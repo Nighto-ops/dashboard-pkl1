@@ -11,8 +11,6 @@ import statsmodels.formula.api as smf
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.multivariate.manova import MANOVA
-
-# Diperlukan untuk membaca file Excel
 import openpyxl 
 
 
