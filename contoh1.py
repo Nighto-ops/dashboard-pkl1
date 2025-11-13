@@ -6,8 +6,6 @@ import plotly.graph_objects as go
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-
-# Impor library STATSMODELS yang sangat penting
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.stats.outliers_influence import variance_inflation_factor
