@@ -486,8 +486,8 @@ if df is not None:
                         st.write("**Hasil MANOVA (Ringkasan Tes Multivariat):**")
                         st.dataframe(mv_test.summary_frame)
                         
-                        # PERBAIKAN (Permintaan #2): Mengambil p-value dari summary_frame menggunakan NAMA KOLOM
-                        p_value_manova = mv_test.summary_frame.loc[c1, "Wilks' lambda_Pr > F"]
+                        # PERBAIKAN: Mengambil p-value dari summary_frame menggunakan C(NAMA_KOLOM)
+                        p_value_manova = mv_test.summary_frame.loc[f'C({c1})', "Wilks' lambda_Pr > F"]
                         
                         if p_value_manova < 0.05:
                             st.success(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) < 0.05. "
@@ -534,9 +534,9 @@ if df is not None:
                         st.dataframe(mv_test.summary_frame)
                         
                         st.subheader("Interpretasi Sederhana (Wilks' Lambda P-value)")
-                        # PERBAIKAN (Permintaan #2): Mengambil p-value dari summary_frame menggunakan NAMA KOLOM
-                        p_c1 = mv_test.summary_frame.loc[c1, "Wilks' lambda_Pr > F"]
-                        p_c2 = mv_test.summary_frame.loc[c2, "Wilks' lambda_Pr > F"]
+                        # PERBAIKAN: Mengambil p-value dari summary_frame menggunakan C(NAMA_KOLOM)
+                        p_c1 = mv_test.summary_frame.loc[f'C({c1})', "Wilks' lambda_Pr > F"]
+                        p_c2 = mv_test.summary_frame.loc[f'C({c2})', "Wilks' lambda_Pr > F"]
                         p_int = mv_test.summary_frame.loc[f'C({c1}):C({c2})', "Wilks' lambda_Pr > F"]
 
                         if p_c1 < 0.05:
