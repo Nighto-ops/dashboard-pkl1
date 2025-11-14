@@ -34,7 +34,7 @@ def load_data(file):
 # KONFIGURASI HALAMAN UTAMA
 # =================================================================
 st.set_page_config(layout="wide")
-st.title("Statistical Analysis Tools v3")
+st.title("Statistical Analysis Tools v3.1 (Fixed)")
 
 # =================================================================
 # SIDEBAR: UPLOAD FILE & IDENTIFIKASI VARIABEL
@@ -78,14 +78,13 @@ else:
 # =================================================================
 
 if df is not None:
-    # PERUBAHAN: Struktur Tab dirombak agar lebih logis
     tab_data, tab_uni, tab_bi, tab_reg, tab_anova, tab_manova = st.tabs([
         "Ringkasan Data",
         "Analisis Univariat", 
         "Analisis Bivariat",
-        "Model Regresi", # BARU (Permintaan #1)
-        "ANOVA",         # BARU (Permintaan #2)
-        "MANOVA"         # BARU (Permintaan #3)
+        "Model Regresi",
+        "ANOVA",
+        "MANOVA"
     ])
 
     # -------------------------------------------------------------
@@ -133,13 +132,12 @@ if df is not None:
                     stat, p_value = stats.shapiro(data_to_test)
                     st.write(f"**P-value:** `{p_value:.4f}`")
                     
-                    # PERUBAHAN: Tambah Interpretasi Awam (Permintaan #4)
                     if p_value > 0.05:
                         st.success(f"**Interpretasi Teknis:** P-value > 0.05. Gagal menolak H0. Data **terdistribusi normal**.")
-                        st.info(" **Bahasa Awam:** Data Anda terlihat simetris seperti lonceng (bell curve) yang normal.")
+                        st.info("💡 **Bahasa Awam:** Data Anda terlihat simetris seperti lonceng (bell curve) yang normal.")
                     else:
                         st.error(f"**Interpretasi Teknis:** P-value <= 0.05. Menolak H0. Data **TIDAK terdistribusi normal**.")
-                        st.info(" **Bahasa Awam:** Data Anda miring/tidak rata, bukan seperti lonceng (bell curve) yang normal.")
+                        st.info("💡 **Bahasa Awam:** Data Anda miring/tidak rata, bukan seperti lonceng (bell curve) yang normal.")
 
     # -------------------------------------------------------------
     # TAB 2: ANALISIS BIVARIAT (Dua Variabel)
@@ -171,13 +169,12 @@ if df is not None:
                 st.write(f"* **Koefisien Korelasi (r):** `{corr:.4f}`")
                 st.write(f"* **P-value:** `{p_value:.4f}`")
                 
-                # PERUBAHAN: Tambah Interpretasi Awam (Permintaan #4)
                 if p_value < 0.05:
                     st.success(f"**Interpretasi Teknis:** Terdapat korelasi yang signifikan secara statistik (p < 0.05).")
-                    st.info(f" **Bahasa Awam:** Ya, ada hubungan yang nyata antara {bi_x} dan {bi_y}. Saat satu naik, yang lain cenderung naik (jika r positif) atau turun (jika r negatif).")
+                    st.info(f"💡 **Bahasa Awam:** Ya, ada hubungan yang nyata antara {bi_x} dan {bi_y}. Saat satu naik, yang lain cenderung naik (jika r positif) atau turun (jika r negatif).")
                 else:
                     st.error(f"**Interpretasi Teknis:** Tidak terdapat korelasi yang signifikan secara statistik (p > 0.05).")
-                    st.info(f" **Bahasa Awam:** Tidak ditemukan hubungan yang jelas antara {bi_x} dan {bi_y}. Perubahannya terlihat acak.")
+                    st.info(f"💡 **Bahasa Awam:** Tidak ditemukan hubungan yang jelas antara {bi_x} dan {bi_y}. Perubahannya terlihat acak.")
             elif bi_x == bi_y:
                 st.warning("Variabel X dan Y tidak boleh sama.")
         
@@ -195,23 +192,24 @@ if df is not None:
                 groups_t = df[cat_col_t].unique()
                 
                 if len(groups_t) == 2:
-                    st.write("**Uji T (Independent T-Test)**")
-                    fig_box = px.box(df, x=cat_col_t, y=num_col_t, title=f"Distribusi {num_col_t} berdasarkan {cat_col_t}", points="all")
-                    st.plotly_chart(fig_box, use_container_width=True)
+                    # PERBAIKAN (Permintaan #1): Menambahkan st.button
+                    if st.button("Jalankan Uji T", key='t_test_btn'):
+                        st.write("**Uji T (Independent T-Test)**")
+                        fig_box = px.box(df, x=cat_col_t, y=num_col_t, title=f"Distribusi {num_col_t} berdasarkan {cat_col_t}", points="all")
+                        st.plotly_chart(fig_box, use_container_width=True)
 
-                    group1 = df[df[cat_col_t] == groups_t[0]][num_col_t].dropna()
-                    group2 = df[df[cat_col_t] == groups_t[1]][num_col_t].dropna()
-                    
-                    stat, p_value = stats.ttest_ind(group1, group2)
-                    st.write(f"* **P-value:** `{p_value:.4f}`")
-                    
-                    # PERUBAHAN: Tambah Interpretasi Awam (Permintaan #4)
-                    if p_value < 0.05:
-                        st.success(f"**Interpretasi Teknis:** Terdapat perbedaan rata-rata yang signifikan antara {groups_t[0]} dan {groups_t[1]}.")
-                        st.info(f" **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]}.")
-                    else:
-                        st.error(f"**Interpretasi Teknis:** Tidak ada perbedaan rata-rata yang signifikan.")
-                        st.info(f" **Bahasa Awam:** Tidak, perbedaan nilai antara kedua kelompok sepertinya hanya kebetulan saja (tidak signifikan).")
+                        group1 = df[df[cat_col_t] == groups_t[0]][num_col_t].dropna()
+                        group2 = df[df[cat_col_t] == groups_t[1]][num_col_t].dropna()
+                        
+                        stat, p_value = stats.ttest_ind(group1, group2)
+                        st.write(f"* **P-value:** `{p_value:.4f}`")
+                        
+                        if p_value < 0.05:
+                            st.success(f"**Interpretasi Teknis:** Terdapat perbedaan rata-rata yang signifikan antara {groups_t[0]} dan {groups_t[1]}.")
+                            st.info(f"💡 **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]}.")
+                        else:
+                            st.error(f"**Interpretasi Teknis:** Tidak ada perbedaan rata-rata yang signifikan.")
+                            st.info(f"💡 **Bahasa Awam:** Tidak, perbedaan nilai antara kedua kelompok sepertinya hanya kebetulan saja (tidak signifikan).")
                 else:
                     st.warning(f"Variabel '{cat_col_t}' tidak memiliki 2 kelompok. Pindah ke tab 'ANOVA' untuk menguji 3 kelompok atau lebih.")
         
@@ -228,7 +226,7 @@ if df is not None:
             st.warning("Membutuhkan setidaknya 2 variabel numerik untuk matriks korelasi.")
             
     # -------------------------------------------------------------
-    # TAB 3: MODEL REGRESI (PERMINTAAN #1)
+    # TAB 3: MODEL REGRESI
     # -------------------------------------------------------------
     with tab_reg:
         st.header("Model Regresi")
@@ -240,7 +238,7 @@ if df is not None:
         with col1:
             reg_y = st.selectbox("Pilih Variabel Dependen (Y):", numeric_cols, key='reg_y')
             available_x = [col for col in numeric_cols if col != reg_y]
-            reg_x = st.multiselect("Pilih Variabel IndependEN (X):", available_x, key='reg_x')
+            reg_x = st.multiselect("Pilih Variabel Independen (X):", available_x, key='reg_x')
         
         if reg_y and len(reg_x) == 1:
             # --- JIKA 1 VAR X: REGRESI SEDERHANA (Linear, Kuadratik, Kubik) ---
@@ -279,7 +277,7 @@ if df is not None:
                 # Interpretasi
                 st.write(f"**R-squared:** `{r2:.4f}`")
                 st.success(f"**Interpretasi Teknis:** {r2*100:.2f}% variasi pada **{reg_y}** dapat dijelaskan oleh model ini.")
-                st.info(f" **Bahasa Awam:** Model ini {r2*100:.2f}% akurat dalam memprediksi {reg_y} menggunakan {reg_x[0]}.")
+                st.info(f"💡 **Bahasa Awam:** Model ini {r2*100:.2f}% akurat dalam memprediksi {reg_y} menggunakan {reg_x[0]}.")
 
         elif reg_y and len(reg_x) >= 2:
              # --- JIKA 2+ VAR X: REGRESI LINEAR BERGANDA ---
@@ -302,7 +300,7 @@ if df is not None:
                 r_squared = model_ols.rsquared_adj
                 st.success(f"**Interpretasi R-squared (Adj.):** {r_squared*100:.2f}% variasi pada **{reg_y}** "
                            f"dapat dijelaskan oleh variabel-variabel X yang dipilih.")
-                st.info(f" **Bahasa Awam:** Kombinasi variabel X ini {r_squared*100:.2f}% akurat dalam menjelaskan {reg_y}.")
+                st.info(f"💡 **Bahasa Awam:** Kombinasi variabel X ini {r_squared*100:.2f}% akurat dalam menjelaskan {reg_y}.")
                 
                 st.markdown("---")
                 
@@ -320,10 +318,10 @@ if df is not None:
                 
                 if (vif_data[vif_data["Variabel"] != 'const']["VIF"] > 10).any():
                     st.error("**Interpretasi Teknis:** Ditemukan VIF > 10. Ini mengindikasikan adanya **multikolinearitas** kuat.")
-                    st.info(" **Bahasa Awam:** Variabel X Anda 'saling tumpang tindih'. Mereka mengukur hal yang terlalu mirip, sehingga sulit untuk membedakan efeknya masing-masing.")
+                    st.info("💡 **Bahasa Awam:** Variabel X Anda 'saling tumpang tindih'. Mereka mengukur hal yang terlalu mirip, sehingga sulit untuk membedakan efeknya masing-masing.")
                 else:
                     st.success("**Interpretasi Teknis:** Semua VIF < 10. Tidak ada indikasi multikolinearitas yang kuat.")
-                    st.info(" **Bahasa Awam:** Bagus! Variabel X Anda 'berdiri sendiri' dan tidak saling tumpang tindih.")
+                    st.info("💡 **Bahasa Awam:** Bagus! Variabel X Anda 'berdiri sendiri' dan tidak saling tumpang tindih.")
 
                 # 2. Uji Heteroskedastisitas (Breusch-Pagan)
                 st.info("**2. Uji Heteroskedastisitas (Breusch-Pagan)**\n"
@@ -336,16 +334,16 @@ if df is not None:
                 
                 if bp_p_value < 0.05:
                     st.error(f"**Interpretasi Teknis:** P-value < 0.05. Menolak H0. Terindikasi **heteroskedastisitas**.")
-                    st.info(" **Bahasa Awam:** Tingkat kesalahan (error) pada model Anda tidak konsisten. Prediksi Anda mungkin lebih akurat untuk data rendah dan kurang akurat untuk data tinggi (atau sebaliknya).")
+                    st.info("💡 **Bahasa Awam:** Tingkat kesalahan (error) pada model Anda tidak konsisten. Prediksi Anda mungkin lebih akurat untuk data rendah dan kurang akurat untuk data tinggi (atau sebaliknya).")
                 else:
                     st.success(f"**Interpretasi Teknis:** P-value > 0.05. Gagal menolak H0. Asumsi **homoskedastisitas** terpenuhi.")
-                    st.info(" **Bahasa Awam:** Bagus! Tingkat kesalahan (error) pada model Anda konsisten di semua level data.")
+                    st.info("💡 **Bahasa Awam:** Bagus! Tingkat kesalahan (error) pada model Anda konsisten di semua level data.")
         
         elif not reg_y or not reg_x:
             st.info("Silakan pilih minimal 1 Variabel Dependen (Y) dan 1 Variabel Independen (X) untuk memulai.")
 
     # -------------------------------------------------------------
-    # TAB 4: ANOVA (PERMINTAAN #2)
+    # TAB 4: ANOVA
     # -------------------------------------------------------------
     with tab_anova:
         st.header("Analisis Varians (ANOVA)")
@@ -366,34 +364,35 @@ if df is not None:
                 groups_a1 = df[cat_col_anova1].unique()
                 
                 if len(groups_a1) > 2:
-                    # Boxplot
-                    fig_box_a1 = px.box(df, x=cat_col_anova1, y=num_col_anova1, title=f"Distribusi {num_col_anova1} berdasarkan {cat_col_anova1}", points="all")
-                    st.plotly_chart(fig_box_a1, use_container_width=True)
+                    if st.button("Jalankan ANOVA One-Way", key='a1_btn'):
+                        # Boxplot
+                        fig_box_a1 = px.box(df, x=cat_col_anova1, y=num_col_anova1, title=f"Distribusi {num_col_anova1} berdasarkan {cat_col_anova1}", points="all")
+                        st.plotly_chart(fig_box_a1, use_container_width=True)
 
-                    # Bersihkan nama kolom
-                    df_clean = df[[cat_col_anova1, num_col_anova1]].dropna()
-                    clean_cat = cat_col_anova1.replace(' ', '_').replace('[', '').replace(']', '')
-                    clean_num = num_col_anova1.replace(' ', '_').replace('[', '').replace(']', '')
-                    df_clean.columns = [clean_cat, clean_num]
-                    
-                    formula = f'{clean_num} ~ C({clean_cat})'
-                    
-                    try:
-                        model = smf.ols(formula, data=df_clean).fit()
-                        anova_table = sm.stats.anova_lm(model, typ=2)
-                        st.dataframe(anova_table)
+                        # Bersihkan nama kolom
+                        df_clean = df[[cat_col_anova1, num_col_anova1]].dropna()
+                        clean_cat = cat_col_anova1.replace(' ', '_').replace('[', '').replace(']', '')
+                        clean_num = num_col_anova1.replace(' ', '_').replace('[', '').replace(']', '')
+                        df_clean.columns = [clean_cat, clean_num]
                         
-                        p_value_anova = anova_table['PR(>F)'][0]
-                        if p_value_anova < 0.05:
-                            st.success(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) < 0.05. "
-                                       "Setidaknya ada satu kelompok yang memiliki rata-rata yang berbeda secara signifikan.")
-                            st.info(" **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata di antara kelompok-kelompok tersebut.")
-                        else:
-                            st.error(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) > 0.05. "
-                                     "Tidak ada perbedaan rata-rata yang signifikan antar kelompok.")
-                            st.info(" **Bahasa Awam:** Tidak, perbedaan nilai antar kelompok sepertinya hanya kebetulan saja.")
-                    except Exception as e:
-                        st.error(f"Error saat menjalankan ANOVA: {e}. Mungkin karena nama kolom yang tidak valid.")
+                        formula = f'{clean_num} ~ C({clean_cat})'
+                        
+                        try:
+                            model = smf.ols(formula, data=df_clean).fit()
+                            anova_table = sm.stats.anova_lm(model, typ=2)
+                            st.dataframe(anova_table)
+                            
+                            p_value_anova = anova_table['PR(>F)'][0]
+                            if p_value_anova < 0.05:
+                                st.success(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) < 0.05. "
+                                           "Setidaknya ada satu kelompok yang memiliki rata-rata yang berbeda secara signifikan.")
+                                st.info("💡 **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata di antara kelompok-kelompok tersebut.")
+                            else:
+                                st.error(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) > 0.05. "
+                                         "Tidak ada perbedaan rata-rata yang signifikan antar kelompok.")
+                                st.info("💡 **Bahasa Awam:** Tidak, perbedaan nilai antar kelompok sepertinya hanya kebetulan saja.")
+                        except Exception as e:
+                            st.error(f"Error saat menjalankan ANOVA: {e}. Mungkin karena nama kolom yang tidak valid.")
                 else:
                     st.warning(f"Variabel '{cat_col_anova1}' hanya memiliki {len(groups_a1)} kelompok. Gunakan Uji T di tab 'Analisis Bivariat' untuk 2 kelompok.")
 
@@ -413,7 +412,7 @@ if df is not None:
             if anova2_cat1 and anova2_cat2 and anova2_num and anova2_cat1 != anova2_cat2:
                 if st.button("Jalankan ANOVA Two-Way", key='a2_btn'):
                     df_clean = df[[anova2_cat1, anova2_cat2, anova2_num]].dropna()
-                    c1, c2, n = [col.replace(' ', '_') for col in df_clean.columns]
+                    c1, c2, n = [col.replace(' ', '_').replace('[', '').replace(']', '') for col in df_clean.columns]
                     df_clean.columns = [c1, c2, n]
                     
                     formula = f'{n} ~ C({c1}) + C({c2}) + C({c1}):C({c2})'
@@ -441,10 +440,10 @@ if df is not None:
                             
                         if p_int < 0.05:
                             st.warning(f"**INTERAKSI ({anova2_cat1}:{anova2_cat2})**: ADA EFEK INTERAKSI SIGNIFIKAN.")
-                            st.info(f" **Bahasa Awam:** Efek dari {anova2_cat1} pada nilai **bergantung** pada {anova2_cat2} (dan sebaliknya). Keduanya tidak bisa dilihat terpisah.")
+                            st.info(f"💡 **Bahasa Awam:** Efek dari {anova2_cat1} pada nilai **bergantung** pada {anova2_cat2} (dan sebaliknya). Keduanya tidak bisa dilihat terpisah.")
                         else:
                             st.info(f"**INTERAKSI ({anova2_cat1}:{anova2_cat2})**: TIDAK ADA EFEK INTERAKSI SIGNIFIKAN.")
-                            st.info(f" **Bahasa Awam:** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
+                            st.info(f"💡 **Bahasa Awam:** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
 
                     except Exception as e:
                         st.error(f"Error saat menjalankan ANOVA: {e}. Pastikan variabel memiliki > 1 level.")
@@ -452,7 +451,7 @@ if df is not None:
                 st.warning("Variabel Kategorikal 1 dan 2 tidak boleh sama.")
 
     # -------------------------------------------------------------
-    # TAB 5: MANOVA (PERMINTAAN #3)
+    # TAB 5: MANOVA
     # -------------------------------------------------------------
     with tab_manova:
         st.header("Analisis MANOVA")
@@ -485,20 +484,19 @@ if df is not None:
                         mv_test = model.mv_test()
                         
                         st.write("**Hasil MANOVA (Ringkasan Tes Multivariat):**")
-                        # PERBAIKAN (Permintaan #3): Menggunakan summary_frame
                         st.dataframe(mv_test.summary_frame)
                         
-                        # PERBAIKAN (Permintaan #3): Mengambil p-value dari summary_frame
-                        p_value_manova = mv_test.summary_frame.loc[f'C({c1})', "Wilks' lambda_Pr > F"]
+                        # PERBAIKAN (Permintaan #2): Mengambil p-value dari summary_frame menggunakan NAMA KOLOM
+                        p_value_manova = mv_test.summary_frame.loc[c1, "Wilks' lambda_Pr > F"]
                         
                         if p_value_manova < 0.05:
                             st.success(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) < 0.05. "
                                        f"Terdapat perbedaan yang signifikan antar kelompok pada setidaknya satu dari variabel dependen.")
-                            st.info(f" **Bahasa Awam:** Ya, {manova1_cat} memiliki pengaruh yang nyata terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
+                            st.info(f"💡 **Bahasa Awam:** Ya, {manova1_cat} memiliki pengaruh yang nyata terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                         else:
                             st.error(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) > 0.05. "
                                      "Tidak ada perbedaan yang signifikan antar kelompok.")
-                            st.info(f" **Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
+                            st.info(f"💡 **Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                     except Exception as e:
                         st.error(f"Error menjalankan MANOVA: {e}. Pastikan kelompok memiliki lebih dari 1 anggota.")
             elif not manova1_cat or len(manova1_num) < 2:
@@ -536,8 +534,9 @@ if df is not None:
                         st.dataframe(mv_test.summary_frame)
                         
                         st.subheader("Interpretasi Sederhana (Wilks' Lambda P-value)")
-                        p_c1 = mv_test.summary_frame.loc[f'C({c1})', "Wilks' lambda_Pr > F"]
-                        p_c2 = mv_test.summary_frame.loc[f'C({c2})', "Wilks' lambda_Pr > F"]
+                        # PERBAIKAN (Permintaan #2): Mengambil p-value dari summary_frame menggunakan NAMA KOLOM
+                        p_c1 = mv_test.summary_frame.loc[c1, "Wilks' lambda_Pr > F"]
+                        p_c2 = mv_test.summary_frame.loc[c2, "Wilks' lambda_Pr > F"]
                         p_int = mv_test.summary_frame.loc[f'C({c1}):C({c2})', "Wilks' lambda_Pr > F"]
 
                         if p_c1 < 0.05:
