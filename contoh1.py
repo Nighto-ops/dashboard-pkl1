@@ -136,10 +136,10 @@ if df is not None:
                     # PERUBAHAN: Tambah Interpretasi Awam (Permintaan #4)
                     if p_value > 0.05:
                         st.success(f"**Interpretasi Teknis:** P-value > 0.05. Gagal menolak H0. Data **terdistribusi normal**.")
-                        st.info("💡 **Bahasa Awam:** Data Anda terlihat simetris seperti lonceng (bell curve) yang normal.")
+                        st.info(" **Bahasa Awam:** Data Anda terlihat simetris seperti lonceng (bell curve) yang normal.")
                     else:
                         st.error(f"**Interpretasi Teknis:** P-value <= 0.05. Menolak H0. Data **TIDAK terdistribusi normal**.")
-                        st.info("💡 **Bahasa Awam:** Data Anda miring/tidak rata, bukan seperti lonceng (bell curve) yang normal.")
+                        st.info(" **Bahasa Awam:** Data Anda miring/tidak rata, bukan seperti lonceng (bell curve) yang normal.")
 
     # -------------------------------------------------------------
     # TAB 2: ANALISIS BIVARIAT (Dua Variabel)
@@ -174,10 +174,10 @@ if df is not None:
                 # PERUBAHAN: Tambah Interpretasi Awam (Permintaan #4)
                 if p_value < 0.05:
                     st.success(f"**Interpretasi Teknis:** Terdapat korelasi yang signifikan secara statistik (p < 0.05).")
-                    st.info(f"💡 **Bahasa Awam:** Ya, ada hubungan yang nyata antara {bi_x} dan {bi_y}. Saat satu naik, yang lain cenderung naik (jika r positif) atau turun (jika r negatif).")
+                    st.info(f" **Bahasa Awam:** Ya, ada hubungan yang nyata antara {bi_x} dan {bi_y}. Saat satu naik, yang lain cenderung naik (jika r positif) atau turun (jika r negatif).")
                 else:
                     st.error(f"**Interpretasi Teknis:** Tidak terdapat korelasi yang signifikan secara statistik (p > 0.05).")
-                    st.info(f"💡 **Bahasa Awam:** Tidak ditemukan hubungan yang jelas antara {bi_x} dan {bi_y}. Perubahannya terlihat acak.")
+                    st.info(f" **Bahasa Awam:** Tidak ditemukan hubungan yang jelas antara {bi_x} dan {bi_y}. Perubahannya terlihat acak.")
             elif bi_x == bi_y:
                 st.warning("Variabel X dan Y tidak boleh sama.")
         
@@ -208,10 +208,10 @@ if df is not None:
                     # PERUBAHAN: Tambah Interpretasi Awam (Permintaan #4)
                     if p_value < 0.05:
                         st.success(f"**Interpretasi Teknis:** Terdapat perbedaan rata-rata yang signifikan antara {groups_t[0]} dan {groups_t[1]}.")
-                        st.info(f"💡 **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]}.")
+                        st.info(f" **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]}.")
                     else:
                         st.error(f"**Interpretasi Teknis:** Tidak ada perbedaan rata-rata yang signifikan.")
-                        st.info(f"💡 **Bahasa Awam:** Tidak, perbedaan nilai antara kedua kelompok sepertinya hanya kebetulan saja (tidak signifikan).")
+                        st.info(f" **Bahasa Awam:** Tidak, perbedaan nilai antara kedua kelompok sepertinya hanya kebetulan saja (tidak signifikan).")
                 else:
                     st.warning(f"Variabel '{cat_col_t}' tidak memiliki 2 kelompok. Pindah ke tab 'ANOVA' untuk menguji 3 kelompok atau lebih.")
         
@@ -279,7 +279,7 @@ if df is not None:
                 # Interpretasi
                 st.write(f"**R-squared:** `{r2:.4f}`")
                 st.success(f"**Interpretasi Teknis:** {r2*100:.2f}% variasi pada **{reg_y}** dapat dijelaskan oleh model ini.")
-                st.info(f"💡 **Bahasa Awam:** Model ini {r2*100:.2f}% akurat dalam memprediksi {reg_y} menggunakan {reg_x[0]}.")
+                st.info(f" **Bahasa Awam:** Model ini {r2*100:.2f}% akurat dalam memprediksi {reg_y} menggunakan {reg_x[0]}.")
 
         elif reg_y and len(reg_x) >= 2:
              # --- JIKA 2+ VAR X: REGRESI LINEAR BERGANDA ---
@@ -302,7 +302,7 @@ if df is not None:
                 r_squared = model_ols.rsquared_adj
                 st.success(f"**Interpretasi R-squared (Adj.):** {r_squared*100:.2f}% variasi pada **{reg_y}** "
                            f"dapat dijelaskan oleh variabel-variabel X yang dipilih.")
-                st.info(f"💡 **Bahasa Awam:** Kombinasi variabel X ini {r_squared*100:.2f}% akurat dalam menjelaskan {reg_y}.")
+                st.info(f" **Bahasa Awam:** Kombinasi variabel X ini {r_squared*100:.2f}% akurat dalam menjelaskan {reg_y}.")
                 
                 st.markdown("---")
                 
@@ -320,10 +320,10 @@ if df is not None:
                 
                 if (vif_data[vif_data["Variabel"] != 'const']["VIF"] > 10).any():
                     st.error("**Interpretasi Teknis:** Ditemukan VIF > 10. Ini mengindikasikan adanya **multikolinearitas** kuat.")
-                    st.info("💡 **Bahasa Awam:** Variabel X Anda 'saling tumpang tindih'. Mereka mengukur hal yang terlalu mirip, sehingga sulit untuk membedakan efeknya masing-masing.")
+                    st.info(" **Bahasa Awam:** Variabel X Anda 'saling tumpang tindih'. Mereka mengukur hal yang terlalu mirip, sehingga sulit untuk membedakan efeknya masing-masing.")
                 else:
                     st.success("**Interpretasi Teknis:** Semua VIF < 10. Tidak ada indikasi multikolinearitas yang kuat.")
-                    st.info("💡 **Bahasa Awam:** Bagus! Variabel X Anda 'berdiri sendiri' dan tidak saling tumpang tindih.")
+                    st.info(" **Bahasa Awam:** Bagus! Variabel X Anda 'berdiri sendiri' dan tidak saling tumpang tindih.")
 
                 # 2. Uji Heteroskedastisitas (Breusch-Pagan)
                 st.info("**2. Uji Heteroskedastisitas (Breusch-Pagan)**\n"
@@ -336,10 +336,10 @@ if df is not None:
                 
                 if bp_p_value < 0.05:
                     st.error(f"**Interpretasi Teknis:** P-value < 0.05. Menolak H0. Terindikasi **heteroskedastisitas**.")
-                    st.info("💡 **Bahasa Awam:** Tingkat kesalahan (error) pada model Anda tidak konsisten. Prediksi Anda mungkin lebih akurat untuk data rendah dan kurang akurat untuk data tinggi (atau sebaliknya).")
+                    st.info(" **Bahasa Awam:** Tingkat kesalahan (error) pada model Anda tidak konsisten. Prediksi Anda mungkin lebih akurat untuk data rendah dan kurang akurat untuk data tinggi (atau sebaliknya).")
                 else:
                     st.success(f"**Interpretasi Teknis:** P-value > 0.05. Gagal menolak H0. Asumsi **homoskedastisitas** terpenuhi.")
-                    st.info("💡 **Bahasa Awam:** Bagus! Tingkat kesalahan (error) pada model Anda konsisten di semua level data.")
+                    st.info(" **Bahasa Awam:** Bagus! Tingkat kesalahan (error) pada model Anda konsisten di semua level data.")
         
         elif not reg_y or not reg_x:
             st.info("Silakan pilih minimal 1 Variabel Dependen (Y) dan 1 Variabel Independen (X) untuk memulai.")
@@ -387,11 +387,11 @@ if df is not None:
                         if p_value_anova < 0.05:
                             st.success(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) < 0.05. "
                                        "Setidaknya ada satu kelompok yang memiliki rata-rata yang berbeda secara signifikan.")
-                            st.info("💡 **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata di antara kelompok-kelompok tersebut.")
+                            st.info(" **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata di antara kelompok-kelompok tersebut.")
                         else:
                             st.error(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) > 0.05. "
                                      "Tidak ada perbedaan rata-rata yang signifikan antar kelompok.")
-                            st.info("💡 **Bahasa Awam:** Tidak, perbedaan nilai antar kelompok sepertinya hanya kebetulan saja.")
+                            st.info(" **Bahasa Awam:** Tidak, perbedaan nilai antar kelompok sepertinya hanya kebetulan saja.")
                     except Exception as e:
                         st.error(f"Error saat menjalankan ANOVA: {e}. Mungkin karena nama kolom yang tidak valid.")
                 else:
@@ -441,10 +441,10 @@ if df is not None:
                             
                         if p_int < 0.05:
                             st.warning(f"**INTERAKSI ({anova2_cat1}:{anova2_cat2})**: ADA EFEK INTERAKSI SIGNIFIKAN.")
-                            st.info(f"💡 **Bahasa Awam:** Efek dari {anova2_cat1} pada nilai **bergantung** pada {anova2_cat2} (dan sebaliknya). Keduanya tidak bisa dilihat terpisah.")
+                            st.info(f" **Bahasa Awam:** Efek dari {anova2_cat1} pada nilai **bergantung** pada {anova2_cat2} (dan sebaliknya). Keduanya tidak bisa dilihat terpisah.")
                         else:
                             st.info(f"**INTERAKSI ({anova2_cat1}:{anova2_cat2})**: TIDAK ADA EFEK INTERAKSI SIGNIFIKAN.")
-                            st.info(f"💡 **Bahasa Awam:** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
+                            st.info(f" **Bahasa Awam:** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
 
                     except Exception as e:
                         st.error(f"Error saat menjalankan ANOVA: {e}. Pastikan variabel memiliki > 1 level.")
@@ -494,11 +494,11 @@ if df is not None:
                         if p_value_manova < 0.05:
                             st.success(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) < 0.05. "
                                        f"Terdapat perbedaan yang signifikan antar kelompok pada setidaknya satu dari variabel dependen.")
-                            st.info(f"💡 **Bahasa Awam:** Ya, {manova1_cat} memiliki pengaruh yang nyata terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
+                            st.info(f" **Bahasa Awam:** Ya, {manova1_cat} memiliki pengaruh yang nyata terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                         else:
                             st.error(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) > 0.05. "
                                      "Tidak ada perbedaan yang signifikan antar kelompok.")
-                            st.info(f"💡 **Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
+                            st.info(f" **Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                     except Exception as e:
                         st.error(f"Error menjalankan MANOVA: {e}. Pastikan kelompok memiliki lebih dari 1 anggota.")
             elif not manova1_cat or len(manova1_num) < 2:
