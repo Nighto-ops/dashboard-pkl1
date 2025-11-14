@@ -34,7 +34,7 @@ def load_data(file):
 # KONFIGURASI HALAMAN UTAMA
 # =================================================================
 st.set_page_config(layout="wide")
-st.title("Statistical Analysis Tools v3.1 (Fixed)")
+st.title("Statistical Analysis Tools")
 
 # =================================================================
 # SIDEBAR: UPLOAD FILE & IDENTIFIKASI VARIABEL
