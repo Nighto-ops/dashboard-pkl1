@@ -34,7 +34,7 @@ def load_data(file):
 # KONFIGURASI HALAMAN UTAMA
 # =================================================================
 st.set_page_config(layout="wide")
-st.title("Statistical Analysis Tools")
+st.title("Statistical Analysis Tools v3.2 (Fixed)")
 
 # =================================================================
 # SIDEBAR: UPLOAD FILE & IDENTIFIKASI VARIABEL
@@ -192,7 +192,7 @@ if df is not None:
                 groups_t = df[cat_col_t].unique()
                 
                 if len(groups_t) == 2:
-                    # PERBAIKAN (Permintaan #1): Menambahkan st.button
+                    # PERBAIKAN: Menambahkan st.button
                     if st.button("Jalankan Uji T", key='t_test_btn'):
                         st.write("**Uji T (Independent T-Test)**")
                         fig_box = px.box(df, x=cat_col_t, y=num_col_t, title=f"Distribusi {num_col_t} berdasarkan {cat_col_t}", points="all")
@@ -486,8 +486,11 @@ if df is not None:
                         st.write("**Hasil MANOVA (Ringkasan Tes Multivariat):**")
                         st.dataframe(mv_test.summary_frame)
                         
-                        # PERBAIKAN: Mengambil p-value dari summary_frame menggunakan C(NAMA_KOLOM)
-                        p_value_manova = mv_test.summary_frame.loc[f'C({c1})', "Wilks' lambda_Pr > F"]
+                        # ==================================================================
+                        # PERBAIKAN BUG v3.2
+                        # Mengakses P-value dari MultiIndex (Effect, Statistic)
+                        # ==================================================================
+                        p_value_manova = mv_test.summary_frame.loc[(f'C({c1})', "Wilks' lambda"), "Pr > F"]
                         
                         if p_value_manova < 0.05:
                             st.success(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) < 0.05. "
@@ -498,7 +501,8 @@ if df is not None:
                                      "Tidak ada perbedaan yang signifikan antar kelompok.")
                             st.info(f"💡 **Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                     except Exception as e:
-                        st.error(f"Error menjalankan MANOVA: {e}. Pastikan kelompok memiliki lebih dari 1 anggota.")
+                        # PERBAIKAN: Menampilkan error yang sebenarnya
+                        st.error(f"Error menjalankan MANOVA: {e}")
             elif not manova1_cat or len(manova1_num) < 2:
                 st.warning("Silakan pilih 1 variabel kelompok dan minimal 2 variabel dependen.")
 
@@ -534,10 +538,13 @@ if df is not None:
                         st.dataframe(mv_test.summary_frame)
                         
                         st.subheader("Interpretasi Sederhana (Wilks' Lambda P-value)")
-                        # PERBAIKAN: Mengambil p-value dari summary_frame menggunakan C(NAMA_KOLOM)
-                        p_c1 = mv_test.summary_frame.loc[f'C({c1})', "Wilks' lambda_Pr > F"]
-                        p_c2 = mv_test.summary_frame.loc[f'C({c2})', "Wilks' lambda_Pr > F"]
-                        p_int = mv_test.summary_frame.loc[f'C({c1}):C({c2})', "Wilks' lambda_Pr > F"]
+                        # ==================================================================
+                        # PERBAIKAN BUG v3.2
+                        # Mengakses P-value dari MultiIndex (Effect, Statistic)
+                        # ==================================================================
+                        p_c1 = mv_test.summary_frame.loc[(f'C({c1})', "Wilks' lambda"), "Pr > F"]
+                        p_c2 = mv_test.summary_frame.loc[(f'C({c2})', "Wilks' lambda"), "Pr > F"]
+                        p_int = mv_test.summary_frame.loc[(f'C({c1}):C({c2})', "Wilks' lambda"), "Pr > F"]
 
                         if p_c1 < 0.05:
                             st.success(f"**{manova2_cat1}**: BERPENGARUH SIGNIFIKAN.")
@@ -555,6 +562,7 @@ if df is not None:
                             st.info(f"**INTERAKSI ({manova2_cat1}:{manova2_cat2})**: TIDAK ADA EFEK INTERAKSI SIGNIFIKAN.")
 
                     except Exception as e:
+                        # PERBAIKAN: Menampilkan error yang sebenarnya
                         st.error(f"Error menjalankan MANOVA: {e}")
             elif not manova2_cat1 or not manova2_cat2 or len(manova2_num) < 2:
                 st.warning("Silakan pilih 2 variabel kelompok yang berbeda dan minimal 2 variabel dependen.")
