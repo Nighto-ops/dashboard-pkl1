@@ -31,7 +31,6 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 
 @st.cache_data
 def load_data(file):
-    """Memuat data dari file yang diupload (CSV atau Excel)."""
     try:
         if file.name.endswith('.csv'):
             return pd.read_csv(file)
