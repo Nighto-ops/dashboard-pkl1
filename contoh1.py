@@ -45,7 +45,7 @@ def load_data(file):
 # KONFIGURASI HALAMAN UTAMA
 # =================================================================
 st.set_page_config(layout="wide")
-st.title("🛠️ Platform Analisis Statistik Multivariat")
+st.title("Tools Analisis Statistik")
 st.markdown("*Berdasarkan acuan: 'Applied Multivariate Statistical Analysis' (Johnson & Wichern)*")
 
 # =================================================================
@@ -92,13 +92,13 @@ else:
 if df is not None and all_cols:
     # Struktur Tab Baru (Permintaan Desain)
     tab_data, tab_basic, tab_reg, tab_anova, tab_manova, tab_dim, tab_class = st.tabs([
-        "🏠 Beranda & Data",
-        "📊 Analisis Dasar",
-        "📈 Model Regresi",
-        "🔬 ANOVA",
-        "🧩 MANOVA",
-        "🧬 Reduksi Dimensi (PCA/EFA)",
-        "🎯 Klasifikasi & Clustering"
+        "Beranda & Data",
+        "Analisis Dasar",
+        "Model Regresi",
+        "ANOVA",
+        "MANOVA",
+        "Reduksi Dimensi (PCA/EFA)",
+        "Klasifikasi & Clustering"
     ])
 
     # -------------------------------------------------------------
@@ -152,10 +152,10 @@ if df is not None and all_cols:
                         st.write(f"**P-value:** `{p_value:.4f}`")
                         if p_value > 0.05:
                             st.success(f"**Interpretasi Teknis:** P-value > 0.05. Gagal menolak H0. Data **terdistribusi normal**.")
-                            st.info("💡 **Bahasa Awam:** Data Anda terlihat simetris seperti lonceng (bell curve) yang normal.")
+                            st.info("**Bahasa Awam:** Data Anda terlihat simetris seperti lonceng (bell curve) yang normal.")
                         else:
                             st.error(f"**Interpretasi Teknis:** P-value <= 0.05. Menolak H0. Data **TIDAK terdistribusi normal**.")
-                            st.info("💡 **Bahasa Awam:** Data Anda miring/tidak rata, bukan seperti lonceng (bell curve) yang normal.")
+                            st.info("**Bahasa Awam:** Data Anda miring/tidak rata, bukan seperti lonceng (bell curve) yang normal.")
             
             st.markdown("---")
 
@@ -183,10 +183,10 @@ if df is not None and all_cols:
                     
                     if p_value < 0.05:
                         st.success(f"**Interpretasi Teknis:** Terdapat korelasi yang signifikan secara statistik (p < 0.05).")
-                        st.info(f"💡 **Bahasa Awam:** Ya, ada hubungan yang nyata antara {bi_x} dan {bi_y}.")
+                        st.info(f"**Bahasa Awam:** Ya, ada hubungan yang nyata antara {bi_x} dan {bi_y}.")
                     else:
                         st.error(f"**Interpretasi Teknis:** Tidak terdapat korelasi yang signifikan secara statistik (p > 0.05).")
-                        st.info(f"💡 **Bahasa Awam:** Tidak ditemukan hubungan yang jelas antara {bi_x} dan {bi_y}.")
+                        st.info(f"**Bahasa Awam:** Tidak ditemukan hubungan yang jelas antara {bi_x} dan {bi_y}.")
                 elif bi_x == bi_y:
                     st.warning("Variabel X dan Y tidak boleh sama.")
             
@@ -221,10 +221,10 @@ if df is not None and all_cols:
                             
                             if p_value < 0.05:
                                 st.success(f"**Interpretasi Teknis:** Terdapat perbedaan rata-rata yang signifikan antara {groups_t[0]} dan {groups_t[1]}.")
-                                st.info(f"💡 **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]}.")
+                                st.info(f"**Bahasa Awam:** Ya, ada perbedaan nilai yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]}.")
                             else:
                                 st.error(f"**Interpretasi Teknis:** Tidak ada perbedaan rata-rata yang signifikan.")
-                                st.info(f"💡 **Bahasa Awam:** Tidak, perbedaan nilai antara kedua kelompok sepertinya hanya kebetulan saja (tidak signifikan).")
+                                st.info(f"**Bahasa Awam:** Tidak, perbedaan nilai antara kedua kelompok sepertinya hanya kebetulan saja (tidak signifikan).")
                     elif len(groups_t) > 2:
                         st.warning(f"Variabel '{cat_col_t}' memiliki {len(groups_t)} kelompok. Pindah ke tab 'ANOVA' untuk menguji 3 kelompok atau lebih.")
                     else:
@@ -234,7 +234,7 @@ if df is not None and all_cols:
     # TAB 3: MODEL REGRESI (BAB 7)
     # -------------------------------------------------------------
     with tab_reg:
-        st.header("Model Regresi (Bab 7)")
+        st.header("Model Regresi")
         st.info("Memodelkan hubungan antara variabel dependen (Y) dan variabel independen (X) untuk membuat prediksi.")
         st.markdown("---")
 
@@ -281,7 +281,7 @@ if df is not None and all_cols:
                     
                     st.write(f"**R-squared:** `{r2:.4f}`")
                     st.success(f"**Interpretasi Teknis:** {r2*100:.2f}% variasi pada **{reg_y}** dapat dijelaskan oleh model ini.")
-                    st.info(f"💡 **Bahasa Awam:** Model ini {r2*100:.2f}% akurat dalam memprediksi {reg_y} menggunakan {reg_x[0]}.")
+                    st.info(f"**Bahasa Awam:** Model ini {r2*100:.2f}% akurat dalam memprediksi {reg_y} menggunakan {reg_x[0]}.")
 
             elif reg_y and len(reg_x) >= 2:
                  # --- JIKA 2+ VAR X: REGRESI LINEAR BERGANDA ---
@@ -302,7 +302,7 @@ if df is not None and all_cols:
                     r_squared = model_ols.rsquared_adj
                     st.success(f"**Interpretasi R-squared (Adj.):** {r_squared*100:.2f}% variasi pada **{reg_y}** "
                                f"dapat dijelaskan oleh variabel-variabel X yang dipilih.")
-                    st.info(f"💡 **Bahasa Awam:** Kombinasi variabel X ini {r_squared*100:.2f}% akurat dalam menjelaskan {reg_y}.")
+                    st.info(f"**Bahasa Awam:** Kombinasi variabel X ini {r_squared*100:.2f}% akurat dalam menjelaskan {reg_y}.")
                     
                     st.markdown("---")
                     
@@ -318,10 +318,10 @@ if df is not None and all_cols:
                     
                     if (vif_data[vif_data["Variabel"] != 'const']["VIF"] > 10).any():
                         st.error("**Interpretasi Teknis:** Ditemukan VIF > 10. Ini mengindikasikan adanya **multikolinearitas** kuat.")
-                        st.info("💡 **Bahasa Awam:** Variabel X Anda 'saling tumpang tindih'. Mereka mengukur hal yang terlalu mirip.")
+                        st.info("**Bahasa Awam:** Variabel X Anda 'saling tumpang tindih'. Mereka mengukur hal yang terlalu mirip.")
                     else:
                         st.success("**Interpretasi Teknis:** Semua VIF < 10. Tidak ada indikasi multikolinearitas yang kuat.")
-                        st.info("💡 **Bahasa Awam:** Bagus! Variabel X Anda 'berdiri sendiri' dan tidak saling tumpang tindih.")
+                        st.info("**Bahasa Awam:** Bagus! Variabel X Anda 'berdiri sendiri' dan tidak saling tumpang tindih.")
 
                     st.info("**2. Uji Heteroskedastisitas (Breusch-Pagan)**\n"
                             "Tujuan: Menguji apakah varians dari residual (error) konstan.")
@@ -333,10 +333,10 @@ if df is not None and all_cols:
                     
                     if bp_p_value < 0.05:
                         st.error(f"**Interpretasi Teknis:** P-value < 0.05. Menolak H0. Terindikasi **heteroskedastisitas**.")
-                        st.info("💡 **Bahasa Awam:** Tingkat kesalahan (error) pada model Anda tidak konsisten.")
+                        st.info("**Bahasa Awam:** Tingkat kesalahan (error) pada model Anda tidak konsisten.")
                     else:
                         st.success(f"**Interpretasi Teknis:** P-value > 0.05. Gagal menolak H0. Asumsi **homoskedastisitas** terpenuhi.")
-                        st.info("💡 **Bahasa Awam:** Bagus! Tingkat kesalahan (error) pada model Anda konsisten.")
+                        st.info("**Bahasa Awam:** Bagus! Tingkat kesalahan (error) pada model Anda konsisten.")
             
             elif not reg_y or not reg_x:
                 st.info("Silakan pilih minimal 1 Variabel Dependen (Y) dan 1 Variabel Independen (X) untuk memulai.")
@@ -386,11 +386,11 @@ if df is not None and all_cols:
                                 if p_value_anova < 0.05:
                                     st.success(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) < 0.05. "
                                                "Setidaknya ada satu kelompok yang memiliki rata-rata yang berbeda secara signifikan.")
-                                    st.info("💡 **Bahasa Awam:** Ya, ada perbedaan nilai yang nyata di antara kelompok-kelompok tersebut.")
+                                    st.info("**Bahasa Awam:** Ya, ada perbedaan nilai yang nyata di antara kelompok-kelompok tersebut.")
                                 else:
                                     st.error(f"**Interpretasi Teknis:** P-value ({p_value_anova:.4f}) > 0.05. "
                                              "Tidak ada perbedaan rata-rata yang signifikan antar kelompok.")
-                                    st.info("💡 **Bahasa Awam:** Tidak, perbedaan nilai antar kelompok sepertinya hanya kebetulan saja.")
+                                    st.info("**Bahasa Awam:** Tidak, perbedaan nilai antar kelompok sepertinya hanya kebetulan saja.")
                             except Exception as e:
                                 st.error(f"Error saat menjalankan ANOVA: {e}. Pastikan nama kolom valid.")
                     elif len(groups_a1) == 2:
@@ -442,10 +442,10 @@ if df is not None and all_cols:
                                 
                             if p_int < 0.05:
                                 st.warning(f"**INTERAKSI ({anova2_cat1}:{anova2_cat2})**: ADA EFEK INTERAKSI SIGNIFIKAN.")
-                                st.info(f"💡 **Bahasa Awam:** Efek dari {anova2_cat1} pada nilai **bergantung** pada {anova2_cat2}.")
+                                st.info(f"**Bahasa Awam:** Efek dari {anova2_cat1} pada nilai **bergantung** pada {anova2_cat2}.")
                             else:
                                 st.info(f"**INTERAKSI ({anova2_cat1}:{anova2_cat2})**: TIDAK ADA EFEK INTERAKSI SIGNIFIKAN.")
-                                st.info(f"💡 **Bahasa Awam:** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
+                                st.info(f"**Bahasa Awam:** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
 
                         except Exception as e:
                             st.error(f"Error saat menjalankan ANOVA: {e}. Pastikan variabel memiliki > 1 level.")
@@ -456,7 +456,7 @@ if df is not None and all_cols:
     # TAB 5: MANOVA (BAB 6)
     # -------------------------------------------------------------
     with tab_manova:
-        st.header("Analisis MANOVA (Bab 6)")
+        st.header("Analisis MANOVA")
         st.info("Seperti ANOVA, tetapi untuk **DUA ATAU LEBIH** variabel dependen (Y) secara bersamaan.")
         st.markdown("---")
 
@@ -497,11 +497,11 @@ if df is not None and all_cols:
                             if p_value_manova < 0.05:
                                 st.success(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) < 0.05. "
                                            f"Terdapat perbedaan yang signifikan antar kelompok.")
-                                st.info(f"💡 **Bahasa Awam:** Ya, {manova1_cat} memiliki pengaruh yang nyata terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
+                                st.info(f"**Bahasa Awam:** Ya, {manova1_cat} memiliki pengaruh yang nyata terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                             else:
                                 st.error(f"**Interpretasi Teknis:** P-value ({p_value_manova:.4f}) > 0.05. "
                                          "Tidak ada perbedaan yang signifikan antar kelompok.")
-                                st.info(f"💡 **Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
+                                st.info(f"**Bahasa Awam:** Tidak, {manova1_cat} sepertinya tidak memiliki pengaruh apa-apa terhadap nilai-nilai ({', '.join(manova1_num)}) secara bersamaan.")
                         except Exception as e:
                             st.error(f"Error menjalankan MANOVA: {e}")
                 elif not manova1_cat or len(manova1_num) < 2:
@@ -570,7 +570,7 @@ if df is not None and all_cols:
     # TAB 6: REDUKSI DIMENSI (PCA & EFA) (BAB 8 & 9)
     # -------------------------------------------------------------
     with tab_dim:
-        st.header("Reduksi Dimensi (Bab 8 & 9)")
+        st.header("Reduksi Dimensi")
         st.info("Metode ini membantu menyederhanakan data Anda dengan mengurangi jumlah variabel, "
                 "baik dengan meringkas (PCA) atau menemukan faktor tersembunyi (EFA).")
         st.warning("Penting: Analisis di tab ini sangat sensitif terhadap skala data. "
@@ -626,7 +626,7 @@ if df is not None and all_cols:
                         st.dataframe(pd.DataFrame(pca.components_.T, index=numeric_cols, columns=[f'PC{i+1}' for i in range(n_components_pca)]))
                         
                         st.success(f"**Interpretasi Teknis:** Model PCA {n_components_pca} komponen berhasil dibuat, menjelaskan {pca.explained_variance_ratio_.sum()*100:.2f}% dari total varians.")
-                        st.info(f"💡 **Bahasa Awam:** Anda telah berhasil 'meringkas' {len(numeric_cols)} variabel Anda menjadi {n_components_pca} komponen utama. Lihat tabel 'Component Loadings' untuk melihat variabel mana yang paling berkontribusi pada setiap komponen baru.")
+                        st.info(f"**Bahasa Awam:** Anda telah berhasil 'meringkas' {len(numeric_cols)} variabel Anda menjadi {n_components_pca} komponen utama. Lihat tabel 'Component Loadings' untuk melihat variabel mana yang paling berkontribusi pada setiap komponen baru.")
                         
                     except Exception as e:
                         st.error(f"Error menjalankan PCA: {e}")
@@ -678,7 +678,7 @@ if df is not None and all_cols:
                             st.dataframe(pd.DataFrame(fa.loadings_, index=numeric_cols, columns=[f'Faktor {i+1}' for i in range(n_components_efa)]))
                             
                             st.success(f"**Interpretasi Teknis:** Model EFA {n_components_efa} faktor berhasil dibuat.")
-                            st.info(f"💡 **Bahasa Awam:** Anda telah menemukan {n_components_efa} 'konsep tersembunyi'. Lihat tabel di atas. Variabel dengan angka besar (misal > 0.6) pada 'Faktor 1' adalah variabel-variabel yang mengukur konsep tersebut.")
+                            st.info(f"**Bahasa Awam:** Anda telah menemukan {n_components_efa} 'konsep tersembunyi'. Lihat tabel di atas. Variabel dengan angka besar (misal > 0.6) pada 'Faktor 1' adalah variabel-variabel yang mengukur konsep tersebut.")
                         
                     except Exception as e:
                         st.error(f"Error menjalankan EFA: {e}")
@@ -687,7 +687,7 @@ if df is not None and all_cols:
     # TAB 7: KLASIFIKASI & CLUSTERING (BAB 11 & 12)
     # -------------------------------------------------------------
     with tab_class:
-        st.header("Klasifikasi & Clustering (Bab 11 & 12)")
+        st.header("Klasifikasi & Clustering")
         st.info("Metode ini membantu Anda mengelompokkan data Anda, baik ke dalam kelompok yang sudah ada (Klasifikasi) "
                 "atau menemukan kelompok baru yang tersembunyi (Clustering).")
         st.markdown("---")
@@ -742,7 +742,7 @@ if df is not None and all_cols:
                             st.dataframe(pd.DataFrame(kmeans.cluster_centers_, columns=cluster_vars, index=[f'Cluster {i}' for i in range(n_clusters)]))
                             
                             st.success(f"**Interpretasi Teknis:** Data berhasil dikelompokkan menjadi {n_clusters} cluster.")
-                            st.info(f"💡 **Bahasa Awam:** Data Anda telah dibagi menjadi {n_clusters} kelompok. Lihat grafik untuk melihat persebarannya dan tabel 'Pusat Cluster' untuk melihat karakteristik rata-rata setiap kelompok.")
+                            st.info(f"**Bahasa Awam:** Data Anda telah dibagi menjadi {n_clusters} kelompok. Lihat grafik untuk melihat persebarannya dan tabel 'Pusat Cluster' untuk melihat karakteristik rata-rata setiap kelompok.")
                             
                         except Exception as e:
                             st.error(f"Error menjalankan Clustering: {e}")
@@ -793,7 +793,7 @@ if df is not None and all_cols:
                                 
                                 st.write(f"**Akurasi Model:** `{lda_accuracy*100:.2f}%`")
                                 st.success(f"**Interpretasi Teknis:** Model berhasil dibuat dengan akurasi {lda_accuracy*100:.2f}% dalam membedakan kelompok.")
-                                st.info(f"💡 **Bahasa Awam:** Model ini {lda_accuracy*100:.2f}% akurat dalam menebak '{lda_target}' hanya dengan melihat variabel prediktor yang Anda pilih.")
+                                st.info(f"**Bahasa Awam:** Model ini {lda_accuracy*100:.2f}% akurat dalam menebak '{lda_target}' hanya dengan melihat variabel prediktor yang Anda pilih.")
 
                                 st.write("**Koefisien Diskriminan (Bobot Variabel)**")
                                 st.dataframe(pd.DataFrame(lda.scalings_, index=lda_predictors, columns=[f'LD{i+1}' for i in range(n_components_lda)]))
