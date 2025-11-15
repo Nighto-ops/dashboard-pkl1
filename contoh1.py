@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from scipy import stats
+from scipy import stats 
 import openpyxl 
 
 # Impor dari Scikit-learn (SKLEARN)
@@ -289,6 +289,7 @@ if df is not None and all_cols:
     # -------------------------------------------------------------
     # TAB 3: MODEL REGRESI (BAB 7)
     # -------------------------------------------------------------
+    """halo"""
     with tab_reg:
         st.header("Model Regresi")
         st.info("Memodelkan hubungan antara variabel dependen (Y) dan variabel independen (X) untuk membuat prediksi.")
