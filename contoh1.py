@@ -42,7 +42,6 @@ def load_data(file):
 
 # Fungsi bantuan baru untuk interpretasi korelasi
 def interpret_correlation(r):
-    """Memberikan interpretasi kualitatif untuk nilai koefisien korelasi."""
     r_abs = abs(r)
     if r_abs >= 0.8: return "sangat kuat"
     if r_abs >= 0.6: return "kuat"
