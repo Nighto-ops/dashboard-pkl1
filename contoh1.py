@@ -56,7 +56,7 @@ def interpret_correlation(r):
 # =================================================================
 st.set_page_config(layout="wide")
 st.title("Tools Analisis Statistik")
-st.markdown("*Berdasarkan acuan: 'Applied Multivariate Statistical Analysis' (Johnson & Wichern)*")
+st.markdown("*Masukkan datamu, dan lakukan sesukamu*")
 
 # =================================================================
 # SIDEBAR: UPLOAD FILE & IDENTIFIKASI VARIABEL
