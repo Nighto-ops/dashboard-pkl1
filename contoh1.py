@@ -285,7 +285,7 @@ if df is not None and all_cols:
                     eb_cat = st.selectbox("Pilih Variabel Kelompok (Kategorikal):", categorical_cols, key='eb_cat')
                     eb_num = st.selectbox("Pilih Variabel Nilai (Numerik):", numeric_cols, key='eb_num')
                     eb_type = st.radio("Pilih Tipe Error Bar:", ["Standar Error (SE)", "Standar Deviasi (SD)"], key='eb_type')
-                    eb_plot_type = st.radio("Tipe Plot:", ["Bar Chart", "Line Chart (seperti contoh)"], key='eb_plot_type')
+                    eb_plot_type = st.radio("Tipe Plot:", ["Bar Chart", "Line Chart"], key='eb_plot_type')
                     
             with col8:
                 if eb_cat and eb_num:
