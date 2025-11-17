@@ -304,7 +304,7 @@ if df is not None and all_cols:
                             # 4. Buat plot
                             fig = go.Figure()
                             
-                            if eb_plot_type == "Line Chart (seperti contoh)":
+                            if eb_plot_type == "Line Chart":
                                 fig.add_trace(go.Scatter(
                                     x=df_agg[eb_cat],
                                     y=df_agg['mean'],
