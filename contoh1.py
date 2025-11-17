@@ -158,25 +158,20 @@ if df is not None and all_cols:
                         stat, p_value = stats.shapiro(data_to_test)
                         st.write(f"**P-value:** `{p_value:.4f}`")
                         
-                        # PERUBAHAN v5: Interpretasi lebih rinci
+                        # Interpretasi hasil
                         with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                             st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                             st.markdown(f"""
-                            **Tujuan Uji:** Uji Normalitas (Shapiro-Wilk) bertujuan untuk mengecek apakah data pada variabel '{norm_col}' terdistribusi normal (simetris, berbentuk seperti lonceng). Ini adalah asumsi penting untuk banyak uji statistik lainnya.
-
+                            **Tujuan Uji:** Uji Normalitas (Shapiro-Wilk) bertujuan untuk mengecek apakah data pada variabel '{norm_col}' terdistribusi normal.
                             **Aturan Keputusan (Rule of Thumb):**
                             * **P-value > 0.05:** Data **TERDISTRIBUSI NORMAL**.
                             * **P-value <= 0.05:** Data **TIDAK TERDISTRIBUSI NORMAL**.
-
-                            **Hasil Anda:**
-                            * P-value Anda adalah **{p_value:.4f}**.
+                            **Hasil Anda:** P-value Anda adalah **{p_value:.4f}**.
                             """)
                             if p_value > 0.05:
                                 st.success(f"**Kesimpulan:** Hasil Anda **NORMAL** (karena P-value > 0.05).")
-                                st.info(" **Bahasa Awam:** Ini adalah hasil yang baik. Data Anda terlihat simetris, mirip kurva lonceng. Anda bisa melanjutkan dengan uji statistik yang mengasumsikan normalitas (seperti Uji T atau ANOVA) dengan percaya diri.")
                             else:
                                 st.error(f"**Kesimpulan:** Hasil Anda **TIDAK NORMAL** (karena P-value <= 0.05).")
-                                st.warning(" **Bahasa Awam:** Data Anda miring/tidak rata. Hasil ini menunjukkan bahwa Anda mungkin perlu berhati-hati saat menggunakan uji statistik yang mengasumsikan normalitas (seperti Uji T atau ANOVA). Pertimbangkan untuk menggunakan uji non-parametrik.")
             
             st.markdown("---")
 
@@ -202,31 +197,23 @@ if df is not None and all_cols:
                     st.write(f"* **Koefisien Korelasi (r):** `{corr:.4f}`")
                     st.write(f"* **P-value:** `{p_value:.4f}`")
                     
-                    # PERUBAHAN v5: Interpretasi lebih rinci
+                    # Interpretasi hasil
                     with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                         st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                         st.markdown(f"""
-                        **Tujuan Uji:** Uji Korelasi Pearson mengukur kekuatan dan arah hubungan *linear* (garis lurus) antara '{bi_x}' dan '{bi_y}'.
-
+                        **Tujuan Uji:** Uji Korelasi Pearson mengukur kekuatan dan arah hubungan *linear* antara '{bi_x}' dan '{bi_y}'.
                         **Aturan Keputusan (Rule of Thumb):**
                         1.  **P-value:** Menunjukkan apakah hubungan itu "nyata" (signifikan).
-                            * `P-value > 0.05`: Hubungan **Tidak Nyata** (kemungkinan hanya kebetulan).
-                            * `P-value <= 0.05`: Hubungan **Nyata** (signifikan).
+                            * `P-value > 0.05`: Hubungan **Tidak Nyata**.
+                            * `P-value <= 0.05`: Hubungan **Nyata**.
                         2.  **Koefisien Korelasi (r):** Jika hubungannya nyata, ini menunjukkan kekuatan dan arah.
-                            * `Tanda Positif (+) `: Jika {bi_x} naik, {bi_y} ikut naik.
-                            * `Tanda Negatif (-) `: Jika {bi_x} naik, {bi_y} malah turun.
-                            * `Kekuatan`: Diukur dari {abs(corr):.2f} (skala 0 s/d 1).
-
-                        **Hasil Anda:**
-                        * P-value Anda adalah **{p_value:.4f}**.
-                        * Koefisien (r) Anda adalah **{corr:.4f}**.
+                        **Hasil Anda:** P-value Anda adalah **{p_value:.4f}**, Koefisien (r) Anda adalah **{corr:.4f}**.
                         """)
                         if p_value < 0.05:
                             st.success(f"**Kesimpulan:** Ya, ada hubungan yang **nyata** antara {bi_x} dan {bi_y} (karena P-value <= 0.05).")
-                            st.info(f" **Bahasa Awam:** Kekuatan hubungan ini **{interpret_correlation(corr)}**. Tanda **{'+' if corr > 0 else '-'}** menunjukkan bahwa ketika {bi_x} naik, {bi_y} cenderung {'naik' if corr > 0 else 'turun'}.")
+                            st.info(f" **Kekuatan:** Hubungan ini **{interpret_correlation(corr)}** dan bersifat {'positif' if corr > 0 else 'negatif'}.")
                         else:
                             st.error(f"**Kesimpulan:** Tidak, **tidak ditemukan** hubungan yang nyata antara {bi_x} dan {bi_y} (karena P-value > 0.05).")
-                            st.info(f" **Bahasa Awam:** Meskipun Anda mungkin melihat pola di grafik, uji statistik menunjukkan pola itu kemungkinan besar hanya kebetulan saja.")
                 elif bi_x == bi_y:
                     st.warning("Variabel X dan Y tidak boleh sama.")
             
@@ -239,6 +226,8 @@ if df is not None and all_cols:
                 st.info("Membandingkan rata-rata variabel numerik di antara **DUA** kelompok.")
                 if not categorical_cols:
                     st.warning("Tidak ada kolom kategorikal yang terdeteksi untuk Uji T.")
+                    cat_col_t = None
+                    num_col_t = None
                 else:
                     cat_col_t = st.selectbox("Pilih Variabel Kelompok (Kategorikal):", categorical_cols, key='bi_cat_t')
                     num_col_t = st.selectbox("Pilih Variabel Nilai (Numerik):", numeric_cols, key='bi_num_t')
@@ -259,33 +248,102 @@ if df is not None and all_cols:
                             stat, p_value = stats.ttest_ind(group1, group2)
                             st.write(f"* **P-value:** `{p_value:.4f}`")
                             
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                 st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                 st.markdown(f"""
-                                **Tujuan Uji:** Uji T adalah untuk membandingkan nilai rata-rata dari variabel '{num_col_t}' antara dua kelompok: '{groups_t[0]}' dan '{groups_t[1]}'.
-                                
-                                **Pertanyaan:** Apakah perbedaan rata-rata yang terlihat di grafik itu "nyata" (signifikan) atau hanya kebetulan?
-
+                                **Tujuan Uji:** Uji T membandingkan rata-rata '{num_col_t}' antara '{groups_t[0]}' dan '{groups_t[1]}'.
                                 **Aturan Keputusan (Rule of Thumb):**
-                                * **P-value > 0.05:** Perbedaan **Tidak Signifikan** (rata-rata kedua kelompok dianggap sama).
-                                * **P-value <= 0.05:** Perbedaan **Signifikan** (rata-rata kedua kelompok berbeda secara nyata).
-
-                                **Hasil Anda:**
-                                * P-value Anda adalah **{p_value:.4f}**.
+                                * **P-value > 0.05:** Perbedaan **Tidak Signifikan**.
+                                * **P-value <= 0.05:** Perbedaan **Signifikan**.
+                                **Hasil Anda:** P-value Anda adalah **{p_value:.4f}**.
                                 """)
                                 if p_value < 0.05:
-                                    st.success(f"**Kesimpulan:** Ya, ada perbedaan rata-rata {num_col_t} yang **nyata** antara kelompok {groups_t[0]} dan {groups_t[1]} (karena P-value <= 0.05).")
+                                    st.success(f"**Kesimpulan:** Ya, ada perbedaan rata-rata {num_col_t} yang **nyata** antara kelompok (karena P-value <= 0.05).")
                                 else:
-                                    st.error(f"**Kesimpulan:** Tidak, **tidak ditemukan** perbedaan rata-rata {num_col_t} yang nyata antara kelompok {groups_t[0]} dan {groups_t[1]} (karena P-value > 0.05).")
-                                    st.info(f" **Bahasa Awam:** Meskipun rata-rata mereka terlihat berbeda di grafik, perbedaan itu tidak cukup besar untuk dianggap nyata secara statistik. Kemungkinan itu hanya kebetulan.")
+                                    st.error(f"**Kesimpulan:** Tidak, **tidak ditemukan** perbedaan rata-rata {num_col_t} yang nyata (karena P-value > 0.05).")
                     elif len(groups_t) > 2:
                         st.warning(f"Variabel '{cat_col_t}' memiliki {len(groups_t)} kelompok. Pindah ke tab 'ANOVA' untuk menguji 3 kelompok atau lebih.")
                     else:
                         st.warning(f"Variabel '{cat_col_t}' hanya memiliki {len(groups_t)} kelompok. Tidak dapat diuji.")
 
+            # ==========================================================
+            # PENAMBAHAN BARU: PLOT DENGAN ERROR BAR
+            # ==========================================================
+            st.markdown("---")
+            st.subheader("Perbandingan Rata-rata (dengan Error Bar)")
+            st.info("Visualisasikan rata-rata (mean) dengan galat (error bar) untuk setiap kelompok. Mirip dengan Box Plot, tapi berfokus pada Mean dan SD/SE.")
+            
+            col7, col8 = st.columns([1, 2])
+            
+            with col7:
+                if not categorical_cols:
+                    st.warning("Analisis ini memerlukan setidaknya 1 kolom kategorikal.")
+                    eb_cat = None
+                    eb_num = None
+                else:
+                    eb_cat = st.selectbox("Pilih Variabel Kelompok (Kategorikal):", categorical_cols, key='eb_cat')
+                    eb_num = st.selectbox("Pilih Variabel Nilai (Numerik):", numeric_cols, key='eb_num')
+                    eb_type = st.radio("Pilih Tipe Error Bar:", ["Standar Error (SE)", "Standar Deviasi (SD)"], key='eb_type')
+                    eb_plot_type = st.radio("Tipe Plot:", ["Bar Chart", "Line Chart (seperti contoh)"], key='eb_plot_type')
+                    
+            with col8:
+                if eb_cat and eb_num:
+                    if st.button("Buat Grafik Error Bar", key='eb_btn'):
+                        try:
+                            # 1. Hitung statistik yang diperlukan
+                            df_agg = df.groupby(eb_cat)[eb_num].agg(['mean', 'std', 'count']).reset_index()
+                            
+                            # 2. Hitung Standar Error (SE)
+                            df_agg['se'] = df_agg['std'] / np.sqrt(df_agg['count'])
+                            
+                            # 3. Tentukan nilai error berdasarkan pilihan user
+                            error_col = 'se' if eb_type == "Standar Error (SE)" else 'std'
+                            df_agg['error_val'] = df_agg[error_col]
+                            
+                            # 4. Buat plot
+                            fig = go.Figure()
+                            
+                            if eb_plot_type == "Line Chart (seperti contoh)":
+                                fig.add_trace(go.Scatter(
+                                    x=df_agg[eb_cat],
+                                    y=df_agg['mean'],
+                                    error_y=dict(
+                                        type='data',
+                                        array=df_agg['error_val'],
+                                        visible=True
+                                    ),
+                                    mode='lines+markers'
+                                ))
+                            else: # Bar Chart
+                                fig.add_trace(go.Bar(
+                                    x=df_agg[eb_cat],
+                                    y=df_agg['mean'],
+                                    error_y=dict(
+                                        type='data',
+                                        array=df_agg['error_val'],
+                                        visible=True
+                                    )
+                                ))
+                            
+                            fig.update_layout(
+                                title=f"Rata-rata {eb_num} per {eb_cat} (Error Bar: {eb_type})",
+                                xaxis_title=eb_cat,
+                                yaxis_title=f"Rata-rata {eb_num}"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+
+                            with st.expander("Lihat Data Agregat"):
+                                st.dataframe(df_agg)
+
+                        except Exception as e:
+                            st.error(f"Gagal membuat grafik: {e}")
+                
+                elif categorical_cols:
+                    st.warning("Silakan pilih variabel kategorikal dan numerik.")
+
     # -------------------------------------------------------------
-    # TAB 3: MODEL REGRESI (BAB 7)
+    # TAB 3: MODEL REGRESI (MODIFIKASI)
     # -------------------------------------------------------------
     with tab_reg:
         st.header("Model Regresi")
@@ -293,17 +351,21 @@ if df is not None and all_cols:
         st.markdown("---")
 
         if not numeric_cols:
-             st.error("Analisis ini memerlukan setidaknya satu kolom numerik.")
+            st.error("Analisis ini memerlukan setidaknya satu kolom numerik.")
         else:
             col1, col2 = st.columns([1, 2])
             
             with col1:
-                reg_y = st.selectbox("Pilih Variabel Dependen (Y):", numeric_cols, key='reg_y')
-                available_x = [col for col in numeric_cols if col != reg_y]
+                # --- PERUBAHAN DI SINI ---
+                reg_y_list = st.multiselect("Pilih Variabel Dependen (Y) (min. 1):", numeric_cols, key='reg_y_list')
+                
+                available_x = [col for col in numeric_cols if col not in reg_y_list]
                 reg_x = st.multiselect("Pilih Variabel Independen (X):", available_x, key='reg_x')
             
-            if reg_y and len(reg_x) == 1:
-                # --- JIKA 1 VAR X: REGRESI SEDERHANA (Linear, Kuadratik, Kubik) ---
+            # --- KONDISI 1: REGRESI SEDERHANA / POLINOMIAL (1Y, 1X) ---
+            if len(reg_y_list) == 1 and len(reg_x) == 1:
+                reg_y = reg_y_list[0] # Ambil satu-satunya Y
+                
                 st.subheader(f"Regresi Sederhana: {reg_y} vs {reg_x[0]}")
                 
                 with col1:
@@ -334,25 +396,14 @@ if df is not None and all_cols:
                     
                     st.write(f"**R-squared:** `{r2:.4f}`")
                     
-                    # PERUBAHAN v5: Interpretasi lebih rinci
                     with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
-                        st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                        st.markdown(f"""
-                        **Tujuan Uji:** Regresi adalah model prediksi. Kita mencoba memprediksi nilai **{reg_y}** (Variabel Y) menggunakan nilai **{reg_x[0]}** (Variabel X).
+                        st.success(f"**Kesimpulan (Bahasa Awam):** Model Anda **{r2*100:.2f}%** akurat. Ini berarti {r2*100:.2f}% dari perubahan pada '{reg_y}' dapat dijelaskan oleh perubahan pada '{reg_x[0]}' menggunakan model ini.")
 
-                        **Aturan Keputusan (Rule of Thumb):**
-                        * **R-squared:** Menunjukkan seberapa bagus model Anda (dalam %). Semakin tinggi (mendekati 1.0), semakin baik.
-                        * `Model Linear (Derajat 1)`: Gunakan jika Anda percaya hubungannya lurus (seperti di grafik korelasi).
-                        * `Model Kuadratik/Kubik`: Gunakan jika Anda percaya hubungannya melengkung (misal: meningkat lalu melambat).
-
-                        **Hasil Anda:**
-                        * Model Regresi (Derajat {poly_degree}) Anda memiliki R-squared **{r2:.4f}**.
-                        """)
-                        st.success(f"**Kesimpulan (Bahasa Awam):** Model Anda **{r2*100:.2f}%** akurat. Ini berarti {r2*100:.2f}% dari perubahan pada variabel '{reg_y}' dapat dijelaskan oleh perubahan pada '{reg_x[0]}' menggunakan model ini.")
-
-            elif reg_y and len(reg_x) >= 2:
-                 # --- JIKA 2+ VAR X: REGRESI LINEAR BERGANDA ---
-                st.subheader("Regresi Linear Berganda")
+            # --- KONDISI 2: REGRESI BERGANDA (1Y, >1X) ---
+            elif len(reg_y_list) == 1 and len(reg_x) >= 2:
+                reg_y = reg_y_list[0] # Ambil satu-satunya Y
+                
+                st.subheader("Regresi Linear Berganda (OLS)")
                 st.info(f"Model: **{reg_y} = b0 + b1*{reg_x[0]} + b2*{reg_x[1]} + ...**")
 
                 with col2:
@@ -368,57 +419,82 @@ if df is not None and all_cols:
                     
                     r_squared = model_ols.rsquared_adj
                     
-                    # PERUBAHAN v5: Interpretasi lebih rinci
                     with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                         st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                        st.markdown(f"""
-                        **Tujuan Uji:** Regresi Linear Berganda mencoba memprediksi satu variabel **{reg_y}** (Dependen) menggunakan *kombinasi* dari beberapa variabel lain (Independen).
-
-                        ---
-                        **1. Kebaikan Model (R-squared)**
-                        * **Angka Anda:** *Adjusted R-squared* = **{r_squared:.4f}**.
-                        * **Kesimpulan:** Model Anda **{r_squared*100:.2f}%** akurat. Ini berarti {r_squared*100:.2f}% dari perubahan pada '{reg_y}' dapat dijelaskan oleh *kombinasi* variabel X yang Anda pilih.
-
-                        ---
-                        **2. Signifikansi Variabel (Tabel `P>|t|`)**
-                        * **Tujuan:** Melihat variabel X mana yang *benar-benar* berpengaruh terhadap Y.
-                        * **Lihat:** Di "Ringkasan Model (OLS)" di atas, lihat kolom `P>|t|` untuk setiap variabel X Anda.
-                        * **Aturan:** Jika `P>|t|` <= 0.05, variabel itu **signifikan** (berpengaruh nyata). Jika > 0.05, variabel itu **tidak signifikan** (mungkin bisa dibuang dari model).
-
-                        ---
-                        **3. Uji Asumsi: Multikolinearitas (VIF)**
-                        * **Tujuan:** Mengecek apakah ada variabel X yang "tumpang tindih" (mengukur hal yang sama). Ini bisa membuat model tidak stabil.
-                        * **Lihat:** Tabel VIF di bawah.
-                        * **Aturan:** Jika ada VIF **> 10**, itu masalah.
-                        """)
+                        st.markdown(f"**1. Kebaikan Model (R-squared)**\n* **Angka Anda:** *Adjusted R-squared* = **{r_squared:.4f}**.\n* **Kesimpulan:** Model Anda **{r_squared*100:.2f}%** akurat.")
+                        st.markdown(f"**2. Signifikansi Variabel (Tabel `P>|t|`)**\n* **Aturan:** Jika `P>|t|` <= 0.05, variabel itu **signifikan**. Jika > 0.05, variabel itu **tidak signifikan**.")
                     
+                    st.markdown("---")
+                    st.subheader("Uji Asumsi")
+                    st.write("**1. Multikolinearitas (VIF)**")
                     vif_data = pd.DataFrame()
                     vif_data["Variabel"] = X_with_const.columns
                     vif_data["VIF"] = [variance_inflation_factor(X_with_const.values, i) for i in range(X_with_const.shape[1])]
                     st.dataframe(vif_data[vif_data["Variabel"] != 'const'])
                     
                     if (vif_data[vif_data["Variabel"] != 'const']["VIF"] > 10).any():
-                        st.error(f"**Kesimpulan VIF:** Ditemukan VIF > 10. Ini mengindikasikan **multikolinearitas**. Variabel X Anda tumpang tindih, yang bisa mengacaukan hasil model.")
+                        st.error(f"**Kesimpulan VIF:** Ditemukan VIF > 10. Ini mengindikasikan **multikolinearitas**.")
                     else:
-                        st.success(f"**Kesimpulan VIF:** Semua VIF < 10. Asumsi **terpenuhi**. Variabel X Anda tidak tumpang tindih.")
+                        st.success(f"**Kesimpulan VIF:** Semua VIF < 10. Asumsi **terpenuhi**.")
                     
-                    st.markdown("---")
-                    
-                    st.subheader("Uji Asumsi: Heteroskedastisitas (Breusch-Pagan)")
-                    st.info("Tujuan: Mengecek apakah tingkat *error* (kesalahan prediksi) model Anda konsisten.")
-                    
+                    st.write("**2. Heteroskedastisitas (Breusch-Pagan)**")
                     bp_test = het_breuschpagan(model_ols.resid, model_ols.model.exog)
                     bp_p_value = bp_test[1]
                     st.write(f"* **P-value Uji Breusch-Pagan:** `{bp_p_value:.4f}`")
-                    st.markdown(f"""
-                    **Aturan:** Jika P-value <= 0.05, itu masalah (terjadi Heteroskedastisitas).
-                    """)
                     if bp_p_value < 0.05:
-                        st.error(f"**Kesimpulan Hetero:** P-value < 0.05. Terindikasi **heteroskedastisitas**. Tingkat error model Anda tidak konsisten, yang mengurangi keandalan model.")
+                        st.error(f"**Kesimpulan Hetero:** P-value < 0.05. Terindikasi **heteroskedastisitas**.")
                     else:
-                        st.success(f"**Kesimpulan Hetero:** P-value > 0.05. Asumsi **terpenuhi**. Tingkat error model Anda konsisten (homoskedastisitas). Ini bagus!")
-            
-            elif not reg_y or not reg_x:
+                        st.success(f"**Kesimpulan Hetero:** P-value > 0.05. Asumsi **terpenuhi** (homoskedastisitas).")
+
+            # --- KONDISI 3: REGRESI MULTIVARIAT (>1Y, >0X) ---
+            elif len(reg_y_list) >= 2 and len(reg_x) >= 1:
+                st.subheader("Regresi Linear Multivariat (Multi-Output)")
+                st.info(f"Model ini menjalankan regresi OLS terpisah untuk setiap variabel Y.")
+                st.write(f"Model: **({', '.join(reg_y_list)}) ~ {', '.join(reg_x)}**")
+
+                with col2:
+                    try:
+                        data_reg = df[reg_y_list + reg_x].dropna()
+                        X_multi = data_reg[reg_x]
+                        y_multi = data_reg[reg_y_list]
+                        
+                        model = LinearRegression()
+                        model.fit(X_multi, y_multi)
+                        y_pred = model.predict(X_multi)
+                        
+                        r2_scores = r2_score(y_multi, y_pred, multioutput='raw_values')
+                        
+                        st.write("**Koefisien Model**")
+                        st.info("Setiap baris adalah model untuk 1 variabel Y. Kolom menunjukkan koefisien untuk setiap variabel X.")
+                        coefs_df = pd.DataFrame(model.coef_, columns=reg_x, index=reg_y_list)
+                        st.dataframe(coefs_df, use_container_width=True)
+                        
+                        st.write("**Intercept Model**")
+                        intercept_df = pd.DataFrame(model.intercept_, index=reg_y_list, columns=['Intercept'])
+                        st.dataframe(intercept_df, use_container_width=True)
+                        
+                        st.write("**R-squared (per Variabel Y)**")
+                        r2_df = pd.DataFrame(r2_scores, index=reg_y_list, columns=['R-squared'])
+                        st.dataframe(r2_df, use_container_width=True)
+
+                        with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
+                            st.subheader("Bagaimana Cara Membaca Hasil Ini?")
+                            st.markdown(f"""
+                            **Tujuan Uji:** Anda memprediksi {len(reg_y_list)} variabel Y secara bersamaan menggunakan {len(reg_x)} variabel X. Model ini pada dasarnya menjalankan {len(reg_y_list)} regresi berganda terpisah.
+                            
+                            **1. Koefisien Model:**
+                            * Tabel ini menunjukkan bobot (pengaruh) dari setiap X terhadap setiap Y.
+                            * **Contoh:** Nilai di baris `{reg_y_list[0]}` dan kolom `{reg_x[0]}` adalah koefisien `{reg_x[0]}` dalam model untuk memprediksi `{reg_y_list[0]}`.
+                            
+                            **2. R-squared:**
+                            * Tabel ini menunjukkan seberapa baik *setiap* model Y bekerja.
+                            * **Contoh:** R-squared untuk `{reg_y_list[0]}` (`{r2_scores[0]:.4f}`) berarti `{r2_scores[0]*100:.2f}%` variasi di `{reg_y_list[0]}` dapat dijelaskan oleh variabel X yang Anda pilih.
+                            """)
+
+                    except Exception as e:
+                        st.error(f"Gagal menjalankan regresi multivariat: {e}")
+
+            elif not reg_y_list or not reg_x:
                 st.info("Silakan pilih minimal 1 Variabel Dependen (Y) dan 1 Variabel Independen (X) untuk memulai.")
 
     # -------------------------------------------------------------
@@ -451,6 +527,7 @@ if df is not None and all_cols:
                             st.plotly_chart(fig_box_a1, use_container_width=True)
 
                             df_clean = df[[cat_col_anova1, num_col_anova1]].dropna()
+                            # Sanitasi nama kolom untuk formula statsmodels
                             clean_cat = cat_col_anova1.replace(' ', '_').replace('[', '').replace(']', '')
                             clean_num = num_col_anova1.replace(' ', '_').replace('[', '').replace(']', '')
                             df_clean.columns = [clean_cat, clean_num]
@@ -464,26 +541,21 @@ if df is not None and all_cols:
                                 
                                 p_value_anova = anova_table['PR(>F)'][0]
                                 
-                                # PERUBAHAN v5: Interpretasi lebih rinci
+                                # Interpretasi hasil
                                 with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                     st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                     st.markdown(f"""
-                                    **Tujuan Uji:** ANOVA One-Way membandingkan rata-rata '{num_col_anova1}' di antara {len(groups_a1)} kelompok dari '{cat_col_anova1}'.
-                                    
-                                    **Pertanyaan:** Apakah setidaknya ada *satu* kelompok yang rata-ratanya berbeda secara nyata dari yang lain?
-
+                                    **Tujuan Uji:** ANOVA One-Way membandingkan rata-rata '{num_col_anova1}' di antara {len(groups_a1)} kelompok.
                                     **Aturan Keputusan (Rule of Thumb):**
                                     * Lihat P-value (kolom `PR(>F)`).
-                                    * **P-value > 0.05:** Perbedaan **Tidak Signifikan** (rata-rata semua kelompok dianggap sama).
-                                    * **P-value <= 0.05:** Perbedaan **Signifikan** (setidaknya satu kelompok berbeda).
-
-                                    **Hasil Anda:**
-                                    * P-value Anda adalah **{p_value_anova:.4f}**.
+                                    * **P-value > 0.05:** Perbedaan **Tidak Signifikan**.
+                                    * **P-value <= 0.05:** Perbedaan **Signifikan**.
+                                    **Hasil Anda:** P-value Anda adalah **{p_value_anova:.4f}**.
                                     """)
                                     if p_value_anova < 0.05:
                                         st.success(f"**Kesimpulan:** Ya, ada perbedaan rata-rata {num_col_anova1} yang **nyata** di antara kelompok-kelompok tersebut (karena P-value <= 0.05).")
                                     else:
-                                        st.error(f"**Kesimpulan:** Tidak, **tidak ditemukan** perbedaan rata-rata {num_col_anova1} yang nyata di antara kelompok-kelompok tersebut (karena P-value > 0.05).")
+                                        st.error(f"**Kesimpulan:** Tidak, **tidak ditemukan** perbedaan rata-rata {num_col_anova1} yang nyata (karena P-value > 0.05).")
                             except Exception as e:
                                 st.error(f"Error saat menjalankan ANOVA: {e}")
                     elif len(groups_a1) == 2:
@@ -518,41 +590,26 @@ if df is not None and all_cols:
                             st.write("**Hasil ANOVA Two-Way:**")
                             st.dataframe(anova_table)
                             
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                 st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                 st.markdown(f"""
-                                **Tujuan Uji:** ANOVA Two-Way menguji tiga hal secara bersamaan:
-                                1.  Apakah **{anova2_cat1}** (X1) memiliki efek pada **{anova2_num}** (Y)?
-                                2.  Apakah **{anova2_cat2}** (X2) memiliki efek pada **{anova2_num}** (Y)?
-                                3.  Apakah **interaksi** antara X1 dan X2 memiliki efek unik pada Y?
+                                **Tujuan Uji:** ANOVA Two-Way menguji tiga hal:
+                                1.  Efek **{anova2_cat1}** (X1) pada {anova2_num} (Y)?
+                                2.  Efek **{anova2_cat2}** (X2) pada {anova2_num} (Y)?
+                                3.  Efek **interaksi** (X1*X2) pada Y?
                                 
-                                **Aturan Keputusan (Rule of Thumb):**
-                                * Lihat kolom `PR(>F)` untuk setiap baris. P-value <= 0.05 berarti "Ya, ada efek yang signifikan".
-                                
-                                **Hasil Anda:**
+                                **Aturan Keputusan (Rule of Thumb):** Lihat `PR(>F)`. P-value <= 0.05 berarti "Ya, ada efek yang signifikan".
                                 """)
                                 
                                 p_c1 = anova_table.loc[f'C({c1})', 'PR(>F)']
                                 p_c2 = anova_table.loc[f'C({c2})', 'PR(>F)']
                                 p_int = anova_table.loc[f'C({c1}):C({c2})', 'PR(>F)']
                                 
-                                if p_c1 < 0.05:
-                                    st.success(f"**1. Efek {anova2_cat1}**: SIGNIFIKAN (P-value = {p_c1:.4f}).")
-                                else:
-                                    st.error(f"**1. Efek {anova2_cat1}**: TIDAK SIGNIFIKAN (P-value = {p_c1:.4f}).")
-                                
-                                if p_c2 < 0.05:
-                                    st.success(f"**2. Efek {anova2_cat2}**: SIGNIFIKAN (P-value = {p_c2:.4f}).")
-                                else:
-                                    st.error(f"**2. Efek {anova2_cat2}**: TIDAK SIGNIFIKAN (P-value = {p_c2:.4f}).")
-                                    
-                                if p_int < 0.05:
-                                    st.warning(f"**3. Efek INTERAKSI**: SIGNIFIKAN (P-value = {p_int:.4f}).")
-                                    st.info(f" **Bahasa Awam (Interaksi):** Ini adalah temuan penting! Ini berarti efek dari {anova2_cat1} pada {anova2_num} **bergantung** pada apa kelompok {anova2_cat2} nya. Keduanya tidak bisa dilihat secara terpisah.")
-                                else:
-                                    st.info(f"**3. Efek INTERAKSI**: TIDAK SIGNIFIKAN (P-value = {p_int:.4f}).")
-                                    st.info(f" **Bahasa Awam (Interaksi):** Efek {anova2_cat1} dan {anova2_cat2} bersifat independen (terpisah).")
+                                st.write(f"**1. Efek {anova2_cat1}**: {'SIGNIFIKAN' if p_c1 < 0.05 else 'TIDAK SIGNIFIKAN'} (P-value = {p_c1:.4f})")
+                                st.write(f"**2. Efek {anova2_cat2}**: {'SIGNIFIKAN' if p_c2 < 0.05 else 'TIDAK SIGNIFIKAN'} (P-value = {p_c2:.4f})")
+                                st.write(f"**3. Efek INTERAKSI**: {'SIGNIFIKAN' if p_int < 0.05 else 'TIDAK SIGNIFIKAN'} (P-value = {p_int:.4f})")
+
                         except Exception as e:
                             st.error(f"Error saat menjalankan ANOVA: {e}")
                 elif anova2_cat1 == anova2_cat2:
@@ -597,27 +654,23 @@ if df is not None and all_cols:
                             st.write("**Hasil MANOVA (Ringkasan Tes Multivariat):**")
                             st.dataframe(mv_test.summary_frame)
                             
-                            # PERBAIKAN v3.2
                             p_value_manova = mv_test.summary_frame.loc[(f'C({c1})', "Wilks' lambda"), "Pr > F"]
                             
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                 st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                 st.markdown(f"""
-                                **Tujuan Uji:** MANOVA One-Way menguji apakah variabel kelompok '{manova1_cat}' memiliki efek pada *kombinasi* variabel-variabel dependen ({', '.join(manova1_num)}) secara bersamaan.
-
+                                **Tujuan Uji:** MANOVA menguji apakah '{manova1_cat}' memiliki efek pada *kombinasi* variabel Y.
                                 **Aturan Keputusan (Rule of Thumb):**
-                                * Lihat P-value (kolom `Pr > F`) untuk statistik **Wilks' lambda**.
+                                * Lihat P-value (`Pr > F`) untuk **Wilks' lambda**.
                                 * **P-value > 0.05:** Perbedaan **Tidak Signifikan**.
                                 * **P-value <= 0.05:** Perbedaan **Signifikan**.
-
-                                **Hasil Anda:**
-                                * P-value (Wilks' lambda) Anda adalah **{p_value_manova:.4f}**.
+                                **Hasil Anda:** P-value (Wilks' lambda) Anda adalah **{p_value_manova:.4f}**.
                                 """)
                                 if p_value_manova < 0.05:
-                                    st.success(f"**Kesimpulan:** Ya, '{manova1_cat}' memiliki pengaruh yang **nyata** terhadap setidaknya satu dari variabel dependen yang Anda uji (karena P-value <= 0.05).")
+                                    st.success(f"**Kesimpulan:** Ya, '{manova1_cat}' memiliki pengaruh yang **nyata** (karena P-value <= 0.05).")
                                 else:
-                                    st.error(f"**Kesimpulan:** Tidak, '{manova1_cat}' **tidak memiliki pengaruh** yang nyata terhadap kombinasi variabel dependen Anda (karena P-value > 0.05).")
+                                    st.error(f"**Kesimpulan:** Tidak, '{manova1_cat}' **tidak memiliki pengaruh** yang nyata (karena P-value > 0.05).")
                         except Exception as e:
                             st.error(f"Error menjalankan MANOVA: {e}")
                 elif not manova1_cat or len(manova1_num) < 2:
@@ -654,39 +707,21 @@ if df is not None and all_cols:
                             st.write("**Hasil MANOVA (Ringkasan Tes Multivariat):**")
                             st.dataframe(mv_test.summary_frame)
                             
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                 st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                 st.markdown(f"""
-                                **Tujuan Uji:** MANOVA Two-Way menguji tiga hal (mirip ANOVA Two-Way), tetapi pada *kombinasi* variabel Y ({', '.join(manova2_num)}) secara bersamaan.
-                                
-                                **Aturan Keputusan (Rule of Thumb):**
-                                * Lihat P-value (`Pr > F` untuk **Wilks' lambda**) untuk setiap baris. P-value <= 0.05 berarti "Ya, ada efek yang signifikan".
-                                
-                                **Hasil Anda:**
+                                **Tujuan Uji:** MANOVA Two-Way menguji tiga hal (pada kombinasi Y).
+                                **Aturan Keputusan (Rule of Thumb):** Lihat `Pr > F` (Wilks' lambda). P-value <= 0.05 berarti "Ya, ada efek yang signifikan".
                                 """)
                                 
-                                # PERBAIKAN v3.2
                                 p_c1 = mv_test.summary_frame.loc[(f'C({c1})', "Wilks' lambda"), "Pr > F"]
                                 p_c2 = mv_test.summary_frame.loc[(f'C({c2})', "Wilks' lambda"), "Pr > F"]
                                 p_int = mv_test.summary_frame.loc[(f'C({c1}):C({c2})', "Wilks' lambda"), "Pr > F"]
 
-                                if p_c1 < 0.05:
-                                    st.success(f"**1. Efek {manova2_cat1}**: SIGNIFIKAN (P-value = {p_c1:.4f}).")
-                                else:
-                                    st.error(f"**1. Efek {manova2_cat1}**: TIDAK SIGNIFIKAN (P-value = {p_c1:.4f}).")
-                                
-                                if p_c2 < 0.05:
-                                    st.success(f"**2. Efek {manova2_cat2}**: SIGNIFIKAN (P-value = {p_c2:.4f}).")
-                                else:
-                                    st.error(f"**2. Efek {manova2_cat2}**: TIDAK SIGNIFIKAN (P-value = {p_c2:.4f}).")
-                                    
-                                if p_int < 0.05:
-                                    st.warning(f"**3. Efek INTERAKSI**: SIGNIFIKAN (P-value = {p_int:.4f}).")
-                                    st.info(f" **Bahasa Awam (Interaksi):** Ini adalah temuan penting! Efek dari {manova2_cat1} **bergantung** pada apa kelompok {manova2_cat2} nya.")
-                                else:
-                                    st.info(f"**3. Efek INTERAKSI**: TIDAK SIGNIFIKAN (P-value = {p_int:.4f}).")
-                                    st.info(f" **Bahasa Awam (Interaksi):** Efek {manova2_cat1} dan {manova2_cat2} bersifat independen (terpisah).")
+                                st.write(f"**1. Efek {manova2_cat1}**: {'SIGNIFIKAN' if p_c1 < 0.05 else 'TIDAK SIGNIFIKAN'} (P-value = {p_c1:.4f})")
+                                st.write(f"**2. Efek {manova2_cat2}**: {'SIGNIFIKAN' if p_c2 < 0.05 else 'TIDAK SIGNIFIKAN'} (P-value = {p_c2:.4f})")
+                                st.write(f"**3. Efek INTERAKSI**: {'SIGNIFIKAN' if p_int < 0.05 else 'TIDAK SIGNIFIKAN'} (P-value = {p_int:.4f})")
 
                         except Exception as e:
                             st.error(f"Error menjalankan MANOVA: {e}")
@@ -700,16 +735,15 @@ if df is not None and all_cols:
     # -------------------------------------------------------------
     with tab_dim:
         st.header("Reduksi Dimensi")
-        st.info("Metode ini membantu menyederhanakan data Anda dengan mengurangi jumlah variabel, "
-                "baik dengan meringkas (PCA) atau menemukan faktor tersembunyi (EFA).")
-        st.warning("Penting: Analisis di tab ini sangat sensitif terhadap skala data. "
-                   "Kami akan **otomatis menstandardisasi data Anda** (mean=0, std=1) sebelum analisis.")
+        st.info("Metode ini membantu menyederhanakan data Anda dengan mengurangi jumlah variabel.")
+        st.warning("Penting: Kami akan **otomatis menstandardisasi data Anda** (mean=0, std=1) sebelum analisis.")
         st.markdown("---")
 
         if len(numeric_cols) < 2:
              st.error("Analisis ini memerlukan setidaknya 2 kolom numerik.")
         else:
             try:
+                # Selalu standarisasi data untuk PCA/EFA
                 df_scaled = pd.DataFrame(StandardScaler().fit_transform(df[numeric_cols]), columns=numeric_cols)
             except Exception as e:
                 st.error(f"Gagal melakukan standarisasi data: {e}")
@@ -717,8 +751,7 @@ if df is not None and all_cols:
 
             # --- PCA (Bab 8) ---
             st.subheader("Principal Component Analysis (PCA)")
-            st.info("Tujuan: Meringkas (mereduksi) beberapa variabel numerik menjadi lebih sedikit 'komponen' "
-                    "baru sambil mempertahankan sebanyak mungkin informasi (varians).")
+            st.info("Tujuan: Meringkas (mereduksi) beberapa variabel numerik menjadi lebih sedikit 'komponen' baru.")
             
             col1, col2 = st.columns([1, 2])
             with col1:
@@ -754,23 +787,14 @@ if df is not None and all_cols:
                             st.write("**Component Loadings (Bobot Variabel)**")
                             st.dataframe(pd.DataFrame(pca.components_.T, index=pca_vars, columns=[f'PC{i+1}' for i in range(n_components_pca)]))
 
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                 st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                 st.markdown(f"""
-                                **Tujuan Uji:** PCA adalah teknik untuk **meringkas** {len(pca_vars)} variabel Anda menjadi {n_components_pca} "Komponen Utama" (PC) baru, yang merupakan inti dari data Anda.
-
-                                ---
-                                **1. Seberapa Bagus Ringkasan Ini? (Scree Plot)**
-                                * **Lihat:** Garis 'Kumulatif' pada Scree Plot di atas.
-                                * **Hasil Anda:** {n_components_pca} komponen utama Anda menjelaskan **{pca.explained_variance_ratio_.sum()*100:.2f}%** dari total variasi di data Anda.
-                                * **Kesimpulan:** Angka ini menunjukkan seberapa banyak "informasi" asli yang berhasil dipertahankan. (Misal, 70-80% itu sangat bagus).
-
-                                ---
-                                **2. Apa Arti dari Setiap Komponen? (Component Loadings)**
-                                * **Tujuan:** Ini adalah bagian terpenting. Kita memberi "nama" pada komponen baru.
-                                * **Lihat:** Tabel "Component Loadings" di atas. Cari angka *loading* yang besar (jauh dari 0, misal > 0.6 atau < -0.6) di setiap kolom PC.
-                                * **Contoh:** Jika `gaji` dan `lama_bekerja` punya *loading* tinggi di `PC1`, maka `PC1` bisa kita sebut sebagai "Faktor Senioritas & Kompensasi".
+                                **1. Scree Plot:** Garis 'Kumulatif' menunjukkan seberapa banyak info (varians) yang dipertahankan.
+                                * **Hasil Anda:** {n_components_pca} komponen utama Anda menjelaskan **{pca.explained_variance_ratio_.sum()*100:.2f}%** dari total variasi.
+                                **2. Component Loadings:** Menunjukkan "resep" dari setiap Komponen Utama (PC).
+                                * Cari angka *loading* yang besar (jauh dari 0) untuk menamai komponen (misal: PC1 adalah "Faktor Senioritas").
                                 """)
                         except Exception as e:
                             st.error(f"Error menjalankan PCA: {e}")
@@ -779,7 +803,7 @@ if df is not None and all_cols:
 
             # --- EFA (Bab 9) ---
             st.subheader("Exploratory Factor Analysis (EFA)")
-            st.info("Tujuan: Menemukan 'faktor' (konsep tersembunyi/laten) yang mendasari sekumpulan variabel numerik.")
+            st.info("Tujuan: Menemukan 'faktor' (konsep tersembunyi/laten) yang mendasari sekumpulan variabel.")
             
             col3, col4 = st.columns([1, 2])
             with col3:
@@ -809,22 +833,22 @@ if df is not None and all_cols:
                             st.write(f"* **Kaiser-Meyer-Olkin (KMO) Measure:** `{kmo_model:.4f}`")
                             st.write(f"* **Bartlett's Test p-value:** `{p_value_bartlett:.4f}`")
 
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan Uji Kelayakan"):
                                 st.markdown(f"""
                                 **Tujuan Uji:** Ini adalah tes "Boleh Jalan" untuk EFA.
-                                1.  **KMO:** Mengukur kecukupan sampling. **Aturan:** Harus > 0.6 (semakin dekat ke 1, semakin baik).
-                                2.  **Bartlett:** Mengecek apakah variabel Anda saling berkorelasi (ini yang kita inginkan). **Aturan:** P-value harus <= 0.05.
+                                1.  **KMO:** Harus > 0.6.
+                                2.  **Bartlett:** P-value harus <= 0.05.
                                 """)
                                 if kmo_model < 0.6:
-                                    st.error("**Kesimpulan KMO:** Nilai KMO di bawah 0.6. Data Anda **kurang ideal** untuk analisis faktor.")
+                                    st.error("**Kesimpulan KMO:** Nilai KMO < 0.6. Data **kurang ideal**.")
                                 else:
-                                    st.success("**Kesimpulan KMO:** Nilai KMO di atas 0.6. Data Anda **cukup baik** untuk analisis faktor.")
+                                    st.success("**Kesimpulan KMO:** Nilai KMO > 0.6. Data **cukup baik**.")
                                 
                                 if p_value_bartlett > 0.05:
-                                    st.error("**Kesimpulan Bartlett:** P-value > 0.05. Variabel Anda tidak saling berkorelasi. Analisis faktor **tidak disarankan**.")
+                                    st.error("**Kesimpulan Bartlett:** P-value > 0.05. Variabel tidak berkorelasi. EFA **tidak disarankan**.")
                                 else:
-                                    st.success("**Kesimpulan Bartlett:** P-value < 0.05. Variabel Anda **berkorelasi**, yang bagus untuk analisis faktor.")
+                                    st.success("**Kesimpulan Bartlett:** P-value < 0.05. Variabel **berkorelasi**, bagus untuk EFA.")
                             
                             if kmo_model >= 0.6 and p_value_bartlett <= 0.05:
                                 fa = FactorAnalyzer(n_factors=n_components_efa, rotation=rotation)
@@ -834,13 +858,10 @@ if df is not None and all_cols:
                                 st.dataframe(pd.DataFrame(fa.loadings_, index=efa_vars, columns=[f'Faktor {i+1}' for i in range(n_components_efa)]))
                                 
                                 with st.expander("Lihat Penjelasan Factor Loadings"):
-                                    st.subheader("Bagaimana Cara Membaca Hasil Ini?")
                                     st.markdown(f"""
-                                    **Tujuan:** Ini adalah hasil utama. Kita memberi "nama" pada {n_components_efa} faktor tersembunyi.
-                                    **Lihat:** Tabel "Factor Loadings" di atas. Cari angka *loading* yang besar (misal > 0.6) di setiap kolom Faktor.
-                                    
+                                    **Tujuan:** Memberi "nama" pada {n_components_efa} faktor tersembunyi.
+                                    **Lihat:** Cari angka *loading* yang besar (misal > 0.6) di setiap kolom Faktor.
                                     **Aturan:** Idealnya, satu variabel hanya punya *loading* tinggi di **satu** faktor saja.
-                                    * **Contoh:** Jika `skor_kepuasan` dan `skor_loyalitas` *loading*-nya tinggi di `Faktor 1`, sementara `gaji` dan `skor_kinerja` tinggi di `Faktor 2`, Anda telah menemukan dua konsep berbeda: "Kepuasan Kerja" dan "Nilai Karyawan".
                                     """)
                         except Exception as e:
                             st.error(f"Error menjalankan EFA: {e}")
@@ -850,8 +871,7 @@ if df is not None and all_cols:
     # -------------------------------------------------------------
     with tab_class:
         st.header("Klasifikasi & Clustering")
-        st.info("Metode ini membantu Anda mengelompokkan data Anda, baik ke dalam kelompok yang sudah ada (Klasifikasi) "
-                "atau menemukan kelompok baru yang tersembunyi (Clustering).")
+        st.info("Metode ini membantu Anda mengelompokkan data Anda.")
         st.markdown("---")
 
         if not numeric_cols:
@@ -859,8 +879,7 @@ if df is not None and all_cols:
         else:
             # --- Clustering (Bab 12 - Unsupervised) ---
             st.subheader("Clustering (K-Means)")
-            st.info("Tujuan: Menemukan kelompok-kelompok (cluster) yang 'alami' dalam data Anda, "
-                    "tanpa mengetahui kelompoknya terlebih dahulu (unsupervised).")
+            st.info("Tujuan: Menemukan kelompok-kelompok (cluster) yang 'alami' dalam data Anda (unsupervised).")
             
             col1, col2 = st.columns([1, 2])
             with col1:
@@ -903,27 +922,12 @@ if df is not None and all_cols:
                             st.write("**Pusat Cluster (Cluster Centers)**")
                             st.dataframe(pd.DataFrame(kmeans.cluster_centers_, columns=cluster_vars, index=[f'Cluster {i}' for i in range(n_clusters)]))
 
-                            # PERUBAHAN v5: Interpretasi lebih rinci
+                            # Interpretasi hasil
                             with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                 st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                                st.markdown(f"""
-                                **Tujuan Uji:** K-Means Clustering adalah metode untuk **menemukan kelompok-kelompok (cluster)** yang tersembunyi di dalam data Anda.
-
-                                **Hasil Anda:** Data Anda telah dibagi menjadi **{n_clusters}** kelompok.
-
-                                **1. Bagaimana Tampilan Kelompoknya? (Visualisasi Cluster)**
-                                * **Lihat:** Grafik scatter plot di atas. Setiap warna mewakili satu cluster.
-                                * **Interpretasi:** Plot ini membantu Anda memvalidasi apakah {n_clusters} adalah jumlah cluster yang tepat. Apakah kelompoknya terlihat jelas terpisah?
-
-                                **2. Apa Ciri-ciri Setiap Kelompok? (Pusat Cluster)**
-                                * **Lihat:** Tabel "Pusat Cluster" di atas. Ini adalah bagian terpenting.
-                                * **Interpretasi:** Tabel ini menunjukkan nilai *rata-rata* dari setiap variabel untuk setiap cluster (dalam skala standar).
-                                * **Contoh:**
-                                    * `Cluster 0` mungkin memiliki `{cluster_vars[0]}` tinggi (misal: 1.5) dan `{cluster_vars[1]}` tinggi (misal: 1.2).
-                                    * `Cluster 1` mungkin memiliki `{cluster_vars[0]}` rendah (misal: -0.8) dan `{cluster_vars[1]}` rendah (misal: -1.0).
-                                * Dengan melihat ini, Anda bisa memberi "nama" atau "persona" pada setiap cluster (misal: "Kinerja Tinggi/Gaji Tinggi" vs "Kinerja Rendah/Gaji Rendah").
-                                """)
-                            
+                                st.markdown(f"**1. Visualisasi Cluster:** Menunjukkan sebaran {n_clusters} kelompok. Apakah terlihat terpisah dengan baik?")
+                                st.markdown(f"**2. Pusat Cluster:** Menunjukkan nilai *rata-rata* (standardisasi) dari setiap variabel untuk setiap cluster. Gunakan ini untuk memberi 'nama' atau 'persona' pada setiap cluster.")
+                                
                         except Exception as e:
                             st.error(f"Error menjalankan Clustering: {e}")
                 else:
@@ -939,6 +943,8 @@ if df is not None and all_cols:
             with col3:
                 if not categorical_cols:
                     st.warning("Analisis Diskriminan memerlukan 1 variabel kategorikal (Target) untuk diprediksi.")
+                    lda_target = None
+                    lda_predictors = []
                 else:
                     lda_target = st.selectbox("Pilih Variabel Target (Kategorikal):", categorical_cols, key='lda_target')
                     
@@ -987,28 +993,13 @@ if df is not None and all_cols:
                                     fig_lda = px.histogram(lda_plot_df, x='LD1', color='Target', title='Plot Fungsi Diskriminan 1D', marginal='box')
                                     st.plotly_chart(fig_lda, use_container_width=True)
                                 
-                                # PERUBAHAN v5: Interpretasi lebih rinci
+                                # Interpretasi hasil
                                 with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
                                     st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                                    st.markdown(f"""
-                                    **Tujuan Uji:** Analisis Diskriminan (LDA) adalah model *supervised*. Tujuannya adalah untuk **memprediksi** keanggotaan kelompok (Target: **{lda_target}**) menggunakan variabel-variabel prediktor Anda.
-
-                                    ---
-                                    **1. Seberapa Akurat Model Ini? (Akurasi Model)**
-                                    * **Angka Anda:** Akurasi Model = **{lda_accuracy*100:.2f}%**.
-                                    * **Kesimpulan:** Model ini {lda_accuracy*100:.2f}% akurat dalam **menebak** '{lda_target}' seseorang, hanya dengan melihat variabel prediktor yang Anda pilih. (Akurasi yang tinggi berarti variabel prediktor Anda sangat baik dalam membedakan kelompok).
-
-                                    ---
-                                    **2. Variabel Apa yang Paling Penting? (Koefisien Diskriminan)**
-                                    * **Lihat:** Tabel "Koefisien Diskriminan" di atas.
-                                    * **Interpretasi:** Angka yang besar (jauh dari 0, baik positif atau negatif) menunjukkan variabel tersebut adalah pembeda yang *kuat* antar kelompok. Angka yang dekat dengan 0 berarti variabel itu tidak terlalu penting.
-
-                                    ---
-                                    **3. Bagaimana Model Ini Memisahkan Kelompok? (Plot Fungsi Diskriminan)**
-                                    * **Lihat:** Grafik di atas. LD1 (sumbu X) dan LD2 (sumbu Y) adalah "fungsi" atau "resep" baru yang dibuat model untuk memaksimalkan pemisahan kelompok.
-                                    * **Interpretasi:** Semakin jauh jarak titik-titik (kelompok) berwarna di plot, semakin baik model Anda dalam membedakan mereka.
-                                    """)
+                                    st.markdown(f"**1. Akurasi Model:** Model ini **{lda_accuracy*100:.2f}%** akurat dalam menebak '{lda_target}' berdasarkan prediktor.")
+                                    st.markdown(f"**2. Koefisien Diskriminan:** Angka yang besar (jauh dari 0) menunjukkan variabel tersebut adalah pembeda yang *kuat* antar kelompok.")
+                                    st.markdown(f"**3. Plot Fungsi Diskriminan:** Menunjukkan seberapa baik model memisahkan kelompok. Semakin jauh jarak antar warna, semakin baik.")
                         except Exception as e:
                             st.error(f"Error menjalankan LDA: {e}")
-                else:
+                elif categorical_cols:
                     st.warning("Silakan pilih 1 variabel target (kategorikal) dan minimal 1 variabel prediktor (numerik).")
