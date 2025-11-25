@@ -79,7 +79,7 @@ def load_shp_data():
     """Fungsi memuat Shapefile batas wilayah"""
     try:
         # Path ke file SHP Anda
-        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326) # Wajib convert ke Lat/Lon
     except Exception as e:
         return None
