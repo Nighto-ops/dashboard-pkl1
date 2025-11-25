@@ -57,7 +57,7 @@ def interpret_correlation(r):
     return "sangat lemah"
 
 # =================================================================
-# FUNGSI TAMBAHAN UNTUK PETA
+# FUNGSI TAMBAHAN UNTUK PETA (SUDAH DIPERBAIKI)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -80,11 +80,12 @@ def load_map_excel_data():
     # Bersihkan data agar tidak error saat sorting
     combined_df = combined_df.dropna(subset=['lattitude', 'longitude'])
     
-    # FIX ERROR FLOAT VS STR: Paksa kolom wilayah jadi String
+    # --- PERBAIKAN: NORMALISASI HURUF (TITLE CASE) ---
+    # Ini akan mengubah "BANTUL"/"bantul" menjadi "Bantul" agar tidak duplikat
     if 'kabupaten' in combined_df.columns:
-        combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
+        combined_df['kabupaten'] = combined_df['kabupaten'].astype(str).str.title().str.strip()
     if 'kecamatan' in combined_df.columns:
-        combined_df['kecamatan'] = combined_df['kecamatan'].astype(str)
+        combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         
     return combined_df
 
@@ -92,7 +93,7 @@ def load_map_excel_data():
 def load_shp_data():
     try:
         # Path ke file SHP Anda
-        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
@@ -139,7 +140,7 @@ if uploaded_file is None:
         st.sidebar.markdown("---")
         st.sidebar.header("Filter Peta")
         
-        # FIX ERROR: .astype(str) memastikan semua data dianggap teks saat disortir
+        # List Kabupaten sekarang sudah bersih (Title Case)
         list_kab = sorted(df_map['kabupaten'].unique().tolist())
         selected_kab = st.sidebar.multiselect("Pilih Kabupaten:", list_kab, default=list_kab)
         
@@ -160,21 +161,23 @@ if uploaded_file is None:
             ]
             
             # Filter SHP
-            gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].str.upper()
-            gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].str.upper()
-            sel_kab_upper = [x.upper() for x in selected_kab]
-            sel_kec_upper = [x.upper() for x in selected_kec]
+            # Normalisasi kolom SHP juga ke format yang sama agar MATCH
+            gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
+            gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             
+            # Filter SHP menggunakan list pilihan user (yang sudah Title Case)
             final_gdf = gdf_shape[
-                (gdf_shape['kab_upper'].isin(sel_kab_upper)) &
-                (gdf_shape['kec_upper'].isin(sel_kec_upper))
+                (gdf_shape['kab_upper'].isin(selected_kab)) &
+                (gdf_shape['kec_upper'].isin(selected_kec))
             ]
 
             if not final_gdf.empty:
                 # Merge Data untuk Warna
-                final_df['kec_upper'] = final_df['kecamatan'].str.upper()
-                stats_kec = final_df.groupby('kec_upper').size().reset_index(name='jumlah_lokasi')
-                gdf_viz = final_gdf.merge(stats_kec, on='kec_upper', how='left')
+                # Group by nama kecamatan (Title Case)
+                stats_kec = final_df.groupby('kecamatan').size().reset_index(name='jumlah_lokasi')
+                
+                # Merge menggunakan kolom 'kec_upper' di SHP (yang isinya Title Case) dan 'kecamatan' di Excel
+                gdf_viz = final_gdf.merge(stats_kec, left_on='kec_upper', right_on='kecamatan', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
 
                 # Buat Map
@@ -210,7 +213,7 @@ if uploaded_file is None:
                 folium.LayerControl().add_to(m)
                 st_folium(m, width=1200, height=600)
             else:
-                st.warning("Wilayah tidak ditemukan di SHP.")
+                st.warning("Wilayah tidak ditemukan di SHP. Pastikan ejaan nama kecamatan di Excel sama dengan di Peta.")
         else:
             st.info("Pilih wilayah di sidebar kiri (bawah upload file) untuk menampilkan peta.")
     else:
