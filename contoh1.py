@@ -122,7 +122,7 @@ uploaded_file = st.sidebar.file_uploader(
 
 # === JIKA BELUM UPLOAD FILE: TAMPILKAN PETA ===
 if uploaded_file is None:
-    st.title("📍 Dashboard Sebaran Lokasi DIY")
+    st.title("Dashboard Sebaran Lokasi DIY")
     st.info("Silakan upload file statistik di sidebar untuk masuk ke menu analisis.")
     st.markdown("---")
     
