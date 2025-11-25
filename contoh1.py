@@ -11,7 +11,6 @@ import geopandas as gpd
 import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
-# -----------------------------------
 
 # Impor dari Scikit-learn (SKLEARN)
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
