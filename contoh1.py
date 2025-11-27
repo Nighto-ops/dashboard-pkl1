@@ -196,7 +196,7 @@ if uploaded_file is None:
             gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace('Gunungkidul', 'Gunung Kidul', regex=False)
-            gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace('Yogya', 'Yogyakarta', regex=False)
+            gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace('Yogyakarta', regex=False)
 
             # 2. Bersihkan Nama Kecamatan di SHP
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
