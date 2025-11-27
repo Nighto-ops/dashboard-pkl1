@@ -215,7 +215,7 @@ if uploaded_file is None:
                 'Gedong Tengen': 'Gedongtengen',
                 'Umbul Harjo': 'Umbulharjo',
                 'Paku Alaman': 'Pakualaman',
-                'Bambangli Puro' : 'Bambanglipuro'
+                'Bambang Lipuro' : 'Bambanglipuro'
             })
 
             final_gdf = gdf_shape[
