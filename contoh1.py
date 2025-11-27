@@ -6,11 +6,12 @@ import plotly.graph_objects as go
 from scipy import stats
 import openpyxl 
 
-# --- TAMBAHAN LIBRARY UNTUK PETA ---
+# --- TAMBAHAN LIBRARY UNTUK PETA (GEOSPASIAL) ---
 import geopandas as gpd
 import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
+# ----------------------------------------
 
 # Impor dari Scikit-learn (SKLEARN)
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
@@ -32,12 +33,12 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # =================================================================
-# KONFIGURASI HALAMAN (WAJIB DI ATAS)
+# KONFIGURASI HALAMAN UTAMA
 # =================================================================
 st.set_page_config(layout="wide", page_title="Tools Analisis Statistik")
 
 # =================================================================
-# FUNGSI-FUNGSI BANTUAN
+# FUNGSI BANTUAN
 # =================================================================
 
 @st.cache_data
@@ -59,7 +60,9 @@ def interpret_correlation(r):
     if r_abs >= 0.2: return "lemah"
     return "sangat lemah"
 
-# --- FUNGSI KHUSUS PETA ---
+# =================================================================
+# FUNGSI TAMBAHAN KHUSUS PETA (SUDAH DIPERBAIKI)
+# =================================================================
 @st.cache_data
 def load_map_excel_data():
     files = [
@@ -76,35 +79,42 @@ def load_map_excel_data():
     if not df_list: return pd.DataFrame()
     
     combined_df = pd.concat(df_list, ignore_index=True)
-    # Standarisasi nama kolom
     combined_df.columns = [c.lower() for c in combined_df.columns]
     
     # Hapus data tanpa koordinat
     combined_df = combined_df.dropna(subset=['lattitude', 'longitude'])
     
-    # FIX ERROR FLOAT VS STR: Pastikan kolom wilayah jadi String & Title Case
+    # --- BAGIAN PENTING: PEMBERSIHAN NAMA WILAYAH ---
+    # Ini memperbaiki masalah "Kab. Bantul" vs "Bantul"
     if 'kabupaten' in combined_df.columns:
-        combined_df['kabupaten'] = combined_df['kabupaten'].astype(str).str.title().str.strip()
+        combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
+        # Hapus awalan "Kab.", "Kabupaten", "Kota"
+        combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
+        # Ubah ke Title Case (Huruf Besar di Awal) & Hapus spasi
+        combined_df['kabupaten'] = combined_df['kabupaten'].str.title().str.strip()
+
     if 'kecamatan' in combined_df.columns:
-        combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
+        combined_df['kecamatan'] = combined_df['kecamatan'].astype(str)
+        combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan)\s+', '', regex=True)
+        combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
         
     return combined_df
 
 @st.cache_data
 def load_shp_data():
     try:
-        # Gunakan kec_jogja.shp (Polygon) untuk Choropleth
-        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
+        # Menggunakan file SHP wilayah (Polygon)
+        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
 
-# Konfigurasi Nama Kolom SHP (Sesuaikan jika perlu)
+# Konfigurasi Nama Kolom di SHP
 SHP_COL_KEC = 'nmkec'
 SHP_COL_KAB = 'nmkab'
 
 # =================================================================
-# SIDEBAR UTAMA
+# SIDEBAR UTAMA (UPLOAD FILE)
 # =================================================================
 
 st.sidebar.title("Kontrol Panel")
@@ -112,17 +122,17 @@ st.sidebar.title("Kontrol Panel")
 uploaded_file = st.sidebar.file_uploader(
     "1. Upload File Anda",
     type=['csv', 'xls', 'xlsx'],
-    help="Hanya file CSV, XLS, atau XLSX yang didukung."
+    help="Upload file statistik Anda di sini. Hapus file (x) untuk kembali ke Peta."
 )
 
 # =================================================================
-# LOGIKA UTAMA (MAP VS STATISTIK)
+# LOGIKA UTAMA: SWITCHING ANTARA PETA DAN STATISTIK
 # =================================================================
 
-# === JIKA BELUM UPLOAD FILE: TAMPILKAN PETA ===
+# === JIKA BELUM ADA FILE: TAMPILKAN PETA ===
 if uploaded_file is None:
-    st.title("Dashboard Sebaran Lokasi DIY")
-    st.info("Silakan upload file statistik di sidebar untuk masuk ke menu analisis.")
+    st.title("📍 Dashboard Sebaran Lokasi DIY")
+    st.markdown("Peta interaktif persebaran lokasi. Upload file di sidebar untuk analisis statistik.")
     st.markdown("---")
     
     # Load Data Peta
@@ -131,26 +141,25 @@ if uploaded_file is None:
 
     if not df_map.empty and gdf_shape is not None:
         
-        # --- FILTER & OPSI (DI DALAM TAB/HALAMAN UTAMA) ---
-        # Menggunakan columns agar rapi di atas peta
+        # --- FILTER DI HALAMAN UTAMA (BUKAN SIDEBAR) ---
         c_filter1, c_filter2, c_filter3 = st.columns(3)
         
         with c_filter1:
-            # FIX ERROR: .astype(str)
-            list_kab = sorted(df_map['kabupaten'].astype(str).unique().tolist())
-            selected_kab = st.multiselect("Pilih Kabupaten:", list_kab, default=list_kab)
+            # Data sudah bersih, jadi sorted() aman
+            list_kab = sorted(df_map['kabupaten'].unique().tolist())
+            selected_kab = st.multiselect("1. Pilih Kabupaten:", list_kab, default=list_kab)
             
         with c_filter2:
             if selected_kab:
                 df_filtered_kab = df_map[df_map['kabupaten'].isin(selected_kab)]
-                list_kec = sorted(df_filtered_kab['kecamatan'].astype(str).unique().tolist())
+                list_kec = sorted(df_filtered_kab['kecamatan'].unique().tolist())
             else:
                 list_kec = []
-            selected_kec = st.multiselect("Pilih Kecamatan:", list_kec, default=list_kec)
+            selected_kec = st.multiselect("2. Pilih Kecamatan:", list_kec, default=list_kec)
             
         with c_filter3:
-            # Opsi Tampilan Peta
-            map_mode = st.radio("Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
+            # Pilihan Tampilan
+            map_mode = st.radio("3. Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
 
         # --- RENDER PETA ---
         if selected_kab and selected_kec:
@@ -164,18 +173,21 @@ if uploaded_file is None:
             gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             
+            # Kita bersihkan juga kolom SHP dari kata "KABUPATEN" jika ada
+            gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True).str.strip()
+
             final_gdf = gdf_shape[
                 (gdf_shape['kab_upper'].isin(selected_kab)) &
                 (gdf_shape['kec_upper'].isin(selected_kec))
             ]
 
             if not final_gdf.empty:
-                # Merge Data untuk Warna Choropleth
+                # Merge Data Statistik untuk Warna Choropleth
                 stats_kec = final_df.groupby('kecamatan').size().reset_index(name='jumlah_lokasi')
                 gdf_viz = final_gdf.merge(stats_kec, left_on='kec_upper', right_on='kecamatan', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
 
-                # Base Map
+                # Base Map Center
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
                 m = folium.Map(location=center, zoom_start=11)
@@ -209,23 +221,20 @@ if uploaded_file is None:
                 folium.LayerControl().add_to(m)
                 st_folium(m, width=1200, height=600)
                 
-                with st.expander("Lihat Data Tabel"):
+                with st.expander("Lihat Data Tabel Detail"):
                     st.dataframe(final_df)
             else:
-                st.warning("Wilayah tidak ditemukan di SHP. Cek filter.")
+                st.warning("Wilayah tidak ditemukan di SHP. Cek kesesuaian nama kecamatan.")
         else:
-            st.info("Pilih Kabupaten dan Kecamatan di atas untuk memunculkan peta.")
+            st.info("👆 Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
     else:
         st.warning("Data peta (Excel/SHP) belum siap di folder data/.")
 
 
 # === JIKA FILE SUDAH DIUPLOAD: KEMBALI KE KODE ASLI STATISTIK ANDA ===
 else:
-    # --- MULAI DARI SINI ADALAH KODE ASLI DASHBOARD STATISTIK ANDA ---
+    # --- DI BAWAH INI ADALAH KODE ASLI ANDA (COPY-PASTE TANPA UBAHAN) ---
     
-    st.title("Tools Analisis Statistik")
-    st.markdown("*Masukkan datamu, dan lakukan sesukamu*")
-
     # Inisialisasi
     df = None
     numeric_cols = []
