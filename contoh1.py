@@ -34,12 +34,12 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # =================================================================
-# KONFIGURASI HALAMAN
+# KONFIGURASI HALAMAN UTAMA
 # =================================================================
 st.set_page_config(layout="wide", page_title="Tools Analisis Statistik")
 
 # =================================================================
-# FUNGSI BANTUAN (ORIGINAL)
+# FUNGSI BANTUAN
 # =================================================================
 
 @st.cache_data
@@ -75,9 +75,9 @@ def load_map_excel_data():
                 file_path = os.path.join(folder_path, file)
                 try:
                     temp_df = pd.read_excel(file_path)
-                    # Bersihkan Nama Kolom
+                    # 1. Bersihkan Nama Kolom
                     temp_df.columns = [c.lower().strip() for c in temp_df.columns]
-                    # Normalisasi Kolom 'latitude'
+                    # 2. Normalisasi Kolom 'latitude'
                     if 'latitude' in temp_df.columns:
                         temp_df = temp_df.rename(columns={'latitude': 'lattitude'})
                     df_list.append(temp_df)
@@ -88,22 +88,23 @@ def load_map_excel_data():
     
     combined_df = pd.concat(df_list, ignore_index=True)
     
-    # Hapus data tanpa koordinat
+    # 3. Hapus data tanpa koordinat
     if 'lattitude' in combined_df.columns and 'longitude' in combined_df.columns:
         combined_df = combined_df.dropna(subset=['lattitude', 'longitude'])
     else:
         return pd.DataFrame() 
     
-    # PEMBERSIHAN NAMA WILAYAH (EXCEL)
+    # 4. PEMBERSIHAN NAMA WILAYAH (EXCEL)
     if 'kabupaten' in combined_df.columns:
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.title().str.strip()
-        # Fix Typo Excel
+        
+        # --- FIX TYPO DI EXCEL ---
         combined_df['kabupaten'] = combined_df['kabupaten'].replace({
             'Gunungkidul': 'Gunung Kidul',
             'Yogya': 'Yogyakarta',
-            'Yogyakartakarta': 'Yogyakarta'
+            'Yogyakartakarta': 'Yogyakarta' # Fix Typo User
         })
 
     if 'kecamatan' in combined_df.columns:
@@ -116,14 +117,14 @@ def load_map_excel_data():
 @st.cache_data
 def load_shp_data():
     try:
-        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
 
-# --- KONFIGURASI KOLOM (SUDAH DITUKAR SESUAI TEMUAN ANDA) ---
-SHP_COL_KEC = 'nmkab' # Ternyata kolom 'nmkab' isinya Nama Kecamatan
-SHP_COL_KAB = 'nmkec' # Ternyata kolom 'nmkec' isinya Nama Kabupaten
+# --- KONFIGURASI KOLOM ASLI (Tidak ditukar) ---
+SHP_COL_KEC = 'nmkec'
+SHP_COL_KAB = 'nmkab'
 
 # =================================================================
 # SIDEBAR UTAMA
@@ -152,19 +153,7 @@ if uploaded_file is None:
 
     if not df_map.empty and gdf_shape is not None:
         
-        # --- FITUR DEBUGGING (CEK NAMA) ---
-        with st.expander("🔍 CEK NAMA ASLI DI FILE SHP (KLIK UNTUK MEMBUKA)"):
-            st.info("Gunakan ini untuk melihat ejaan asli (misal: SAPTO SARI vs Saptosari).")
-            if SHP_COL_KAB in gdf_shape.columns:
-                unique_kab = gdf_shape[SHP_COL_KAB].unique()
-                pilih_kab_cek = st.selectbox("Isi Kolom Kabupaten (SHP):", unique_kab)
-                isi_kec = gdf_shape[gdf_shape[SHP_COL_KAB] == pilih_kab_cek][SHP_COL_KEC].unique()
-                st.write(f"Isi Kecamatan untuk '{pilih_kab_cek}':")
-                st.write(isi_kec)
-        
-        st.markdown("---")
-
-        # --- FILTER UTAMA ---
+        # --- FILTER UTAMA (Di Halaman Utama) ---
         c_filter1, c_filter2, c_filter3 = st.columns(3)
         
         with c_filter1:
@@ -201,21 +190,33 @@ if uploaded_file is None:
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
             
+            # --- !!! FIX KHUSUS: KOTA YOGYAKARTA (SHP Salah Kolom) !!! ---
+            # Jika kolom Kabupaten isinya malah nama kecamatan Yogya, ubah jadi 'Yogyakarta'
+            list_kec_yogya = [
+                'Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 'Jetis', 
+                'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 'Ngampilan', 
+                'Pakualaman', 'Tegalrejo', 'Umbulharjo', 'Wirobrajan'
+            ]
+            gdf_shape.loc[gdf_shape['kab_upper'].isin(list_kec_yogya), 'kab_upper'] = 'Yogyakarta'
+
             # --- !!! KAMUS PERBAIKAN TYPO/SPASI (SHP -> EXCEL) !!! ---
-            # FIX KHUSUS: Mengubah "Sapto Sari" menjadi "Saptosari"
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].replace({
-                'Sapto Sari': 'Saptosari',
+                'Sapto Sari': 'Saptosari',  # Fix Spasi Gunung Kidul
                 'Karang Mojo': 'Karangmojo', 
                 'Gedang Sari': 'Gedangsari',
                 'Giri Subo': 'Girisubo',
                 'Purwo Sari': 'Purwosari',
-                'Gondo Kusuman': 'Gondokusuman',
+                'Gondo Kusuman': 'Gondokusuman', # Fix Spasi Yogya
                 'Gondo Manan': 'Gondomanan',
                 'Danu Rejan': 'Danurejan',
                 'Mer Gangsan': 'Mergangsan',
                 'Gedong Tengen': 'Gedongtengen',
                 'Umbul Harjo': 'Umbulharjo',
-                'Paku Alaman': 'Pakualaman'
+                'Paku Alaman': 'Pakualaman',
+                'Kota Gede': 'Kotagede',
+                'Mantri Jeron': 'Mantrijeron',
+                'Wiro Brajan': 'Wirobrajan',
+                'Tegal Rejo': 'Tegalrejo'
             })
             
             # 3. Filter SHP
@@ -263,14 +264,20 @@ if uploaded_file is None:
                 with st.expander("Lihat Data Tabel Detail"):
                     st.dataframe(final_df)
             else:
-                st.warning(f"Wilayah SHP tidak ditemukan. Cek 'Cek Nama Asli' di atas.")
+                st.warning(f"Wilayah SHP tidak ditemukan. Cek ejaan kecamatan.")
         else:
             st.info("👆 Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
     else:
-        st.warning("Data peta (Excel/SHP) belum siap di folder data/.")
+        st.warning("Data peta (Excel/SHP) belum siap di folder data/. Pastikan file .xlsx dan .shp ada.")
 
 # === JIKA FILE SUDAH DIUPLOAD: KEMBALI KE KODE ASLI STATISTIK ANDA ===
 else:
+    # --- MULAI DARI SINI ADALAH KODE ASLI DASHBOARD STATISTIK ANDA ---
+    # --- TANPA PERUBAHAN APAPUN DARI SAYA ---
+
+    st.title("Tools Analisis Statistik")
+    st.markdown("*Masukkan datamu, dan lakukan sesukamu*")
+
     # Inisialisasi
     df = None
     numeric_cols = []
