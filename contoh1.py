@@ -117,7 +117,7 @@ def load_map_excel_data():
 @st.cache_data
 def load_shp_data():
     try:
-        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
