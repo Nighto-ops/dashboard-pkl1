@@ -147,8 +147,7 @@ if uploaded_file is None:
     if not df_map.empty and gdf_shape is not None:
         
         # --- FITUR TAMBAHAN: CEK ISI SHP ---
-        with st.expander("🔍 CEK NAMA ASLI DI FILE SHP (KLIK UNTUK MEMBUKA)"):
-            st.info("Gunakan ini untuk melihat ejaan asli (misal: SAPTO SARI vs Saptosari).")
+        with st.expander("Klik disini untuk melihat daftar kabupaten/kota dan kecamatan"):
             if SHP_COL_KAB in gdf_shape.columns:
                 unique_kab = gdf_shape[SHP_COL_KAB].unique()
                 pilih_kab_cek = st.selectbox("Isi Kolom Kabupaten (SHP):", unique_kab)
