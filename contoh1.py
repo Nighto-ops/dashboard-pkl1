@@ -157,8 +157,7 @@ if uploaded_file is None:
     if not df_map.empty and gdf_shape is not None:
         
         # --- FITUR DEBUGGING KHUSUS (CEK NAMA ASLI DI SHP) ---
-        with st.expander("🕵️‍♂️ KLIK DISINI UNTUK CEK NAMA ASLI KECAMATAN DI FILE SHP"):
-            st.warning("Gunakan fitur ini untuk melihat kenapa 'Saptosari' atau kecamatan lain tidak muncul.")
+        with st.expander("🕵️‍♂️ Klik disini untuk melihat daftar kabupaten dan kecamatan"):
             
             # Ambil semua nama kabupaten di SHP untuk dropdown
             if SHP_COL_KAB in gdf_shape.columns:
@@ -169,7 +168,6 @@ if uploaded_file is None:
                 daftar_kec_shp = gdf_shape[gdf_shape[SHP_COL_KAB] == pilih_kab_cek][SHP_COL_KEC].unique()
                 st.write(f"**Daftar Kecamatan di {pilih_kab_cek} (Format Asli SHP):**")
                 st.write(daftar_kec_shp)
-                st.info("👆 Coba cari 'Saptosari' di daftar di atas. Lihat bagaimana tulisannya.")
             else:
                 st.error(f"Kolom {SHP_COL_KAB} tidak ditemukan di SHP.")
 
