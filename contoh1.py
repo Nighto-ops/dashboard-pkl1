@@ -33,19 +33,18 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # =================================================================
-# KONFIGURASI HALAMAN (WAJIB DI ATAS)
+# KONFIGURASI HALAMAN
 # =================================================================
 st.set_page_config(layout="wide", page_title="Tools Analisis Statistik")
 
 # =================================================================
-# FUNGSI-FUNGSI BANTUAN (MAP)
+# FUNGSI BANTUAN (MAP & STATISTIK)
 # =================================================================
 
 @st.cache_data
 def load_map_excel_data():
     folder_path = 'data'
     df_list = []
-    
     if os.path.exists(folder_path):
         for file in os.listdir(folder_path):
             if file.endswith('.xlsx') or file.endswith('.xls'):
@@ -66,7 +65,7 @@ def load_map_excel_data():
     else:
         return pd.DataFrame()
 
-    # Fix Typo di Excel
+    # FIX TYPO DI EXCEL
     if 'kabupaten' in combined_df.columns:
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
@@ -87,18 +86,14 @@ def load_map_excel_data():
 @st.cache_data
 def load_shp_data():
     try:
-        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
 
-# Konfigurasi Kolom SHP
+# KONFIGURASI KOLOM SHP (DEFAULT)
 SHP_COL_KEC = 'nmkec'
 SHP_COL_KAB = 'nmkab'
-
-# =================================================================
-# FUNGSI BANTUAN (STATISTIK - ASLI)
-# =================================================================
 
 @st.cache_data
 def load_data(file):
@@ -122,23 +117,17 @@ def interpret_correlation(r):
 # =================================================================
 # SIDEBAR UTAMA
 # =================================================================
-
 st.sidebar.title("Kontrol Panel")
-
-uploaded_file = st.sidebar.file_uploader(
-    "1. Upload File Anda",
-    type=['csv', 'xls', 'xlsx'],
-    help="Hanya file CSV, XLS, atau XLSX yang didukung."
-)
+uploaded_file = st.sidebar.file_uploader("1. Upload File Anda", type=['csv', 'xls', 'xlsx'])
 
 # =================================================================
 # LOGIKA UTAMA
 # =================================================================
 
-# === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
+# === BAGIAN 1: JIKA BELUM UPLOAD FILE (FITUR PETA) ===
 if uploaded_file is None:
-    st.title("Dashboard Sebaran Lokasi DIY")
-    st.markdown("Silakan upload file statistik di sidebar untuk masuk ke menu analisis.")
+    st.title("📍 Dashboard Sebaran Lokasi DIY")
+    st.markdown("Peta interaktif persebaran lokasi. Upload file di sidebar untuk analisis statistik.")
     st.markdown("---")
     
     df_map = load_map_excel_data()
@@ -146,8 +135,9 @@ if uploaded_file is None:
 
     if not df_map.empty and gdf_shape is not None:
         
-        # --- FITUR TAMBAHAN: CEK ISI SHP ---
-        with st.expander("Klik disini untuk melihat daftar kabupaten/kota dan kecamatan"):
+        # FITUR CEK ISI SHP
+        with st.expander("🔍 CEK NAMA ASLI DI FILE SHP (KLIK UNTUK MEMBUKA)"):
+            st.info("Gunakan ini untuk melihat ejaan asli (misal: GEDANG SARI vs Gedangsari).")
             if SHP_COL_KAB in gdf_shape.columns:
                 unique_kab = gdf_shape[SHP_COL_KAB].unique()
                 pilih_kab_cek = st.selectbox("Isi Kolom Kabupaten (SHP):", unique_kab)
@@ -157,54 +147,50 @@ if uploaded_file is None:
 
         st.markdown("---")
 
-        # --- FILTER PETA ---
+        # FILTER PETA
         c_filter1, c_filter2, c_filter3 = st.columns(3)
         with c_filter1:
             list_kab = sorted(df_map['kabupaten'].unique().tolist())
-            selected_kab = st.multiselect("Pilih Kabupaten:", list_kab, default=list_kab)
+            selected_kab = st.multiselect("1. Pilih Kabupaten:", list_kab, default=list_kab)
         with c_filter2:
             if selected_kab:
                 df_filtered_kab = df_map[df_map['kabupaten'].isin(selected_kab)]
                 list_kec = sorted(df_filtered_kab['kecamatan'].unique().tolist())
             else:
                 list_kec = []
-            selected_kec = st.multiselect("Pilih Kecamatan:", list_kec, default=list_kec)
+            selected_kec = st.multiselect("2. Pilih Kecamatan:", list_kec, default=list_kec)
         with c_filter3:
-            map_mode = st.radio("Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
+            map_mode = st.radio("3. Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
 
-        # --- RENDER PETA ---
+        # RENDER PETA
         if selected_kab and selected_kec:
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
                 (df_map['kecamatan'].isin(selected_kec))
             ]
             
-            # Bersihkan SHP
+            # 1. Bersihkan Nama Kabupaten di SHP
             gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
-            # Fix Typo SHP
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].replace({
                 'Gunungkidul': 'Gunung Kidul',
                 'Yogya': 'Yogyakarta',
                 'Yogyakartakarta': 'Yogyakarta'
             })
+            # Fix khusus SHP Kota Yogya yang isinya nama kecamatan
+            list_kec_yogya = ['Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 'Jetis', 'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 'Ngampilan', 'Pakualaman', 'Tegalrejo', 'Umbulharjo', 'Wirobrajan']
+            gdf_shape.loc[gdf_shape['kab_upper'].isin(list_kec_yogya), 'kab_upper'] = 'Yogyakarta'
 
+            # 2. Bersihkan Nama Kecamatan di SHP
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
             
-            # Fix Khusus SHP Yogyakarta yang salah kolom
-            list_kec_yogya = [
-                'Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 'Jetis', 
-                'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 'Ngampilan', 
-                'Pakualaman', 'Tegalrejo', 'Umbulharjo', 'Wirobrajan'
-            ]
-            gdf_shape.loc[gdf_shape['kab_upper'].isin(list_kec_yogya), 'kab_upper'] = 'Yogyakarta'
-
-            # Fix Typo Kecamatan SHP
+            # --- FIX TYPO / SPASI (SHP -> EXCEL) ---
+            # MENAMBAHKAN GEDANG SARI & SAPTO SARI
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].replace({
-                'Sapto Sari': 'Saptosari',
+                'Gedang Sari': 'Gedangsari', # Fix Gedangsari
+                'Sapto Sari': 'Saptosari',   # Fix Saptosari
                 'Karang Mojo': 'Karangmojo', 
-                'Gedang Sari': 'Gedangsari',
                 'Giri Subo': 'Girisubo',
                 'Purwo Sari': 'Purwosari',
                 'Gondo Kusuman': 'Gondokusuman',
@@ -214,7 +200,10 @@ if uploaded_file is None:
                 'Gedong Tengen': 'Gedongtengen',
                 'Umbul Harjo': 'Umbulharjo',
                 'Paku Alaman': 'Pakualaman',
-                'Bambang Lipuro' : 'Bambanglipuro'
+                'Kota Gede': 'Kotagede',
+                'Mantri Jeron': 'Mantrijeron',
+                'Wiro Brajan': 'Wirobrajan',
+                'Tegal Rejo': 'Tegalrejo'
             })
 
             final_gdf = gdf_shape[
@@ -252,17 +241,17 @@ if uploaded_file is None:
 
                 folium.LayerControl().add_to(m)
                 st_folium(m, width=1200, height=600)
-                
-                with st.expander("Lihat Data Tabel Detail"):
-                    st.dataframe(final_df)
+                with st.expander("Lihat Data Tabel Detail"): st.dataframe(final_df)
             else:
-                st.warning("Wilayah SHP tidak ditemukan.")
+                st.warning("Wilayah SHP tidak ditemukan. Cek ejaan di fitur 'Cek Nama SHP' di atas.")
         else:
-            st.info("Pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
+            st.info("👆 Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
+    else:
+        st.warning("Data peta (Excel/SHP) belum siap di folder data/. Pastikan file .xlsx dan .shp ada.")
 
-# === JIKA FILE SUDAH DIUPLOAD (KODE ASLI STATISTIK) ===
+
+# === BAGIAN 2: JIKA FILE DIUPLOAD (KODE ASLI ANDA KEMBALI 100%) ===
 else:
-    # --- KODE DI BAWAH INI ADALAH KODE ASLI ANDA (COPY PASTE) ---
     # Inisialisasi
     df = None
     numeric_cols = []
