@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy import stats
 import openpyxl 
+import os
 
 # --- TAMBAHAN LIBRARY UNTUK PETA (GEOSPASIAL) ---
 import geopandas as gpd
@@ -61,37 +62,53 @@ def interpret_correlation(r):
     return "sangat lemah"
 
 # =================================================================
-# FUNGSI TAMBAHAN KHUSUS PETA (SUDAH DIPERBAIKI)
+# FUNGSI TAMBAHAN KHUSUS PETA (UPDATE V3 - AUTO DETECT)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
-    files = [
-        "data/Kota Yogyakarta.xlsx", "data/Bantul.xlsx", 
-        "data/Sleman.xlsx", "data/Kulon Progo.xlsx", "data/Gunung Kidul.xlsx"
-    ]
+    folder_path = 'data'
     df_list = []
-    for f in files:
-        try:
-            temp_df = pd.read_excel(f)
-            df_list.append(temp_df)
-        except: pass
-            
+    
+    # Otomatis baca semua file Excel di folder 'data' (Anti-Typo nama file)
+    if os.path.exists(folder_path):
+        for file in os.listdir(folder_path):
+            if file.endswith('.xlsx') or file.endswith('.xls'):
+                file_path = os.path.join(folder_path, file)
+                try:
+                    temp_df = pd.read_excel(file_path)
+                    
+                    # 1. Bersihkan Nama Kolom (strip spasi & lowercase)
+                    temp_df.columns = [c.lower().strip() for c in temp_df.columns]
+                    
+                    # 2. Normalisasi Kolom 'latitude' (kadang tertulis 'latitude', kadang 'lattitude')
+                    if 'latitude' in temp_df.columns:
+                        temp_df = temp_df.rename(columns={'latitude': 'lattitude'})
+                        
+                    df_list.append(temp_df)
+                except: 
+                    pass
+    
     if not df_list: return pd.DataFrame()
     
     combined_df = pd.concat(df_list, ignore_index=True)
-    combined_df.columns = [c.lower() for c in combined_df.columns]
     
-    # Hapus data tanpa koordinat
-    combined_df = combined_df.dropna(subset=['lattitude', 'longitude'])
+    # 3. Hapus data tanpa koordinat yang valid
+    if 'lattitude' in combined_df.columns and 'longitude' in combined_df.columns:
+        combined_df = combined_df.dropna(subset=['lattitude', 'longitude'])
+    else:
+        return pd.DataFrame() # Return kosong jika kolom tidak ada
     
-    # --- BAGIAN PENTING: PEMBERSIHAN NAMA WILAYAH ---
-    # Ini memperbaiki masalah "Kab. Bantul" vs "Bantul"
+    # 4. PEMBERSIHAN NAMA WILAYAH (CRUCIAL FIX)
     if 'kabupaten' in combined_df.columns:
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
         # Hapus awalan "Kab.", "Kabupaten", "Kota"
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
-        # Ubah ke Title Case (Huruf Besar di Awal) & Hapus spasi
+        # Title Case & Trim
         combined_df['kabupaten'] = combined_df['kabupaten'].str.title().str.strip()
+        
+        # --- FIX KHUSUS GUNUNG KIDUL (EXCEL) ---
+        # Mengubah "Gunungkidul" (gabung) menjadi "Gunung Kidul" (pisah)
+        combined_df['kabupaten'] = combined_df['kabupaten'].str.replace('Gunungkidul', 'Gunung Kidul', regex=False)
 
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str)
@@ -104,7 +121,7 @@ def load_map_excel_data():
 def load_shp_data():
     try:
         # Menggunakan file SHP wilayah (Polygon)
-        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
@@ -169,13 +186,17 @@ if uploaded_file is None:
                 (df_map['kecamatan'].isin(selected_kec))
             ]
             
-            # Filter SHP (Samakan Format Text)
+            # --- FILTER & BERSIHKAN SHP (PENTING!) ---
+            # 1. Bersihkan Nama Kabupaten di SHP
             gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
+            gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
+            # FIX KHUSUS GUNUNG KIDUL (SHP) - Agar match dengan Excel
+            gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace('Gunungkidul', 'Gunung Kidul', regex=False)
+
+            # 2. Bersihkan Nama Kecamatan di SHP
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             
-            # Kita bersihkan juga kolom SHP dari kata "KABUPATEN" jika ada
-            gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True).str.strip()
-
+            # 3. Filter SHP
             final_gdf = gdf_shape[
                 (gdf_shape['kab_upper'].isin(selected_kab)) &
                 (gdf_shape['kec_upper'].isin(selected_kec))
@@ -183,6 +204,7 @@ if uploaded_file is None:
 
             if not final_gdf.empty:
                 # Merge Data Statistik untuk Warna Choropleth
+                # Kita gunakan kolom 'kec_upper' di SHP dan 'kecamatan' di Excel yang sudah sama-sama Title Case
                 stats_kec = final_df.groupby('kecamatan').size().reset_index(name='jumlah_lokasi')
                 gdf_viz = final_gdf.merge(stats_kec, left_on='kec_upper', right_on='kecamatan', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
@@ -224,11 +246,11 @@ if uploaded_file is None:
                 with st.expander("Lihat Data Tabel Detail"):
                     st.dataframe(final_df)
             else:
-                st.warning("Wilayah tidak ditemukan di SHP. Cek kesesuaian nama kecamatan.")
+                st.warning(f"Wilayah tidak ditemukan di Peta. Filter terpilih: {selected_kab} - {selected_kec}")
         else:
             st.info("👆 Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
     else:
-        st.warning("Data peta (Excel/SHP) belum siap di folder data/.")
+        st.warning("Data peta (Excel/SHP) belum siap di folder data/. Pastikan file .xlsx dan .shp ada.")
 
 
 # === JIKA FILE SUDAH DIUPLOAD: KEMBALI KE KODE ASLI STATISTIK ANDA ===
