@@ -191,8 +191,6 @@ if uploaded_file is None:
             # Mengubah "Sapto Sari" (SHP) menjadi "Saptosari" (Excel)
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].replace({
                 'Sapto Sari': 'Saptosari',
-                'Karang Mojo': 'Karangmojo', # Jaga-jaga jika ada
-                'Gedang Sari': 'Gedangsari'  # Jaga-jaga jika ada
             })
             # -------------------------------------
             
