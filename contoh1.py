@@ -85,7 +85,7 @@ def load_map_excel_data():
 @st.cache_data
 def load_shp_data():
     try:
-        gdf = gpd.read_file("data/shp_files/kec_jogja.shp") 
+        gdf = gpd.read_file("data/shp/kec_jogja.shp") 
         return gdf.to_crs(epsg=4326)
     except Exception as e:
         return None
@@ -128,7 +128,7 @@ uploaded_file = st.sidebar.file_uploader("1. Upload File Anda", type=['csv', 'xl
 
 # === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
 if uploaded_file is None:
-    st.title("📍 Dashboard Sebaran Lokasi DIY")
+    st.title("Dashboard Sebaran Lokasi DIY")
     st.markdown("Peta interaktif persebaran lokasi. Upload file di sidebar untuk analisis statistik.")
     st.markdown("---")
     
@@ -138,7 +138,7 @@ if uploaded_file is None:
     if not df_map.empty and gdf_shape is not None:
         
         # FITUR CEK ISI SHP
-        with st.expander("🔍 CEK NAMA ASLI DI FILE SHP (KLIK UNTUK MEMBUKA)"):
+        with st.expander("CEK NAMA ASLI DI FILE SHP (KLIK UNTUK MEMBUKA)"):
             st.info("Gunakan ini untuk melihat ejaan asli.")
             if SHP_COL_KAB in gdf_shape.columns:
                 unique_kab = gdf_shape[SHP_COL_KAB].unique()
@@ -243,7 +243,7 @@ if uploaded_file is None:
             else:
                 st.warning("Wilayah SHP tidak ditemukan. Cek ejaan di fitur 'Cek Nama SHP' di atas.")
         else:
-            st.info("👆 Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
+            st.info("Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
     else:
         st.warning("Data peta (Excel/SHP) belum siap di folder data/. Pastikan file .xlsx dan .shp ada.")
 
