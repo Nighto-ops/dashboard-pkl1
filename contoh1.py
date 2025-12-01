@@ -37,114 +37,115 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS UNTUK TAMPILAN ELEGAN & PROFESIONAL ---
+# --- CUSTOM CSS UNTUK TAMPILAN ELEGAN & HANGAT ---
 st.markdown("""
 <style>
     /* Impor Font Serif yang Elegan untuk Judul dan Sans-Serif untuk Isi */
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&family=Open+Sans:wght@400;600&display=swap');
 
-    /* 1. SETUP BACKGROUND & FONT UTAMA */
+    /* 1. SETUP BACKGROUND (WARNA HANGAT / OLD LACE) */
     .stApp {
-        background-color: #FAFAF5; /* Warna Krem Mewah, bukan putih polos */
+        background-color: #FDF5E6; /* Warna Krem Antik (Hangat), tidak putih terang */
         font-family: 'Open Sans', sans-serif;
-        color: #333333; /* Teks abu tua, lebih lembut dari hitam */
+        color: #4A3B32; /* Teks Cokelat Tua Gelap (Coffee) agar kontras tapi lembut */
     }
 
-    /* 2. MENGHILANGKAN PADDING ATAS AGAR HEADER BATIK MENEMPEL */
+    /* 2. MEMPERBAIKI JUDUL TERTUTUP (PADDING ATAS DITAMBAH) */
     .block-container {
-        padding-top: 0rem !important;
-        padding-bottom: 2rem;
+        padding-top: 3rem !important; /* Memberi jarak aman agar judul tidak kepotong */
+        padding-bottom: 5rem;
         max-width: 100%;
     }
 
-    /* 3. TYPOGRAPHY JUDUL (H1-H4) - Menggunakan Font Serif & Warna Cokelat Emas */
+    /* 3. TYPOGRAPHY JUDUL (H1-H4) */
     h1, h2, h3, h4, .streamlit-expanderHeader {
         font-family: 'Merriweather', serif !important;
-        color: #8C4818 !important; /* Warna Cokelat Bata/Emas Tua dari Batik */
+        color: #8C4818 !important; /* Warna Cokelat Bata/Emas Tua */
         font-weight: 700 !important;
         letter-spacing: 0.5px;
     }
-    h1 { font-size: 2.5rem !important; margin-top: 1rem; }
+    h1 { 
+        font-size: 2.8rem !important; 
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-    /* 4. SIDEBAR DESAIN */
+    /* 4. SIDEBAR DESAIN (WARNA LEBIH GELAP DIKIT DARI BG UTAMA) */
     [data-testid="stSidebar"] {
-        background-color: #F4ECE4; /* Latar belakang sidebar krem sepia */
+        background-color: #F5E6D3; /* Krem Sepia / Almond */
         border-right: 1px solid #DBC4B0;
     }
     [data-testid="stSidebar"] h1 {
-        font-size: 1.8rem !important;
-        color: #8C4818 !important;
+        font-size: 1.5rem !important;
+        color: #5D4037 !important;
     }
 
-    /* 5. DESAIN TOMBOL (GRADASI EMAS MEWAH) */
+    /* 5. DESAIN TOMBOL (GRADASI EMAS - COKELAT) */
     .stButton > button {
-        background: linear-gradient(to bottom, #CFAF7B, #A68B5B) !important; /* Gradasi Emas */
+        background: linear-gradient(to bottom, #D4AF37, #AA8C2C) !important; /* Emas Metalik */
         color: white !important;
         border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 3px 5px rgba(0,0,0,0.1) !important;
         font-family: 'Merriweather', serif !important;
         font-weight: 600 !important;
-        padding: 0.6rem 1.5rem !important;
-        border-radius: 4px !important;
-        transition: all 0.3s ease !important;
+        border-radius: 6px !important;
+        padding: 0.5rem 1.2rem;
+        transition: transform 0.2s;
     }
     .stButton > button:hover {
-        background: linear-gradient(to bottom, #A68B5B, #8C4818) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 10px rgba(0,0,0,0.15) !important;
+        background: linear-gradient(to bottom, #AA8C2C, #8C4818) !important;
+        transform: scale(1.02);
+        color: #fff !important;
     }
 
-    /* 6. TABS MENU YANG BERSIH */
+    /* 6. TAB MENU STYLE */
     .stTabs [data-baseweb="tab-list"] {
         background-color: transparent !important;
-        border-bottom: 2px solid #DBC4B0;
-        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #D7CCC8;
     }
     .stTabs [data-baseweb="tab"] {
-        font-family: 'Open Sans', sans-serif;
         font-weight: 600;
-        color: #777777;
-        background-color: transparent !important;
-        border: none !important;
-        border-bottom: 4px solid transparent !important;
-        padding-bottom: 10px;
+        color: #795548; /* Cokelat sedang */
     }
     .stTabs [aria-selected="true"] {
-        color: #8C4818 !important;
-        border-bottom-color: #8C4818 !important;
+        color: #BF360C !important; /* Merah Bata saat aktif */
+        border-bottom-color: #BF360C !important;
     }
 
-    /* 7. AREA PESAN (SUCCESS, INFO, WARNING) YANG LEBIH HALUS */
+    /* 7. WIDGET INPUT (BACKGROUND PUTIH GADING AGAR JELAS) */
+    .stSelectbox > div > div, .stMultiSelect > div > div {
+        background-color: #FFFDF5 !important;
+        border-color: #D7CCC8 !important;
+    }
+
+    /* 8. DATAFRAME & AREA PESAN */
+    div[data-testid="stDataFrame"] {
+        background-color: #FFFFFF; /* Tabel tetap putih agar data jelas */
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #EFEBE9;
+    }
     .stAlert {
-        background-color: #FFFFFF;
-        border: 1px solid #E0E0E0;
-        border-left-width: 5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        border-radius: 4px;
-        color: #444;
+        background-color: #FFF8E1; /* Kuning sangat muda untuk alert */
+        border: 1px solid #FFECB3;
+        color: #5D4037;
     }
-    /* Mengubah warna border kiri alert agar sesuai tema */
-    .stSuccess { border-left-color: #28a745 !important; }
-    .stInfo { border-left-color: #CFAF7B !important; } /* Warna Emas */
-    .stWarning { border-left-color: #ffc107 !important; }
-    .stError { border-left-color: #dc3545 !important; }
 
-    /* 8. MENGHILANGKAN FOOTER BAWAAN STREAMLIT */
+    /* 9. SEMBUNYIKAN FOOTER BAWAAN */
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 # =================================================================
-# SETUP GAMBAR (SESUAI REQUEST USER)
+# SETUP GAMBAR
 # =================================================================
-# Pastikan nama file di folder 'gambar' sesuai persis dengan ini:
-HEADER_IMG = 'gambar/bingkai_1.jpg'  # Gambar Header Batik
-LOGO_IMG   = 'gambar/image_14.png'   # Logo Bulat PKL
-MASCOT_IMG = 'gambar/image_10.png'   # Maskot Gundatala Laptop
-HANDS_IMG  = 'gambar/image_11.png'   # Gambar Tangan
+HEADER_IMG = 'gambar/bingkai_1.jpg'  
+LOGO_IMG   = 'gambar/image_14.png'   
+MASCOT_IMG = 'gambar/image_10.png'   
+HANDS_IMG  = 'gambar/image_11.png'   
 
-# Tampilkan Header
+# Tampilkan Header (Jika ada)
 if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
@@ -256,7 +257,7 @@ if uploaded_file is None:
     
     # Pesan Selamat Datang yang Lebih Profesional
     st.markdown("""
-    <div style='background-color: #FFFFFF; padding: 25px; border-left: 6px solid #8C4818; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 25px;'>
+    <div style='background-color: #FFFFFF; padding: 25px; border-left: 6px solid #8C4818; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 25px;'>
         <h3 style='margin-top:0; color: #8C4818;'>Selamat Datang di Dashboard PKL 65</h3>
         <p style='font-size: 1.1rem; color: #555;'>Halaman ini menyajikan peta interaktif persebaran lokasi di D.I. Yogyakarta. Visualisasi ini dirancang untuk memberikan gambaran spasial terkait data lapangan.</p>
         <p style='font-size: 1rem; color: #666; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b> (seperti Uji Regresi, ANOVA, MANOVA, dan Clustering), silakan unggah dataset Anda melalui panel di sisi kiri.</p>
@@ -374,7 +375,7 @@ if uploaded_file is None:
                 folium.LayerControl().add_to(m)
                 
                 # Menambahkan frame bayangan di sekitar peta agar terlihat elegan
-                st.markdown('<div style="box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden;">', unsafe_allow_html=True)
+                st.markdown('<div style="box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; border: 4px solid #FFFFFF;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
