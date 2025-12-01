@@ -43,97 +43,113 @@ st.set_page_config(
 )
 
 # =================================================================
-# CUSTOM CSS & DESIGN (ELEGAN & BATIK THEME)
+# CUSTOM CSS (TEMA DOMINAN ORANYE - TANPA PUTIH)
 # =================================================================
 def local_css():
     st.markdown("""
     <style>
-        /* IMPOR FONT AGAR LEBIH ELEGAN */
+        /* IMPOR FONT */
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap');
 
-        /* 1. BACKGROUND UTAMA (CREAM LEMBUT AGAR MENYATU DENGAN BATIK) */
+        /* 1. BACKGROUND UTAMA (GRADASI ORANYE HANGAT) */
         .stApp {
-            background-color: #FFFCF5;
+            /* Background gradasi dari Oranye Muda ke Peach Gelap */
+            background: linear-gradient(180deg, #FFF3E0 0%, #FFE0B2 100%);
             font-family: 'Lato', sans-serif;
+            color: #3E2723; /* Teks Coklat Tua agar kontras dan enak dibaca */
         }
 
-        /* 2. MENGHILANGKAN PADDING ATAS AGAR HEADER BATIK NEMPEL */
+        /* 2. MENGHILANGKAN PADDING ATAS */
         .block-container {
             padding-top: 0rem;
             padding-bottom: 5rem;
         }
 
-        /* 3. JUDUL (H1, H2, H3) - MENGGUNAKAN FONT SERIF MEWAH */
+        /* 3. JUDUL (H1, H2, H3) */
         h1, h2, h3 {
             font-family: 'Playfair Display', serif;
-            color: #8E44AD; /* Di-override di bawah agar sesuai tema */
-            color: #A04000 !important; /* Warna Cokelat/Bata Batik */
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            color: #BF360C !important; /* Merah Bata / Burnt Orange */
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.2);
         }
 
-        /* 4. SIDEBAR */
+        /* 4. SIDEBAR (ORANYE LEBIH PEKAT) */
         [data-testid="stSidebar"] {
-            background-color: #FFFFFF;
-            border-right: 2px solid #F5CBA7; /* Garis batas warna peach/emas */
+            background-color: #FFCC80; /* Orange Medium */
+            border-right: 2px solid #EF6C00;
+        }
+        [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+             color: #3E2723 !important;
         }
 
-        /* 5. TOMBOL (GRADASI EMAS - ORANYE) */
+        /* 5. TOMBOL (GRADASI ORANYE KUAT) */
         .stButton>button {
-            background: linear-gradient(90deg, #F39C12 0%, #D35400 100%);
-            color: white;
-            border: none;
+            background: linear-gradient(90deg, #FF6F00 0%, #E65100 100%);
+            color: #FFF3E0;
+            border: 1px solid #BF360C;
             border-radius: 25px;
             padding: 10px 24px;
             font-weight: bold;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
         }
         .stButton>button:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 8px rgba(0,0,0,0.3);
-            color: #fff;
+            background: linear-gradient(90deg, #E65100 0%, #BF360C 100%);
+            color: white;
         }
 
-        /* 6. TABS (TAB MENU) */
+        /* 6. TABS (MENU TAB) */
         .stTabs [data-baseweb="tab-list"] {
             gap: 5px;
-            background-color: white;
+            background-color: #FFE0B2; /* Dasarnya Oranye Muda */
             padding: 10px;
             border-radius: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
         }
         .stTabs [data-baseweb="tab"] {
             height: 50px;
             border-radius: 10px;
             font-weight: 600;
+            color: #5D4037;
         }
         .stTabs [aria-selected="true"] {
-            background-color: #FEF5E7 !important;
-            color: #D35400 !important;
-            border-bottom: 3px solid #D35400;
+            background-color: #EF6C00 !important; /* Oranye Menyala saat aktif */
+            color: #FFFFFF !important;
+            border-bottom: none;
         }
 
-        /* 7. DATAFRAME / TABEL */
-        div[data-testid="stDataFrame"] {
-            background-color: white;
-            padding: 10px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border: 1px solid #F5CBA7;
-        }
-
-        /* 8. PESAN (INFO, SUCCESS, WARNING) - STYLE LEBIH SOFT */
-        .stAlert {
-            border-radius: 10px;
-            border-left: 5px solid #D35400;
+        /* 7. WIDGET & INPUT (Selectbox, Multiselect, Uploader) */
+        .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div {
+            background-color: #FFF8E1; /* Kuning/Oranye Pucat */
+            color: #3E2723;
+            border-color: #FFB74D;
         }
         
-        /* 9. EXPANDER */
-        .streamlit-expanderHeader {
-            background-color: white;
+        /* 8. DATAFRAME / TABEL */
+        div[data-testid="stDataFrame"] {
+            background-color: #FFF8E1; /* Background Tabel Kuning Gading */
+            padding: 10px;
             border-radius: 10px;
-            color: #A04000;
+            border: 1px solid #FFAB91;
+        }
+
+        /* 9. INFO BOX / ALERT */
+        .stAlert {
+            background-color: #FFECB3; /* Background Info Oranye Pucat */
+            color: #3E2723;
+            border: 1px solid #FF9800;
+        }
+        
+        /* 10. EXPANDER */
+        .streamlit-expanderHeader {
+            background-color: #FFE0B2; /* Header Expander Oranye */
+            border-radius: 5px;
+            color: #E65100;
             font-weight: bold;
+        }
+        div[data-testid="stExpanderDetails"] {
+            background-color: #FFF3E0;
+            border: 1px solid #FFCC80;
+            border-top: none;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -143,12 +159,10 @@ local_css()
 # =================================================================
 # HEADER IMAGE DISPLAY (VISUAL)
 # =================================================================
-# Menampilkan Header Batik di bagian paling atas konten utama
-header_path = 'gambar/3.jpg' # Menggunakan gambar header batik yang kamu kirim
+header_path = 'gambar/3.jpg' 
 if os.path.exists(header_path):
     st.image(header_path, use_container_width=True)
 else:
-    # Fallback jika file tidak ada di folder gambar
     st.warning("Gambar header (gambar/3.jpg) tidak ditemukan.")
 
 # =================================================================
@@ -192,7 +206,6 @@ def load_map_excel_data():
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str)
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
-        combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
         
     return combined_df
 
@@ -204,7 +217,6 @@ def load_shp_data():
     except Exception as e:
         return None
 
-# Konfigurasi Kolom SHP
 SHP_COL_KEC = 'nmkec'
 SHP_COL_KAB = 'nmkab'
 
@@ -234,11 +246,9 @@ def interpret_correlation(r):
 # SIDEBAR UTAMA
 # =================================================================
 with st.sidebar:
-    # MENAMPILKAN MASKOT DI SIDEBAR
     mascot_path = 'gambar/Gundatala_Riset 5.jpg'
     logo_path = 'gambar/LOGO-PKL_REV8.jpg'
     
-    # Pilih mau nampilin logo atau maskot, atau keduanya
     col_sb1, col_sb2 = st.columns(2)
     if os.path.exists(logo_path):
         with col_sb1:
@@ -248,22 +258,21 @@ with st.sidebar:
             st.image(mascot_path, use_container_width=True)
     
     st.markdown("---")
-    st.title("Kontrol Panel")
-    uploaded_file = st.file_uploader("Upload File Anda", type=['csv', 'xls', 'xlsx'])
+    st.title("🎛️ Kontrol Panel")
+    uploaded_file = st.file_uploader("📂 1. Upload File Anda", type=['csv', 'xls', 'xlsx'])
 
 # =================================================================
 # LOGIKA UTAMA
 # =================================================================
 
-# === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
+# === JIKA BELUM UPLOAD FILE ===
 if uploaded_file is None:
-    # Spacer agar tidak terlalu mepet header gambar
     st.write("") 
-    st.title("Dashboard Sebaran Lokasi DIY")
+    st.title("🌏 Dashboard Sebaran Lokasi DIY")
     st.markdown("""
-    <div style='background-color: white; padding: 15px; border-radius: 10px; border-left: 6px solid #F39C12; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+    <div style='background-color: #FFCC80; padding: 15px; border-radius: 10px; border-left: 6px solid #BF360C; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #3E2723;'>
         Selamat datang di <b>Dashboard Analisis PKL</b>. <br>
-        Di sini Anda dapat melihat peta interaktif persebaran lokasi. Untuk melakukan analisis statistik mendalam (Regresi, ANOVA, dll), silakan <b>Upload Data</b> melalui panel di sebelah kiri.
+        Silakan gunakan panel di sebelah kiri untuk <b>Upload Data</b> dan memulai analisis statistik.
     </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
@@ -273,8 +282,7 @@ if uploaded_file is None:
 
     if not df_map.empty and gdf_shape is not None:
         
-        # FITUR CEK ISI SHP
-        with st.expander("🔍 CEK NAMA ASLI DI FILE SHP (KLIK UNTUK MEMBUKA)"):
+        with st.expander("🔍 CEK NAMA ASLI DI FILE SHP"):
             st.info("Gunakan ini untuk melihat ejaan asli.")
             if SHP_COL_KAB in gdf_shape.columns:
                 unique_kab = gdf_shape[SHP_COL_KAB].unique()
@@ -283,7 +291,6 @@ if uploaded_file is None:
                 st.write(f"Isi Kecamatan untuk '{pilih_kab_cek}':")
                 st.write(isi_kec)
 
-        # FILTER PETA (Dibuat dalam Container agar rapi)
         with st.container():
             st.subheader("🛠️ Filter Wilayah")
             c_filter1, c_filter2, c_filter3 = st.columns(3)
@@ -300,43 +307,27 @@ if uploaded_file is None:
             with c_filter3:
                 map_mode = st.radio("3. Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
 
-        # RENDER PETA
         if selected_kab and selected_kec:
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
                 (df_map['kecamatan'].isin(selected_kec))
             ]
             
-            # 1. Bersihkan Nama Kabupaten di SHP
             gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].replace({
-                'Gunungkidul': 'Gunung Kidul',
-                'Yogya': 'Yogyakarta',
-                'Yogyakartakarta': 'Yogyakarta'
+                'Gunungkidul': 'Gunung Kidul', 'Yogya': 'Yogyakarta', 'Yogyakartakarta': 'Yogyakarta'
             })
             
-            # 2. Bersihkan Nama Kecamatan di SHP
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
             
-            # --- FIX TYPO / SPASI (SHP -> EXCEL) ---
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].replace({
-                'Gedang Sari': 'Gedangsari', # <--- FIX GEDANG SARI
-                'Sapto Sari': 'Saptosari',    
-                'Karang Mojo': 'Karangmojo', 
-                'Giri Subo': 'Girisubo',
-                'Purwo Sari': 'Purwosari',
-                'Gondo Kusuman': 'Gondokusuman',
-                'Gondo Manan': 'Gondomanan',
-                'Danu Rejan': 'Danurejan',
-                'Mer Gangsan': 'Mergangsan',
-                'Gedong Tengen': 'Gedongtengen',
-                'Umbul Harjo': 'Umbulharjo',
-                'Paku Alaman': 'Pakualaman',
-                'Kota Gede': 'Kotagede',
-                'Mantri Jeron': 'Mantrijeron',
-                'Wiro Brajan': 'Wirobrajan',
+                'Gedang Sari': 'Gedangsari', 'Sapto Sari': 'Saptosari', 'Karang Mojo': 'Karangmojo', 
+                'Giri Subo': 'Girisubo', 'Purwo Sari': 'Purwosari', 'Gondo Kusuman': 'Gondokusuman',
+                'Gondo Manan': 'Gondomanan', 'Danu Rejan': 'Danurejan', 'Mer Gangsan': 'Mergangsan',
+                'Gedong Tengen': 'Gedongtengen', 'Umbul Harjo': 'Umbulharjo', 'Paku Alaman': 'Pakualaman',
+                'Kota Gede': 'Kotagede', 'Mantri Jeron': 'Mantrijeron', 'Wiro Brajan': 'Wirobrajan',
                 'Tegal Rejo': 'Tegalrejo'
             })
 
@@ -352,7 +343,7 @@ if uploaded_file is None:
 
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
-                m = folium.Map(location=center, zoom_start=11, tiles="CartoDB positron") # Peta dasar bersih
+                m = folium.Map(location=center, zoom_start=11, tiles="CartoDB positron") 
 
                 if map_mode in ["Gabungan", "Choropleth (Wilayah)"]:
                     cp = folium.Choropleth(
@@ -361,8 +352,8 @@ if uploaded_file is None:
                         data=gdf_viz,
                         columns=['kec_upper', 'jumlah_lokasi'],
                         key_on='feature.properties.kec_upper',
-                        fill_color='YlOrRd', # Warna Oranye Merah sesuai tema
-                        fill_opacity=0.7,
+                        fill_color='Oranges', # Peta menggunakan tema Oranges
+                        fill_opacity=0.8,
                         line_opacity=0.2,
                         legend_name='Jumlah Lokasi',
                         highlight=True
@@ -371,26 +362,24 @@ if uploaded_file is None:
 
                 if map_mode in ["Gabungan", "Heatmap (Titik)"]:
                     heat_data = final_df[['lattitude', 'longitude']].values.tolist()
-                    HeatMap(heat_data, name='Heatmap', radius=15, gradient={0.4: 'blue', 0.65: 'lime', 1: 'red'}).add_to(m)
+                    HeatMap(heat_data, name='Heatmap', radius=15, gradient={0.4: 'orange', 0.65: 'red', 1: 'maroon'}).add_to(m)
 
                 folium.LayerControl().add_to(m)
                 
-                # Container untuk Peta agar ada shadow
-                st.markdown("<div style='box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden;'>", unsafe_allow_html=True)
+                st.markdown("<div style='border: 4px solid #FFB74D; border-radius: 10px; overflow: hidden;'>", unsafe_allow_html=True)
                 st_folium(m, width=1200, height=600)
                 st.markdown("</div>", unsafe_allow_html=True)
                 
-                with st.expander("Lihat Data Tabel Detail"): st.dataframe(final_df, use_container_width=True)
+                with st.expander("📄 Lihat Data Tabel Detail"): st.dataframe(final_df, use_container_width=True)
             else:
-                st.warning("Wilayah SHP tidak ditemukan. Cek ejaan di fitur 'Cek Nama SHP' di atas.")
+                st.warning("Wilayah SHP tidak ditemukan.")
         else:
-            st.info("Silakan pilih Kabupaten dan Kecamatan di atas untuk menampilkan peta.")
+            st.info("👋 Silakan pilih Kabupaten dan Kecamatan di atas.")
     else:
-        st.warning("Data peta (Excel/SHP) belum siap di folder data/. Pastikan file .xlsx dan .shp ada.")
+        st.warning("⚠️ Data peta belum siap.")
 
-# === JIKA FILE SUDAH DIUPLOAD (KODE ASLI STATISTIK) ===
+# === JIKA FILE SUDAH DIUPLOAD ===
 else:
-    # Inisialisasi
     df = None
     numeric_cols = []
     categorical_cols = []
@@ -399,397 +388,145 @@ else:
     if uploaded_file is not None:
         df = load_data(uploaded_file)
         if df is not None:
-            st.sidebar.success("File berhasil di-upload!")
-            
-            # Identifikasi tipe variabel
+            st.sidebar.success("✅ File berhasil di-upload!")
             all_cols = df.columns.tolist()
             numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
             categorical_cols = df.select_dtypes(exclude=np.number).columns.tolist()
             
-            st.sidebar.subheader("Variabel Teridentifikasi")
+            st.sidebar.subheader("📋 Variabel Teridentifikasi")
             st.sidebar.write(f"**Kolom Numerik:** ({len(numeric_cols)})")
-            st.sidebar.caption(f", ".join(numeric_cols))
             st.sidebar.write(f"**Kolom Kategorikal:** ({len(categorical_cols)})")
-            st.sidebar.caption(f", ".join(categorical_cols))
 
     if df is not None and all_cols:
-        st.title("Analisis Statistik")
+        st.title("📈 Analisis Statistik")
         
         tab_data, tab_basic, tab_reg, tab_anova, tab_manova, tab_dim, tab_class = st.tabs([
-            "Beranda & Data",
-            "Analisis Dasar",
-            "Model Regresi",
-            "ANOVA",
-            "MANOVA",
-            "Reduksi Dimensi",
-            "Klasifikasi & Clustering"
+            "🏠 Beranda & Data", "📊 Analisis Dasar", "📉 Model Regresi",
+            "🧪 ANOVA", "🧬 MANOVA", "📐 Reduksi Dimensi", "🎯 Klasifikasi & Clustering"
         ])
 
-        # -------------------------------------------------------------
-        # TAB 0: RINGKASAN DATA
-        # -------------------------------------------------------------
         with tab_data:
             st.header("Ringkasan dan Tampilan Data")
-            
             col_summ1, col_summ2 = st.columns([1, 2])
             with col_summ1:
-                 st.info("Berikut adalah ringkasan statistik deskriptif dari data yang Anda unggah.")
-            
-            st.subheader("Ringkasan Statistik (Variabel Numerik)")
-            if numeric_cols:
-                st.dataframe(df[numeric_cols].describe(), use_container_width=True)
-            else:
-                st.warning("Tidak ada kolom numerik untuk diringkas.")
-
-            st.subheader("Tampilan Data Mentah (50 Baris Pertama)")
+                 st.info("Ringkasan statistik dari data Anda.")
+            st.subheader("Ringkasan Statistik")
+            if numeric_cols: st.dataframe(df[numeric_cols].describe(), use_container_width=True)
+            st.subheader("Data Mentah")
             st.dataframe(df.head(50), use_container_width=True)
 
-        # -------------------------------------------------------------
-        # TAB 1: ANALISIS DASAR (Univariat & Bivariat)
-        # -------------------------------------------------------------
         with tab_basic:
-            st.header("Analisis Dasar (Univariat & Bivariat)")
+            st.header("Analisis Dasar")
             st.markdown("---")
-
-            if not numeric_cols:
-                 st.error("Analisis ini memerlukan setidaknya satu kolom numerik.")
+            if not numeric_cols: st.error("Perlu data numerik.")
             else:
-                # --- ANALISIS UNIVARIAT ---
-                st.subheader("1. Analisis Univariat (Satu Variabel)")
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown("##### Histogram")
-                    hist_col = st.selectbox("Pilih variabel untuk Histogram:", numeric_cols, key='hist_col')
+                    hist_col = st.selectbox("Histogram:", numeric_cols, key='hist_col')
                     if hist_col:
-                        fig_hist = px.histogram(df, x=hist_col, title=f'Distribusi: {hist_col}', marginal="box", color_discrete_sequence=['#D35400'])
+                        fig_hist = px.histogram(df, x=hist_col, title=f'Distribusi: {hist_col}', marginal="box", color_discrete_sequence=['#E65100'])
                         st.plotly_chart(fig_hist, use_container_width=True)
-
                 with col2:
-                    st.markdown("##### Uji Normalitas")
-                    norm_col = st.selectbox("Pilih variabel untuk Uji Normalitas:", numeric_cols, key='norm_col')
-                    
-                    if st.button("Jalankan Uji Shapiro-Wilk", key='norm_btn'):
+                    norm_col = st.selectbox("Uji Normalitas:", numeric_cols, key='norm_col')
+                    if st.button("Uji Shapiro-Wilk", key='norm_btn'):
                         data_to_test = df[norm_col].dropna()
-                        if len(data_to_test) < 3:
-                            st.error("Data terlalu sedikit (<3).")
+                        if len(data_to_test) < 3: st.error("Data kurang.")
                         else:
                             stat, p_value = stats.shapiro(data_to_test)
                             st.metric("P-Value", f"{p_value:.4f}")
-                            
-                            if p_value > 0.05:
-                                st.success(f"**NORMAL** (P-value > 0.05).")
-                            else:
-                                st.error(f"**TIDAK NORMAL** (P-value <= 0.05).")
+                            if p_value > 0.05: st.success("NORMAL")
+                            else: st.error("TIDAK NORMAL")
                 
                 st.markdown("---")
-
-                # --- ANALISIS BIVARIAT ---
-                st.subheader("2. Analisis Bivariat (Dua Variabel)")
-                
-                # Korelasi
-                st.markdown("#### A. Hubungan Numerik vs Numerik")
                 col3, col4 = st.columns([1, 2])
                 with col3:
-                    bi_x = st.selectbox("Pilih Variabel X:", numeric_cols, key='bi_x')
-                    bi_y = st.selectbox("Pilih Variabel Y:", numeric_cols, key='bi_y')
-                
+                    bi_x = st.selectbox("X:", numeric_cols, key='bi_x')
+                    bi_y = st.selectbox("Y:", numeric_cols, key='bi_y')
                 with col4:
                     if bi_x and bi_y and bi_x != bi_y:
                         data_bi = df[[bi_x, bi_y]].dropna()
-                        fig_scatter = px.scatter(data_bi, x=bi_x, y=bi_y, title=f"{bi_y} vs {bi_x}", trendline="ols", color_discrete_sequence=['#A04000'])
+                        fig_scatter = px.scatter(data_bi, x=bi_x, y=bi_y, trendline="ols", color_discrete_sequence=['#BF360C'])
                         st.plotly_chart(fig_scatter, use_container_width=True)
-                        
                         corr, p_value = stats.pearsonr(data_bi[bi_x], data_bi[bi_y])
-                        st.info(f"Korelasi Pearson: **{corr:.4f}** ({interpret_correlation(corr)}) | P-value: **{p_value:.4f}**")
-                    elif bi_x == bi_y:
-                        st.warning("Variabel X dan Y sama.")
-                
-                st.markdown("---")
+                        st.info(f"Korelasi: {corr:.4f} ({interpret_correlation(corr)})")
 
-                # Uji T
-                st.markdown("#### B. Hubungan Kategorikal vs Numerik (Uji T)")
-                col5, col6 = st.columns([1, 2])
-                with col5:
-                    if not categorical_cols:
-                        st.warning("Butuh data kategorikal.")
-                        cat_col_t, num_col_t = None, None
-                    else:
-                        cat_col_t = st.selectbox("Kelompok (Kat):", categorical_cols, key='bi_cat_t')
-                        num_col_t = st.selectbox("Nilai (Num):", numeric_cols, key='bi_num_t')
-                
-                with col6:
-                    if categorical_cols and cat_col_t and num_col_t:
-                        groups_t = df[cat_col_t].dropna().unique()
-                        if len(groups_t) == 2:
-                            if st.button("Jalankan Uji T", key='t_test_btn'):
-                                fig_box = px.box(df, x=cat_col_t, y=num_col_t, color=cat_col_t, color_discrete_sequence=px.colors.qualitative.Bold)
-                                st.plotly_chart(fig_box, use_container_width=True)
-
-                                group1 = df[df[cat_col_t] == groups_t[0]][num_col_t].dropna()
-                                group2 = df[df[cat_col_t] == groups_t[1]][num_col_t].dropna()
-                                stat, p_value = stats.ttest_ind(group1, group2)
-                                
-                                st.write(f"**Hasil Uji T:** P-value = `{p_value:.4f}`")
-                                if p_value < 0.05:
-                                    st.success("Perbedaan Signifikan (Nyata).")
-                                else:
-                                    st.warning("Perbedaan Tidak Signifikan.")
-                        else:
-                            st.warning(f"Variabel '{cat_col_t}' memiliki {len(groups_t)} kelompok. Uji T hanya untuk 2 kelompok.")
-
-                # Error Bar Plot
-                st.markdown("---")
-                st.markdown("#### C. Plot Rata-rata & Error")
-                col7, col8 = st.columns([1, 2])
-                with col7:
-                    if categorical_cols:
-                        eb_cat = st.selectbox("Kelompok:", categorical_cols, key='eb_cat')
-                        eb_num = st.selectbox("Nilai:", numeric_cols, key='eb_num')
-                        eb_type = st.radio("Error:", ["Standar Error (SE)", "Standar Deviasi (SD)"], key='eb_type')
-                    else:
-                        st.warning("Butuh data kategorikal.")
-                        eb_cat, eb_num = None, None
-
-                with col8:
-                    if eb_cat and eb_num:
-                        if st.button("Buat Grafik Error Bar", key='eb_btn'):
-                            df_agg = df.groupby(eb_cat)[eb_num].agg(['mean', 'std', 'count']).reset_index()
-                            df_agg['se'] = df_agg['std'] / np.sqrt(df_agg['count'])
-                            error_val = df_agg['se'] if eb_type == "Standar Error (SE)" else df_agg['std']
-                            
-                            fig = go.Figure(data=go.Bar(
-                                x=df_agg[eb_cat], y=df_agg['mean'],
-                                error_y=dict(type='data', array=error_val, visible=True),
-                                marker_color='#F39C12' 
-                            ))
-                            fig.update_layout(title=f"Rata-rata {eb_num} per {eb_cat}", yaxis_title=f"Rata-rata {eb_num}")
-                            st.plotly_chart(fig, use_container_width=True)
-
-        # -------------------------------------------------------------
-        # TAB 3: MODEL REGRESI
-        # -------------------------------------------------------------
         with tab_reg:
-            st.header("Model Regresi Linear")
-            st.markdown("---")
-            if not numeric_cols:
-                st.error("Perlu data numerik.")
+            st.header("Regresi Linear")
+            if not numeric_cols: st.error("Perlu data numerik.")
             else:
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    reg_y_list = st.multiselect("Variabel Dependen (Y):", numeric_cols, key='reg_y_list')
+                    reg_y_list = st.multiselect("Y:", numeric_cols, key='reg_y_list')
                     available_x = [col for col in numeric_cols if col not in reg_y_list]
-                    reg_x = st.multiselect("Variabel Independen (X):", available_x, key='reg_x')
+                    reg_x = st.multiselect("X:", available_x, key='reg_x')
 
-                # REGRESI SEDERHANA / POLINOMIAL
                 if len(reg_y_list) == 1 and len(reg_x) == 1:
                     reg_y = reg_y_list[0]
-                    with col1:
-                        poly_degree = st.radio("Tipe:", [1, 2, 3], format_func=lambda x: f"Orde {x}", key='poly_degree')
                     with col2:
                         data_reg = df[[reg_y] + reg_x].dropna()
-                        X = data_reg[[reg_x[0]]]
-                        y = data_reg[reg_y]
-                        
-                        poly = PolynomialFeatures(degree=poly_degree, include_bias=False)
-                        X_poly = poly.fit_transform(X)
-                        model = LinearRegression().fit(X_poly, y)
-                        y_pred = model.predict(X_poly)
-                        r2 = r2_score(y, y_pred)
-
-                        plot_df = pd.DataFrame({'X': X.iloc[:, 0], 'y': y, 'pred': y_pred}).sort_values('X')
-                        fig = px.scatter(plot_df, x='X', y='y', title=f"Regresi Orde {poly_degree}", color_discrete_sequence=['#D35400'])
-                        fig.add_trace(go.Scatter(x=plot_df['X'], y=plot_df['pred'], mode='lines', name='Fit', line=dict(color='#2ECC71', width=3)))
+                        model = LinearRegression().fit(data_reg[[reg_x[0]]], data_reg[reg_y])
+                        y_pred = model.predict(data_reg[[reg_x[0]]])
+                        fig = px.scatter(data_reg, x=reg_x[0], y=reg_y, trendline='ols', color_discrete_sequence=['#E65100'])
                         st.plotly_chart(fig, use_container_width=True)
-                        st.success(f"**R-Squared:** {r2:.4f}")
-
-                # REGRESI BERGANDA
+                        st.success(f"R2 Score: {r2_score(data_reg[reg_y], y_pred):.4f}")
                 elif len(reg_y_list) == 1 and len(reg_x) >= 2:
-                    reg_y = reg_y_list[0]
                     with col2:
-                        data_reg = df[[reg_y] + reg_x].dropna()
+                        data_reg = df[[reg_y_list[0]] + reg_x].dropna()
                         X = sm.add_constant(data_reg[reg_x])
-                        model = sm.OLS(data_reg[reg_y], X).fit()
+                        model = sm.OLS(data_reg[reg_y_list[0]], X).fit()
                         st.write(model.summary())
-                        
-                        st.subheader("Uji Asumsi Klasik")
-                        # VIF
-                        vif = pd.DataFrame()
-                        vif["Var"] = X.columns
-                        vif["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
-                        col_vif, col_hetero = st.columns(2)
-                        with col_vif:
-                            st.write("**1. Multikolinearitas (VIF)**")
-                            st.dataframe(vif[vif["Var"] != 'const'])
-                        with col_hetero:
-                            st.write("**2. Heteroskedastisitas**")
-                            bp_test = het_breuschpagan(model.resid, model.model.exog)
-                            st.write(f"P-value BP: `{bp_test[1]:.4f}`")
-                            if bp_test[1] < 0.05: st.error("Terjadi Heteroskedastisitas")
-                            else: st.success("Aman (Homoskedastisitas)")
 
-                # REGRESI MULTIVARIAT
-                elif len(reg_y_list) >= 2 and len(reg_x) >= 1:
-                    with col2:
-                        data_reg = df[reg_y_list + reg_x].dropna()
-                        model = LinearRegression().fit(data_reg[reg_x], data_reg[reg_y_list])
-                        st.write("**Koefisien (Matrix):**")
-                        st.dataframe(pd.DataFrame(model.coef_, columns=reg_x, index=reg_y_list))
-
-                elif not reg_y_list or not reg_x:
-                    st.info("Pilih variabel Y dan X di samping.")
-
-        # -------------------------------------------------------------
-        # TAB 4: ANOVA
-        # -------------------------------------------------------------
         with tab_anova:
-            st.header("Analysis of Variance (ANOVA)")
-            if not numeric_cols or not categorical_cols:
-                 st.error("Butuh data numerik dan kategorikal.")
-            else:
-                st.subheader("One-Way ANOVA")
+            st.header("ANOVA")
+            if numeric_cols and categorical_cols:
                 c1, c2 = st.columns([1, 2])
                 with c1:
-                    a1_cat = st.selectbox("Kelompok:", categorical_cols, key='a1_cat')
+                    a1_cat = st.selectbox("Grup:", categorical_cols, key='a1_cat')
                     a1_num = st.selectbox("Nilai:", numeric_cols, key='a1_num')
                 with c2:
-                    if a1_cat and a1_num:
-                        if st.button("Proses ANOVA", key='a1_btn'):
-                            clean_cols = {a1_cat: 'C', a1_num: 'N'}
-                            d = df[[a1_cat, a1_num]].dropna().rename(columns=clean_cols)
-                            model = smf.ols('N ~ C(C)', data=d).fit()
-                            anova_table = sm.stats.anova_lm(model, typ=2)
-                            st.dataframe(anova_table)
-                            p = anova_table['PR(>F)'][0]
-                            if p < 0.05: st.success(f"Signifikan (P={p:.4f})")
-                            else: st.warning(f"Tidak Signifikan (P={p:.4f})")
-
-                st.divider()
-                st.subheader("Two-Way ANOVA")
-                c3, c4 = st.columns([1, 2])
-                with c3:
-                    a2_c1 = st.selectbox("Faktor 1:", categorical_cols, key='a2_c1')
-                    a2_c2 = st.selectbox("Faktor 2:", categorical_cols, key='a2_c2')
-                    a2_n = st.selectbox("Nilai Y:", numeric_cols, key='a2_n')
-                with c4:
-                    if a2_c1 and a2_c2 and a2_n and a2_c1 != a2_c2:
-                        if st.button("Proses Two-Way", key='a2_btn'):
-                            d = df[[a2_c1, a2_c2, a2_n]].dropna()
-                            cols = [c.replace(' ','_') for c in d.columns]
-                            d.columns = cols
-                            f = f"{cols[2]} ~ C({cols[0]}) + C({cols[1]}) + C({cols[0]}):C({cols[1]})"
-                            st.write(sm.stats.anova_lm(smf.ols(f, data=d).fit(), typ=2))
-
-        # -------------------------------------------------------------
-        # TAB 5: MANOVA
-        # -------------------------------------------------------------
+                    if st.button("Proses ANOVA", key='a1_btn'):
+                        d = df[[a1_cat, a1_num]].dropna()
+                        d.columns = ['C', 'N']
+                        res = sm.stats.anova_lm(smf.ols('N ~ C(C)', data=d).fit(), typ=2)
+                        st.dataframe(res)
+        
         with tab_manova:
-            st.header("Multivariate ANOVA (MANOVA)")
+            st.header("MANOVA")
             c1, c2 = st.columns([1, 2])
             with c1:
-                m1_cat = st.selectbox("Kelompok (X):", categorical_cols, key='m1_c')
-                m1_nums = st.multiselect("Variabel Dependen (Ys):", numeric_cols, key='m1_n')
+                m1_cat = st.selectbox("Grup (X):", categorical_cols, key='m1_c')
+                m1_nums = st.multiselect("Y (min 2):", numeric_cols, key='m1_n')
             with c2:
-                if m1_cat and len(m1_nums) >= 2:
-                    if st.button("Jalankan MANOVA", key='m1_btn'):
-                        d = df[[m1_cat] + m1_nums].dropna()
-                        cols = [c.replace(' ','_').replace('.','') for c in d.columns]
-                        d.columns = cols
-                        f = f"{' + '.join(cols[1:])} ~ C({cols[0]})"
-                        try:
-                            res = MANOVA.from_formula(f, data=d).mv_test()
-                            st.write(res.summary_frame)
-                        except Exception as e: st.error(f"Error: {e}")
+                if m1_cat and len(m1_nums) >= 2 and st.button("Jalankan MANOVA", key='m1_btn'):
+                    d = df[[m1_cat] + m1_nums].dropna()
+                    cols = [c.replace(' ','_').replace('.','') for c in d.columns]
+                    d.columns = cols
+                    try:
+                        st.write(MANOVA.from_formula(f"{' + '.join(cols[1:])} ~ C({cols[0]})", data=d).mv_test().summary_frame)
+                    except: st.error("Gagal menjalankan MANOVA.")
 
-        # -------------------------------------------------------------
-        # TAB 6: REDUKSI DIMENSI
-        # -------------------------------------------------------------
         with tab_dim:
             st.header("PCA & EFA")
-            if len(numeric_cols) < 2: st.error("Butuh minimal 2 variabel numerik.")
-            else:
+            if len(numeric_cols) >= 2:
                 df_scaled = pd.DataFrame(StandardScaler().fit_transform(df[numeric_cols]), columns=numeric_cols)
-                
-                st.subheader("Principal Component Analysis (PCA)")
                 c1, c2 = st.columns([1, 2])
                 with c1:
-                    pca_vars = st.multiselect("Variabel PCA:", numeric_cols, default=numeric_cols[:4], key='pca_vars')
-                    n_pca = st.slider("Jumlah Komponen:", 1, len(pca_vars), 2, key='n_pca')
+                    pca_vars = st.multiselect("Var PCA:", numeric_cols, default=numeric_cols[:min(4, len(numeric_cols))], key='pca_vars')
                 with c2:
                     if len(pca_vars) >= 2 and st.button("Hitung PCA", key='pca_btn'):
-                        pca = PCA(n_components=n_pca).fit(df_scaled[pca_vars])
-                        # Scree Plot
-                        ev = pca.explained_variance_ratio_
-                        fig = px.bar(x=[f"PC{i+1}" for i in range(len(ev))], y=ev, title="Scree Plot")
-                        st.plotly_chart(fig, use_container_width=True)
-                        st.write("**Loadings:**")
-                        st.dataframe(pd.DataFrame(pca.components_.T, index=pca_vars, columns=[f"PC{i+1}" for i in range(n_pca)]))
+                        pca = PCA().fit(df_scaled[pca_vars])
+                        st.bar_chart(pca.explained_variance_ratio_)
 
-                st.divider()
-                st.subheader("Exploratory Factor Analysis (EFA)")
-                c3, c4 = st.columns([1, 2])
-                with c3:
-                    efa_vars = st.multiselect("Variabel EFA:", numeric_cols, default=numeric_cols[:4], key='efa_vars')
-                    n_efa = st.slider("Faktor:", 1, len(efa_vars)-1, 2, key='n_efa')
-                with c4:
-                    if len(efa_vars) >= 3 and st.button("Hitung EFA", key='efa_btn'):
-                        d_efa = df_scaled[efa_vars]
-                        kmo_val, _ = calculate_kmo(d_efa)
-                        _, bartlett_p = calculate_bartlett_sphericity(d_efa)
-                        
-                        col_kmo, col_bart = st.columns(2)
-                        col_kmo.metric("KMO", f"{kmo_val:.3f}")
-                        col_bart.metric("Bartlett P-val", f"{bartlett_p:.4f}")
-
-                        if kmo_val > 0.5 and bartlett_p < 0.05:
-                            fa = FactorAnalyzer(n_factors=n_efa, rotation='varimax').fit(d_efa)
-                            st.write("**Factor Loadings:**")
-                            st.dataframe(pd.DataFrame(fa.loadings_, index=efa_vars, columns=[f"F{i+1}" for i in range(n_efa)]))
-                        else:
-                            st.warning("Data belum memenuhi syarat EFA (KMO < 0.5 atau Bartlett tidak signifikan).")
-
-        # -------------------------------------------------------------
-        # TAB 7: KLASIFIKASI & CLUSTERING
-        # -------------------------------------------------------------
         with tab_class:
-            st.header("Clustering & Klasifikasi")
-            
-            st.subheader("K-Means Clustering")
+            st.header("Clustering & LDA")
             c1, c2 = st.columns([1, 2])
             with c1:
-                clust_vars = st.multiselect("Variabel:", numeric_cols, default=numeric_cols[:2], key='clust_vars')
-                k = st.slider("Jumlah Cluster (K):", 2, 8, 3, key='k_means')
+                clust_vars = st.multiselect("Var Cluster:", numeric_cols, default=numeric_cols[:min(2, len(numeric_cols))], key='clust_vars')
+                k = st.slider("K:", 2, 8, 3, key='k_means')
             with c2:
-                if len(clust_vars) >= 2 and st.button("Start Clustering", key='clust_btn'):
-                    X = StandardScaler().fit_transform(df[clust_vars].dropna())
-                    labels = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(X)
-                    d_clust = df[clust_vars].dropna()
-                    d_clust['Cluster'] = labels.astype(str)
-                    
-                    fig = px.scatter(d_clust, x=clust_vars[0], y=clust_vars[1], color='Cluster', 
-                                     title=f"K-Means (K={k})", color_discrete_sequence=px.colors.qualitative.Prism)
+                if len(clust_vars) >= 2 and st.button("Start K-Means", key='clust_btn'):
+                    d = df[clust_vars].dropna()
+                    X = StandardScaler().fit_transform(d)
+                    d['Cluster'] = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(X).astype(str)
+                    fig = px.scatter(d, x=clust_vars[0], y=clust_vars[1], color='Cluster', color_discrete_sequence=px.colors.qualitative.Dark24)
                     st.plotly_chart(fig, use_container_width=True)
-
-            st.divider()
-            st.subheader("Linear Discriminant Analysis (LDA)")
-            c3, c4 = st.columns([1, 2])
-            with c3:
-                lda_y = st.selectbox("Target (Kat):", categorical_cols, key='lda_y')
-                lda_x = st.multiselect("Prediktor (Num):", numeric_cols, key='lda_x')
-            with c4:
-                if lda_y and lda_x:
-                    if st.button("Start LDA", key='lda_btn'):
-                        d = df[[lda_y]+lda_x].dropna()
-                        lda = LinearDiscriminantAnalysis()
-                        X_lda = lda.fit_transform(d[lda_x], d[lda_y])
-                        st.success(f"Akurasi: {lda.score(d[lda_x], d[lda_y]):.2%}")
-                        
-                        if X_lda.shape[1] >= 2:
-                            d_plot = pd.DataFrame(X_lda[:, :2], columns=['LD1', 'LD2'])
-                            d_plot['Target'] = d[lda_y].values
-                            fig = px.scatter(d_plot, x='LD1', y='LD2', color='Target', title="LDA Plot")
-                            st.plotly_chart(fig, use_container_width=True)
-                        else:
-                            d_plot = pd.DataFrame(X_lda[:, 0], columns=['LD1'])
-                            d_plot['Target'] = d[lda_y].values
-                            fig = px.histogram(d_plot, x='LD1', color='Target', barmode='overlay')
-                            st.plotly_chart(fig, use_container_width=True)
