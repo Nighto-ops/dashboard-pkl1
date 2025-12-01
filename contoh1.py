@@ -136,12 +136,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =================================================================
-# VISUAL: HEADER IMAGE
+# SETUP GAMBAR (SESUAI REQUEST USER)
 # =================================================================
-# Menggunakan salah satu gambar header batik yang lengkap (misal image_1.png atau image_9.png)
-header_img_path = 'gambar/image_1.png'
-if os.path.exists(header_img_path):
-    st.image(header_img_path, use_container_width=True)
+# Pastikan nama file di folder 'gambar' sesuai persis dengan ini:
+HEADER_IMG = 'gambar/bingkai_1.jpg'  # Gambar Header Batik
+LOGO_IMG   = 'gambar/image_14.png'   # Logo Bulat PKL
+MASCOT_IMG = 'gambar/image_10.png'   # Maskot Gundatala Laptop
+HANDS_IMG  = 'gambar/image_11.png'   # Gambar Tangan
+
+# Tampilkan Header
+if os.path.exists(HEADER_IMG):
+    st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
 # FUNGSI BANTUAN (MAP)
@@ -226,17 +231,14 @@ def interpret_correlation(r):
 # SIDEBAR UTAMA DENGAN BRANDING PKL
 # =================================================================
 with st.sidebar:
-    # Menampilkan Logo PKL dan Maskot di Sidebar secara elegan
-    logo_pkl_path = 'gambar/image_14.png' # Logo bulat
-    mascot_body_path = 'gambar/image_10.png' # Maskot full body
-    
+    # --- LOGO & MASKOT SIDEBAR ---
     col_logo, col_mascot = st.columns([1, 1.5])
-    if os.path.exists(logo_pkl_path):
+    if os.path.exists(LOGO_IMG):
         with col_logo:
-            st.image(logo_pkl_path, use_container_width=True)
-    if os.path.exists(mascot_body_path):
+            st.image(LOGO_IMG, use_container_width=True)
+    if os.path.exists(MASCOT_IMG):
         with col_mascot:
-            st.image(mascot_body_path, use_container_width=True)
+            st.image(MASCOT_IMG, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True) # Spasi
     st.title("Kontrol Panel")
@@ -1349,19 +1351,11 @@ else:
                         st.warning("Silakan pilih 1 variabel target (kategorikal) dan minimal 1 variabel prediktor (numerik).")
 
 # =================================================================
-# VISUAL: FOOTER IMAGES
+# VISUAL: FOOTER IMAGE
 # =================================================================
-st.markdown("<br><br>", unsafe_allow_html=True) # Memberi jarak sebelum footer
-
-# Gambar tangan yang seolah memegang footer
-hands_img_path = 'gambar/image_11.png'
-if os.path.exists(hands_img_path):
-    # Menggunakan kolom untuk mengatur posisi tangan agar di tengah
-    col_h1, col_h2, col_h3 = st.columns([1, 2, 1])
+# Menampilkan tangan di bagian paling bawah
+st.markdown("<br><br>", unsafe_allow_html=True)
+col_h1, col_h2, col_h3 = st.columns([1, 2, 1])
+if os.path.exists(HANDS_IMG):
     with col_h2:
-        st.image(hands_img_path, use_container_width=True)
-
-# Gambar footer bar di bagian paling bawah
-footer_img_path = 'gambar/image_15.png'
-if os.path.exists(footer_img_path):
-    st.image(footer_img_path, use_container_width=True)
+        st.image(HANDS_IMG, use_container_width=True)
