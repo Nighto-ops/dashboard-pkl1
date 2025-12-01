@@ -260,7 +260,8 @@ def load_map_excel_data():
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
         
-# --- PERBAIKAN TOTAL: MENYAMAKAN EXCEL KE SHP (DENGAN SPASI) ---
+        # --- PERBAIKAN TOTAL: MENYAMAKAN EXCEL KE SHP (DENGAN SPASI) ---
+        # Berdasarkan SHP Anda, nama-nama ini harus dipisah dengan spasi
         combined_df['kecamatan'] = combined_df['kecamatan'].replace({
             # KOTA YOGYAKARTA
             'Danurejan': 'Danu Rejan',
@@ -274,10 +275,10 @@ def load_map_excel_data():
             'Tegalrejo': 'Tegal Rejo',
             'Wirobrajan': 'Wiro Brajan',
             
-            # BANTUL
+            # BANTUL (FIX: Bambang Lipuro pakai spasi di SHP)
             'Bambanglipuro': 'Bambang Lipuro',
             
-            # GUNUNG KIDUL
+            # GUNUNG KIDUL (FIX: Gedang Sari pakai spasi di SHP)
             'Gedangsari': 'Gedang Sari',
             'Girisubo': 'Giri Subo',
             'Karangmojo': 'Karang Mojo',
@@ -397,7 +398,7 @@ if uploaded_file is None:
         with c_filter3:
             map_mode = st.radio("3. Mode Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
 
-# RENDER PETA
+        # RENDER PETA
         if selected_kab and selected_kec:
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
@@ -414,7 +415,6 @@ if uploaded_file is None:
             })
             
             # 2. Bersihkan Nama Kecamatan di SHP
-            # HANYA Title Case, JANGAN direplace/dihapus spasinya agar 'Bambang Lipuro' tetap ada spasi
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
 
