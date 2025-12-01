@@ -218,7 +218,7 @@ if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
-# FUNGSI BANTUAN (MAP) - FIXED TYPO WILAYAH
+# FUNGSI BANTUAN (MAP) - FIXED MATCHING SHP (DENGAN SPASI)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -260,25 +260,24 @@ def load_map_excel_data():
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
         
-        # --- PERBAIKAN PENTING UNTUK CHOROPLETH ---
-        # Menyamakan ejaan Excel dengan SHP
+        # --- PERBAIKAN PENTING: MENAMBAHKAN SPASI AGAR COCOK DENGAN SHP ---
         combined_df['kecamatan'] = combined_df['kecamatan'].replace({
-            'Bambang Lipuro': 'Bambanglipuro',  # Spasi dihapus
-            'Gedang Sari': 'Gedangsari',        # Spasi dihapus
-            'Sapto Sari': 'Saptosari',
-            'Karang Mojo': 'Karangmojo',
-            'Giri Subo': 'Girisubo',
-            'Purwo Sari': 'Purwosari',
-            'Gondo Kusuman': 'Gondokusuman',
-            'Danu Rejan': 'Danurejan',
-            'Mer Gangsan': 'Mergangsan',
-            'Gedong Tengen': 'Gedongtengen',
-            'Umbul Harjo': 'Umbulharjo',
-            'Paku Alaman': 'Pakualaman',
-            'Kota Gede': 'Kotagede',
-            'Mantri Jeron': 'Mantrijeron',
-            'Wiro Brajan': 'Wirobrajan',
-            'Tegal Rejo': 'Tegalrejo'
+            'Bambanglipuro': 'Bambang Lipuro',  # Ubah sambung jadi pisah
+            'Gedangsari': 'Gedang Sari',        # Ubah sambung jadi pisah
+            'Saptosari': 'Sapto Sari',
+            'Karangmojo': 'Karang Mojo',
+            'Girisubo': 'Giri Subo',
+            'Purwosari': 'Purwo Sari',
+            'Gondokusuman': 'Gondo Kusuman',
+            'Danurejan': 'Danu Rejan',
+            'Mergangsan': 'Mer Gangsan',
+            'Gedongtengen': 'Gedong Tengen',
+            'Umbulharjo': 'Umbul Harjo',
+            'Pakualaman': 'Paku Alaman',
+            'Kotagede': 'Kota Gede',
+            'Mantrijeron': 'Mantri Jeron',
+            'Wirobrajan': 'Wiro Brajan',
+            'Tegalrejo': 'Tegal Rejo'
         })
         
     return combined_df
@@ -387,7 +386,7 @@ if uploaded_file is None:
         with c_filter3:
             map_mode = st.radio("3. Mode Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
 
-        # RENDER PETA
+# RENDER PETA
         if selected_kab and selected_kec:
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
@@ -404,28 +403,9 @@ if uploaded_file is None:
             })
             
             # 2. Bersihkan Nama Kecamatan di SHP
+            # HANYA Title Case, JANGAN direplace/dihapus spasinya agar 'Bambang Lipuro' tetap ada spasi
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
             gdf_shape['kec_upper'] = gdf_shape['kec_upper'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
-            
-            # --- FIX TYPO / SPASI (SHP -> EXCEL) ---
-            gdf_shape['kec_upper'] = gdf_shape['kec_upper'].replace({
-                'Gedang Sari': 'Gedangsari', # <--- FIX GEDANG SARI
-                'Sapto Sari': 'Saptosari',    
-                'Karang Mojo': 'Karangmojo', 
-                'Giri Subo': 'Girisubo',
-                'Purwo Sari': 'Purwosari',
-                'Gondo Kusuman': 'Gondokusuman',
-                'Gondo Manan': 'Gondomanan',
-                'Danu Rejan': 'Danurejan',
-                'Mer Gangsan': 'Mergangsan',
-                'Gedong Tengen': 'Gedongtengen',
-                'Umbul Harjo': 'Umbulharjo',
-                'Paku Alaman': 'Pakualaman',
-                'Kota Gede': 'Kotagede',
-                'Mantri Jeron': 'Mantrijeron',
-                'Wiro Brajan': 'Wirobrajan',
-                'Tegal Rejo': 'Tegalrejo'
-            })
 
             final_gdf = gdf_shape[
                 (gdf_shape['kab_upper'].isin(selected_kab)) &
@@ -433,13 +413,13 @@ if uploaded_file is None:
             ]
 
             if not final_gdf.empty:
+                # ... (Sisa kode visualisasi peta di bawahnya tetap sama)
                 stats_kec = final_df.groupby('kecamatan').size().reset_index(name='jumlah_lokasi')
                 gdf_viz = final_gdf.merge(stats_kec, left_on='kec_upper', right_on='kecamatan', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
 
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
-                # Menggunakan tiles yang lebih bersih dan elegan (CartoDB Positron)
                 m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
 
                 if map_mode in ["Gabungan", "Choropleth (Wilayah)"]:
@@ -449,7 +429,7 @@ if uploaded_file is None:
                         data=gdf_viz,
                         columns=['kec_upper', 'jumlah_lokasi'],
                         key_on='feature.properties.kec_upper',
-                        fill_color='YlOrRd', # KEMBALI KE WARNA DEFAULT (Kuning-Oranye-Merah)
+                        fill_color='YlOrRd', 
                         fill_opacity=0.7,
                         line_opacity=0.2,
                         legend_name='Jumlah Lokasi (Frekuensi)',
@@ -459,12 +439,11 @@ if uploaded_file is None:
 
                 if map_mode in ["Gabungan", "Heatmap (Titik)"]:
                     heat_data = final_df[['lattitude', 'longitude']].values.tolist()
-                    # Menggunakan gradient warna yang lebih elegan (Emas ke Merah Tua)
                     HeatMap(heat_data, name='Heatmap', radius=15, gradient={0.4: '#FFD700', 0.65: '#FF8C00', 1: '#8B0000'}).add_to(m)
 
                 folium.LayerControl().add_to(m)
                 
-                # Menambahkan frame bayangan di sekitar peta agar terlihat elegan dengan border Terracotta
+                # Frame Peta
                 st.markdown('<div style="box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 3px solid #E07A3F;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -473,7 +452,7 @@ if uploaded_file is None:
                 with st.expander("Lihat Tabel Data Detail untuk Wilayah Terpilih"): 
                     st.dataframe(final_df, use_container_width=True)
             else:
-                st.warning("Wilayah pada file SHP tidak ditemukan berdasarkan filter yang dipilih. Mohon periksa kembali ejaan nama wilayah.")
+                st.warning(f"Wilayah tidak ditemukan di SHP. Pastikan ejaan 'Kabupaten' dan 'Kecamatan' di filter cocok dengan SHP.")
         else:
             st.info("Silakan pilih Kabupaten dan Kecamatan pada panel filter di atas untuk menampilkan visualisasi peta.")
     else:
