@@ -499,7 +499,7 @@ else:
 
     if df is not None and all_cols:
         # Judul Halaman Statistik (H1 Rakkas)
-        st.markdown("<h1>ANALISIS STATISTIK DATA PKL</h1>", unsafe_allow_html=True)
+        st.markdown("<h1>ANALISIS STATISTIK</h1>", unsafe_allow_html=True)
         
         tab_data, tab_basic, tab_reg, tab_anova, tab_manova, tab_dim, tab_class = st.tabs([
             "Beranda & Data",
