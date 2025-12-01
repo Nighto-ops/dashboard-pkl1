@@ -33,11 +33,11 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # =================================================================
-# KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65
+# KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65 (FIXED)
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS BERDASARKAN GRAND DESIGN (UPDATE FIX DARK MODE) ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, & TOOLBAR FIX ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -60,13 +60,26 @@ st.markdown("""
         color: var(--text-dark);
     }
 
-    /* 2. HEADER PADDING */
+    /* 2. HEADER PADDING (Agar judul tidak tertutup) */
     .block-container {
         padding-top: 5rem !important;
         padding-bottom: 2rem;
         max-width: 100%;
     }
 
+    /* --- FIX: MEMUNCULKAN TOMBOL TOOLBAR (TITIK TIGA) --- */
+    [data-testid="stToolbar"] {
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: block !important;
+        z-index: 9999999 !important; /* Layer paling atas */
+        right: 2rem;
+        top: 1rem;
+        background-color: rgba(253, 248, 228, 0.8); /* Background transparan agar terlihat di atas batik */
+        border-radius: 8px;
+        padding: 2px;
+    }
+    
     /* 3. TYPOGRAPHY */
     h1 {
         font-family: 'Rakkas', cursive !important;
@@ -133,17 +146,14 @@ st.markdown("""
     }
 
     /* 7. WIDGET INPUT (MULTISELECT, SELECTBOX) - FIX DARK MODE */
-    /* Memaksa background putih dan border gold */
     .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
         background-color: #FFFFFF !important;
         border-color: var(--comp-gold) !important;
         color: var(--text-dark) !important;
     }
-    /* Memaksa text di dalam widget berwarna gelap */
     .stMultiSelect div[data-baseweb="select"] span {
         color: var(--text-dark) !important;
     }
-    /* Warna Chips (Pilihan yang sudah dipilih) */
     .stMultiSelect div[data-baseweb="tag"] {
         background-color: var(--base-terracotta) !important;
         color: white !important;
@@ -208,7 +218,7 @@ if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
-# FUNGSI BANTUAN (MAP)
+# FUNGSI BANTUAN (MAP) - FIXED TYPO WILAYAH
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -249,6 +259,27 @@ def load_map_excel_data():
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str)
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
+        
+        # --- PERBAIKAN PENTING UNTUK CHOROPLETH ---
+        # Menyamakan ejaan Excel dengan SHP
+        combined_df['kecamatan'] = combined_df['kecamatan'].replace({
+            'Bambang Lipuro': 'Bambanglipuro',  # Spasi dihapus
+            'Gedang Sari': 'Gedangsari',        # Spasi dihapus
+            'Sapto Sari': 'Saptosari',
+            'Karang Mojo': 'Karangmojo',
+            'Giri Subo': 'Girisubo',
+            'Purwo Sari': 'Purwosari',
+            'Gondo Kusuman': 'Gondokusuman',
+            'Danu Rejan': 'Danurejan',
+            'Mer Gangsan': 'Mergangsan',
+            'Gedong Tengen': 'Gedongtengen',
+            'Umbul Harjo': 'Umbulharjo',
+            'Paku Alaman': 'Pakualaman',
+            'Kota Gede': 'Kotagede',
+            'Mantri Jeron': 'Mantrijeron',
+            'Wiro Brajan': 'Wirobrajan',
+            'Tegal Rejo': 'Tegalrejo'
+        })
         
     return combined_df
 
