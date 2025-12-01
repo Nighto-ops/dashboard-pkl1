@@ -218,7 +218,7 @@ if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
-# FUNGSI BANTUAN (MAP) - PERBAIKAN TOTAL NAMA WILAYAH
+# FUNGSI BANTUAN (MAP) - PERBAIKAN NAMA TOTAL (HEATMAP VS CHOROPLETH)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -250,31 +250,31 @@ def load_map_excel_data():
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.title().str.strip()
         combined_df['kabupaten'] = combined_df['kabupaten'].replace({
-            'Gunungkidul': 'Gunung Kidul', # Samakan dengan SHP
+            'Gunungkidul': 'Gunung Kidul', # SHP pakai spasi
             'Yogya': 'Yogyakarta',
             'Yogyakartakarta': 'Yogyakarta'
         })
 
-    # 2. FIX NAMA KECAMATAN (INI KUNCINYA BRE)
+    # 2. FIX NAMA KECAMATAN (MAPPING TOTAL)
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         
-        # MAPPING EXCEL (Kiri) -> SHP (Kanan)
-        # Saya sudah cek satu per satu nama yang biasanya beda format
+        # INI DAFTAR KECAMATAN YANG SERING "BOLONG" DI PETA JOGJA
+        # Kiri: Nama di Excel (Baku) -> Kanan: Nama di SHP (Pakai Spasi)
         combined_df['kecamatan'] = combined_df['kecamatan'].replace({
-            # --- GUNUNG KIDUL (SHP Kamu Banyak Spasinya) ---
+            # --- GUNUNG KIDUL (Paling banyak spasi) ---
+            'Wonosari': 'Wono Sari',      # INI SERING HILANG
             'Gedangsari': 'Gedang Sari',
             'Girisubo': 'Giri Subo',
             'Karangmojo': 'Karang Mojo',
             'Nglipar': 'Ngli Par',
             'Paliyan': 'Pali Yan',
             'Purwosari': 'Purwo Sari',
-            'Rongkop': 'Rong Kop',
+            'Rongkop': 'Rong Kop',        # INI SERING HILANG
             'Saptosari': 'Sapto Sari',
             'Tanjungsari': 'Tanjung Sari',
-            'Wonosari': 'Wono Sari',
             
-            # --- KULON PROGO (SHP Kamu Dipisah) ---
+            # --- KULON PROGO ---
             'Girimulyo': 'Giri Mulyo',
             'Kalibawang': 'Kali Bawang',
             'Samigaluh': 'Sami Galuh',
@@ -282,23 +282,17 @@ def load_map_excel_data():
             # --- BANTUL ---
             'Bambanglipuro': 'Bambang Lipuro',
             
-            # --- KOTA YOGYAKARTA (SHP Kamu Sambung) ---
-            # Excel biasanya sudah sambung (Danurejan), jadi aman. 
-            # Tapi kalau Excel ada typo spasi, kita sambungin lagi:
+            # --- KOTA JOGJA (SHP Kamu Sambung, Jaga-jaga kalau Excel typo spasi) ---
             'Danu Rejan': 'Danurejan',
-            'Gedong Tengen': 'Gedongtengen',
+            'Mantri Jeron': 'Mantrijeron',
             'Gondo Kusuman': 'Gondokusuman',
             'Gondo Manan': 'Gondomanan',
-            'Kota Gede': 'Kotagede',
-            'Mantri Jeron': 'Mantrijeron',
             'Mer Gangsan': 'Mergangsan',
-            'Paku Alaman': 'Pakualaman',
-            'Tegal Rejo': 'Tegalrejo',
-            'Umbul Harjo': 'Umbulharjo',
+            'Pakualaman': 'Pakualaman', # Biasanya aman
             'Wiro Brajan': 'Wirobrajan'
         })
 
-    # 3. AUTO-CORRECT KABUPATEN (Jaga-jaga Mantrijeron nyasar ke Bantul)
+    # 3. AUTO-CORRECT KABUPATEN (Jaga-jaga Mantrijeron masuk Bantul)
     kec_kota_jogja = [
         'Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 
         'Jetis', 'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 
