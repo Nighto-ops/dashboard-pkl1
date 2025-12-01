@@ -33,103 +33,131 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # =================================================================
-# KONFIGURASI HALAMAN & CSS ELEGAN
+# KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65
 # =================================================================
-st.set_page_config(layout="wide", page_title="Riset 5-PKL 65")
+st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS UNTUK TAMPILAN ELEGAN & HANGAT ---
+# --- CUSTOM CSS BERDASARKAN GRAND DESIGN ---
 st.markdown("""
 <style>
-    /* Impor Font Serif yang Elegan untuk Judul dan Sans-Serif untuk Isi */
-    @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&family=Open+Sans:wght@400;600&display=swap');
+    /* IMPORT FONTS SESUAI GRAND DESIGN (Rakkas, dan alternatif dekat untuk TT Bells & Yodnam) */
+    @import url('https://fonts.googleapis.com/css2?family=Rakkas&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
 
-    /* 1. SETUP BACKGROUND (WARNA HANGAT / OLD LACE) */
-    .stApp {
-        background-color: #FDF5E6; /* Warna Krem Antik (Hangat), tidak putih terang */
-        font-family: 'Open Sans', sans-serif;
-        color: #4A3B32; /* Teks Cokelat Tua Gelap (Coffee) agar kontras tapi lembut */
+    /* --- WARNA DARI GRAND DESIGN --- */
+    :root {
+        --base-cream: #FDF8E4;
+        --base-terracotta: #E07A3F;
+        --comp-gold: #F2C94C;
+        --comp-teal: #4F8190;
+        --comp-olive: #739159;
+        --text-dark: #4A3B32; /* Cokelat tua untuk teks isi */
     }
 
-    /* 2. MEMPERBAIKI JUDUL TERTUTUP (PADDING ATAS DITAMBAH) */
+    /* 1. SETUP BACKGROUND UTAMA (BASE CREAM) */
+    .stApp {
+        background-color: var(--base-cream);
+        font-family: 'Poppins', sans-serif; /* Yodnam substitute */
+        color: var(--text-dark);
+    }
+
+    /* 2. MENYESUAIKAN PADDING ATAS UNTUK HEADER BARU */
     .block-container {
-        padding-top: 3rem !important; /* Memberi jarak aman agar judul tidak kepotong */
-        padding-bottom: 5rem;
+        padding-top: 5rem !important; /* Diperbesar agar header image_12 tidak menutupi judul */
+        padding-bottom: 2rem;
         max-width: 100%;
     }
 
-    /* 3. TYPOGRAPHY JUDUL (H1-H4) */
-    h1, h2, h3, h4, .streamlit-expanderHeader {
-        font-family: 'Merriweather', serif !important;
-        color: #8C4818 !important; /* Warna Cokelat Bata/Emas Tua */
-        font-weight: 700 !important;
-        letter-spacing: 0.5px;
-    }
-    h1 { 
-        font-size: 2.8rem !important; 
+    /* 3. TYPOGRAPHY JUDUL (HEADLINE & MAIN FONTS) */
+    /* H1 menggunakan RAKKAS (Headline) */
+    h1 {
+        font-family: 'Rakkas', cursive !important;
+        color: var(--base-terracotta) !important;
+        font-weight: 400 !important;
+        font-size: 3rem !important;
         margin-top: 0.5rem;
         margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    /* H2, H3, H4 menggunakan Playfair Display (TT Bells substitute) */
+    h2, h3, h4, .streamlit-expanderHeader {
+        font-family: 'Playfair Display', serif !important;
+        color: var(--base-terracotta) !important;
+        font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR DESAIN (WARNA LEBIH GELAP DIKIT DARI BG UTAMA) */
+    /* 4. SIDEBAR DESAIN */
     [data-testid="stSidebar"] {
-        background-color: #F5E6D3; /* Krem Sepia / Almond */
-        border-right: 1px solid #DBC4B0;
+        background-color: #FDF1D6; /* Cream sedikit lebih gelap/kuning */
+        border-right: 2px solid var(--base-terracotta);
     }
     [data-testid="stSidebar"] h1 {
-        font-size: 1.5rem !important;
-        color: #5D4037 !important;
+        font-size: 1.8rem !important;
+        color: var(--base-terracotta) !important;
+        text-align: center;
     }
 
-    /* 5. DESAIN TOMBOL (GRADASI EMAS - COKELAT) */
+    /* 5. DESAIN TOMBOL (GRADASI GOLD KE TERRACOTTA) */
     .stButton > button {
-        background: linear-gradient(to bottom, #D4AF37, #AA8C2C) !important; /* Emas Metalik */
-        color: white !important;
+        background: linear-gradient(to right, var(--comp-gold), var(--base-terracotta)) !important;
+        color: var(--base-cream) !important;
         border: none !important;
-        box-shadow: 0 3px 5px rgba(0,0,0,0.1) !important;
-        font-family: 'Merriweather', serif !important;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
+        font-family: 'Poppins', sans-serif !important; /* Sub font */
         font-weight: 600 !important;
-        border-radius: 6px !important;
-        padding: 0.5rem 1.2rem;
-        transition: transform 0.2s;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem;
+        transition: all 0.3s ease;
     }
     .stButton > button:hover {
-        background: linear-gradient(to bottom, #AA8C2C, #8C4818) !important;
-        transform: scale(1.02);
-        color: #fff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.2) !important;
+        background: linear-gradient(to right, var(--base-terracotta), var(--comp-gold)) !important;
     }
 
-    /* 6. TAB MENU STYLE */
+    /* 6. TAB MENU STYLE (Aksen Terracotta & Teal) */
     .stTabs [data-baseweb="tab-list"] {
         background-color: transparent !important;
-        border-bottom: 2px solid #D7CCC8;
+        border-bottom: 2px solid var(--comp-teal);
     }
     .stTabs [data-baseweb="tab"] {
+        font-family: 'Poppins', sans-serif;
         font-weight: 600;
-        color: #795548; /* Cokelat sedang */
+        color: var(--comp-teal); /* Warna Teal saat tidak aktif */
     }
     .stTabs [aria-selected="true"] {
-        color: #BF360C !important; /* Merah Bata saat aktif */
-        border-bottom-color: #BF360C !important;
+        color: var(--base-terracotta) !important; /* Terracotta saat aktif */
+        border-bottom: 3px solid var(--base-terracotta) !important;
     }
 
-    /* 7. WIDGET INPUT (BACKGROUND PUTIH GADING AGAR JELAS) */
-    .stSelectbox > div > div, .stMultiSelect > div > div {
-        background-color: #FFFDF5 !important;
-        border-color: #D7CCC8 !important;
+    /* 7. WIDGET INPUT & SELECTBOX */
+    .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
+        background-color: #FFFFFF !important; /* Tetap putih agar bersih */
+        border-color: var(--comp-gold) !important;
+        color: var(--text-dark);
     }
-
-    /* 8. DATAFRAME & AREA PESAN */
-    div[data-testid="stDataFrame"] {
-        background-color: #FFFFFF; /* Tabel tetap putih agar data jelas */
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #EFEBE9;
+    
+    /* 8. BOX & ALERT STYLING */
+    /* Info box di halaman depan */
+    .welcome-box {
+        background-color: #FFFBF0;
+        padding: 25px;
+        border-left: 6px solid var(--base-terracotta);
+        border-top: 2px solid var(--comp-gold);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        border-radius: 12px;
+        margin-bottom: 25px;
     }
+    /* Streamlit Alerts */
     .stAlert {
-        background-color: #FFF8E1; /* Kuning sangat muda untuk alert */
-        border: 1px solid #FFECB3;
-        color: #5D4037;
+        background-color: #FFFDF8;
+        border: 1px solid var(--comp-gold);
+        color: var(--text-dark);
     }
+    .stSuccess { border-left-color: var(--comp-olive) !important; }
+    .stInfo { border-left-color: var(--comp-teal) !important; }
+    .stWarning { border-left-color: var(--comp-gold) !important; }
+    .stError { border-left-color: #C0392B !important; }
 
     /* 9. SEMBUNYIKAN FOOTER BAWAAN */
     footer {visibility: hidden;}
@@ -138,14 +166,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =================================================================
-# SETUP GAMBAR
+# SETUP GAMBAR (SESUAI GRAND DESIGN & ASET BARU)
 # =================================================================
-HEADER_IMG = 'gambar/bingkai_1.jpg'  
-LOGO_IMG   = 'gambar/image_14.png'   
-MASCOT_IMG = 'gambar/image_10.png'   
-HANDS_IMG  = 'gambar/Full.png'   
+# Menggunakan header full dan footer full yang baru
+HEADER_IMG = 'gambar/image_12.png'  # Header Batik Full Logo
+LOGO_IMG   = 'gambar/image_14.png'  # Logo Bulat untuk Sidebar
+MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
+HANDS_IMG  = 'gambar/image_13.png'  # Gambar Tangan (di atas footer)
+FOOTER_IMG = 'gambar/image_15.png'  # Footer Bar Full Sosmed
 
-# Tampilkan Header (Jika ada)
+# Tampilkan Header di paling atas
 if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
@@ -233,7 +263,8 @@ def interpret_correlation(r):
 # =================================================================
 with st.sidebar:
     # --- LOGO & MASKOT SIDEBAR ---
-    col_logo, col_mascot = st.columns([1, 1.5])
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_logo, col_mascot = st.columns([1, 1.3])
     if os.path.exists(LOGO_IMG):
         with col_logo:
             st.image(LOGO_IMG, use_container_width=True)
@@ -242,8 +273,8 @@ with st.sidebar:
             st.image(MASCOT_IMG, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True) # Spasi
-    st.title("Kontrol Panel")
-    st.markdown("---")
+    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True) # Menggunakan H1 Rakkas
+    st.markdown("---", unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload File Data (Format CSV/Excel)", type=['csv', 'xls', 'xlsx'])
 
 # =================================================================
@@ -252,15 +283,15 @@ with st.sidebar:
 
 # === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
 if uploaded_file is None:
-    # Judul Halaman Utama
-    st.title("Dashboard Sebaran Lokasi PKL 65 - D.I. Yogyakarta")
+    # Judul Halaman Utama (Menggunakan Font RAKKAS dari CSS H1)
+    st.markdown("<h1>DASHBOARD SEBARAN LOKASI PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
     
-    # Pesan Selamat Datang yang Lebih Profesional
+    # Pesan Selamat Datang dengan Styling Baru
     st.markdown("""
-    <div style='background-color: #FFFFFF; padding: 25px; border-left: 6px solid #8C4818; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 25px;'>
-        <h3 style='margin-top:0; color: #8C4818;'>Selamat Datang di Dashboard PKL 65</h3>
-        <p style='font-size: 1.1rem; color: #555;'>Halaman ini menyajikan peta interaktif persebaran lokasi di D.I. Yogyakarta. Visualisasi ini dirancang untuk memberikan gambaran spasial terkait data lapangan.</p>
-        <p style='font-size: 1rem; color: #666; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b> (seperti Uji Regresi, ANOVA, MANOVA, dan Clustering), silakan unggah dataset Anda melalui panel di sisi kiri.</p>
+    <div class="welcome-box">
+        <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
+        <p style='font-size: 1.1rem;'>Halaman ini menyajikan peta interaktif persebaran lokasi di D.I. Yogyakarta. Visualisasi ini dirancang untuk memberikan gambaran spasial terkait data lapangan.</p>
+        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b> (seperti Uji Regresi, ANOVA, MANOVA, dan Clustering), silakan unggah dataset Anda melalui panel di sisi kiri.</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -374,8 +405,8 @@ if uploaded_file is None:
 
                 folium.LayerControl().add_to(m)
                 
-                # Menambahkan frame bayangan di sekitar peta agar terlihat elegan
-                st.markdown('<div style="box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; border: 4px solid #FFFFFF;">', unsafe_allow_html=True)
+                # Menambahkan frame bayangan di sekitar peta agar terlihat elegan dengan border Terracotta
+                st.markdown('<div style="box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 3px solid #E07A3F;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
@@ -414,7 +445,8 @@ else:
             st.sidebar.caption(f", ".join(categorical_cols))
 
     if df is not None and all_cols:
-        st.title("Analisis Statistik Data PKL")
+        # Judul Halaman Statistik (H1 Rakkas)
+        st.markdown("<h1>ANALISIS STATISTIK DATA PKL</h1>", unsafe_allow_html=True)
         
         tab_data, tab_basic, tab_reg, tab_anova, tab_manova, tab_dim, tab_class = st.tabs([
             "Beranda & Data",
@@ -461,9 +493,9 @@ else:
                     st.info("Melihat sebaran frekuensi dari sebuah variabel numerik.")
                     hist_col = st.selectbox("Pilih variabel untuk Histogram:", numeric_cols, key='hist_col')
                     if hist_col:
-                        # Menggunakan warna emas/cokelat yang elegan
-                        fig_hist = px.histogram(df, x=hist_col, title=f'Histogram untuk {hist_col}', marginal="box", color_discrete_sequence=['#CFAF7B'])
-                        fig_hist.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                        # Menggunakan warna Terracotta/Gold
+                        fig_hist = px.histogram(df, x=hist_col, title=f'Histogram untuk {hist_col}', marginal="box", color_discrete_sequence=['#E07A3F'])
+                        fig_hist.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                         st.plotly_chart(fig_hist, use_container_width=True)
 
                 with col2:
@@ -509,9 +541,10 @@ else:
                 with col4:
                     if bi_x and bi_y and bi_x != bi_y:
                         data_bi = df[[bi_x, bi_y]].dropna()
-                        # Menggunakan warna emas/cokelat
-                        fig_scatter = px.scatter(data_bi, x=bi_x, y=bi_y, title=f"Scatter Plot: {bi_y} vs {bi_x}", trendline="ols", color_discrete_sequence=['#A68B5B'])
-                        fig_scatter.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                        # Menggunakan warna Gold/Terracotta
+                        fig_scatter = px.scatter(data_bi, x=bi_x, y=bi_y, title=f"Scatter Plot: {bi_y} vs {bi_x}", trendline="ols", color_discrete_sequence=['#F2C94C'])
+                        fig_scatter.update_traces(marker=dict(color='#E07A3F')) # Marker Terracotta
+                        fig_scatter.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                         st.plotly_chart(fig_scatter, use_container_width=True)
                         
                         st.write("**Uji Korelasi (Pearson)**")
@@ -561,9 +594,9 @@ else:
                         if len(groups_t) == 2:
                             if st.button("Jalankan Uji T", key='t_test_btn'):
                                 st.write("**Uji T (Independent T-Test)**")
-                                # Menggunakan palet warna yang elegan
-                                fig_box = px.box(df, x=cat_col_t, y=num_col_t, title=f"Distribusi {num_col_t} berdasarkan {cat_col_t}", points="all", color=cat_col_t, color_discrete_sequence=px.colors.qualitative.Antique)
-                                fig_box.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                                # Menggunakan palet warna Grand Design (Teal & Terracotta)
+                                fig_box = px.box(df, x=cat_col_t, y=num_col_t, title=f"Distribusi {num_col_t} berdasarkan {cat_col_t}", points="all", color=cat_col_t, color_discrete_sequence=['#4F8190', '#E07A3F'])
+                                fig_box.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                                 st.plotly_chart(fig_box, use_container_width=True)
 
                                 group1 = df[df[cat_col_t] == groups_t[0]][num_col_t].dropna()
@@ -628,8 +661,8 @@ else:
                                 # 4. Buat plot
                                 fig = go.Figure()
                                 
-                                # Warna emas/cokelat untuk plot
-                                plot_color = '#A68B5B'
+                                # Warna Terracotta untuk plot
+                                plot_color = '#E07A3F'
 
                                 if eb_plot_type == "Line Chart":
                                     fig.add_trace(go.Scatter(
@@ -664,7 +697,7 @@ else:
                                     yaxis_title=f"Rata-rata {eb_num}",
                                     plot_bgcolor='rgba(0,0,0,0)', 
                                     paper_bgcolor='rgba(0,0,0,0)',
-                                    font_family="Open Sans"
+                                    font_family="Poppins"
                                 )
                                 st.plotly_chart(fig, use_container_width=True)
 
@@ -726,10 +759,10 @@ else:
                         
                         plot_df = pd.DataFrame({'X': X_simple.iloc[:, 0], 'y_true': y_simple, 'y_pred': y_pred}).sort_values(by='X')
                         
-                        # Warna emas/cokelat untuk plot
-                        fig_poly = px.scatter(plot_df, x='X', y='y_true', title=f"Model Regresi (Derajat {poly_degree})", color_discrete_sequence=['#CFAF7B'])
-                        fig_poly.add_trace(go.Scatter(x=plot_df['X'], y=plot_df['y_pred'], name='Garis Prediksi', line=dict(color='#8C4818', width=3)))
-                        fig_poly.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                        # Warna Gold dan Terracotta
+                        fig_poly = px.scatter(plot_df, x='X', y='y_true', title=f"Model Regresi (Derajat {poly_degree})", color_discrete_sequence=['#F2C94C'])
+                        fig_poly.add_trace(go.Scatter(x=plot_df['X'], y=plot_df['y_pred'], name='Garis Prediksi', line=dict(color='#E07A3F', width=3)))
+                        fig_poly.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                         st.plotly_chart(fig_poly, use_container_width=True)
                         
                         st.write(f"**R-squared:** `{r2:.4f}`")
@@ -861,9 +894,9 @@ else:
                         
                         if len(groups_a1) > 2:
                             if st.button("Jalankan ANOVA One-Way", key='a1_btn'):
-                                # Warna emas/cokelat yang elegan
-                                fig_box_a1 = px.box(df, x=cat_col_anova1, y=num_col_anova1, title=f"Distribusi {num_col_anova1} berdasarkan {cat_col_anova1}", points="all", color=cat_col_anova1, color_discrete_sequence=px.colors.qualitative.Antique)
-                                fig_box_a1.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                                # Warna Grand Design
+                                fig_box_a1 = px.box(df, x=cat_col_anova1, y=num_col_anova1, title=f"Distribusi {num_col_anova1} berdasarkan {cat_col_anova1}", points="all", color=cat_col_anova1, color_discrete_sequence=['#4F8190', '#E07A3F', '#F2C94C', '#739159'])
+                                fig_box_a1.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                                 st.plotly_chart(fig_box_a1, use_container_width=True)
 
                                 df_clean = df[[cat_col_anova1, num_col_anova1]].dropna()
@@ -1120,10 +1153,10 @@ else:
                                     'Komponen': [f'PC{i+1}' for i in range(len(pca.explained_variance_ratio_))],
                                     'Explained Variance': pca.explained_variance_ratio_
                                 })
-                                # Warna emas/cokelat untuk plot
-                                fig_scree = px.bar(scree_data, x='Komponen', y='Explained Variance', title='Scree Plot', color_discrete_sequence=['#CFAF7B'])
-                                fig_scree.add_trace(go.Scatter(x=scree_data['Komponen'], y=scree_data['Explained Variance'].cumsum(), name='Kumulatif', line=dict(color='#8C4818')))
-                                fig_scree.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                                # Warna Grand Design
+                                fig_scree = px.bar(scree_data, x='Komponen', y='Explained Variance', title='Scree Plot', color_discrete_sequence=['#F2C94C'])
+                                fig_scree.add_trace(go.Scatter(x=scree_data['Komponen'], y=scree_data['Explained Variance'].cumsum(), name='Kumulatif', line=dict(color='#E07A3F')))
+                                fig_scree.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                                 st.plotly_chart(fig_scree, use_container_width=True)
                                 
                                 st.write("**Component Loadings (Bobot Variabel)**")
@@ -1251,16 +1284,16 @@ else:
                                 df_clean_clust['Cluster'] = cluster_labels
                                 
                                 st.write(f"**Visualisasi Cluster ({cluster_vars[0]} vs {cluster_vars[1]})**")
-                                # Menggunakan palet warna yang elegan (misal: Antique atau Safe)
+                                # Menggunakan palet warna Grand Design
                                 fig_clust = px.scatter(
                                     df_clean_clust,
                                     x=cluster_vars[0],
                                     y=cluster_vars[1],
                                     color='Cluster',
                                     title=f"Hasil Clustering K-Means (K={n_clusters})",
-                                    color_continuous_scale=px.colors.qualitative.Antique
+                                    color_continuous_scale=['#F2C94C', '#4F8190', '#739159', '#E07A3F']
                                 )
-                                fig_clust.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                                fig_clust.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                                 st.plotly_chart(fig_clust, use_container_width=True)
                                 
                                 st.write("**Pusat Cluster (Cluster Centers)**")
@@ -1326,18 +1359,18 @@ else:
                                     st.write("**Koefisien Diskriminan (Bobot Variabel)**")
                                     st.dataframe(pd.DataFrame(lda.scalings_, index=lda_predictors, columns=[f'LD{i+1}' for i in range(n_components_lda)]))
 
-                                    # Menggunakan palet warna yang elegan
+                                    # Menggunakan palet warna Grand Design
                                     if n_components_lda >= 2:
                                         lda_plot_df = pd.DataFrame(X_lda_transformed, columns=['LD1', 'LD2'])
                                         lda_plot_df['Target'] = y_lda.values
-                                        fig_lda = px.scatter(lda_plot_df, x='LD1', y='LD2', color='Target', title='Plot Fungsi Diskriminan', color_discrete_sequence=px.colors.qualitative.Antique)
-                                        fig_lda.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                                        fig_lda = px.scatter(lda_plot_df, x='LD1', y='LD2', color='Target', title='Plot Fungsi Diskriminan', color_discrete_sequence=['#F2C94C', '#4F8190', '#739159', '#E07A3F'])
+                                        fig_lda.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                                         st.plotly_chart(fig_lda, use_container_width=True)
                                     elif n_components_lda == 1:
                                         lda_plot_df = pd.DataFrame(X_lda_transformed, columns=['LD1'])
                                         lda_plot_df['Target'] = y_lda.values
-                                        fig_lda = px.histogram(lda_plot_df, x='LD1', color='Target', title='Plot Fungsi Diskriminan 1D', marginal='box', color_discrete_sequence=px.colors.qualitative.Antique)
-                                        fig_lda.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Open Sans")
+                                        fig_lda = px.histogram(lda_plot_df, x='LD1', color='Target', title='Plot Fungsi Diskriminan 1D', marginal='box', color_discrete_sequence=['#F2C94C', '#4F8190', '#739159', '#E07A3F'])
+                                        fig_lda.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
                                         st.plotly_chart(fig_lda, use_container_width=True)
                                     
                                     # Interpretasi hasil
@@ -1354,9 +1387,13 @@ else:
 # =================================================================
 # VISUAL: FOOTER IMAGE
 # =================================================================
-# Menampilkan tangan di bagian paling bawah
+# Menampilkan tangan di atas footer bar
 st.markdown("<br><br>", unsafe_allow_html=True)
 col_h1, col_h2, col_h3 = st.columns([1, 2, 1])
 if os.path.exists(HANDS_IMG):
     with col_h2:
         st.image(HANDS_IMG, use_container_width=True)
+
+# Menampilkan footer bar penuh di paling bawah
+if os.path.exists(FOOTER_IMG):
+    st.image(FOOTER_IMG, use_container_width=True)
