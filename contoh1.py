@@ -143,7 +143,7 @@ st.markdown("""
 HEADER_IMG = 'gambar/bingkai_1.jpg'  
 LOGO_IMG   = 'gambar/image_14.png'   
 MASCOT_IMG = 'gambar/image_10.png'   
-HANDS_IMG  = 'gambar/image_11.png'   
+HANDS_IMG  = 'gambar/Full.png'   
 
 # Tampilkan Header (Jika ada)
 if os.path.exists(HEADER_IMG):
@@ -237,9 +237,6 @@ with st.sidebar:
     if os.path.exists(LOGO_IMG):
         with col_logo:
             st.image(LOGO_IMG, use_container_width=True)
-    if os.path.exists(MASCOT_IMG):
-        with col_mascot:
-            st.image(MASCOT_IMG, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True) # Spasi
     st.title("Kontrol Panel")
