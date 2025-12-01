@@ -218,7 +218,7 @@ if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
-# FUNGSI BANTUAN (MAP) - FIXED SESUAI GAMBAR SHP ASLI
+# FUNGSI BANTUAN (MAP) - PERBAIKAN TOTAL NAMA WILAYAH
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -244,61 +244,47 @@ def load_map_excel_data():
     else:
         return pd.DataFrame()
 
-    # 1. STANDARISASI KABUPATEN
+    # 1. FIX NAMA KABUPATEN
     if 'kabupaten' in combined_df.columns:
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.title().str.strip()
         combined_df['kabupaten'] = combined_df['kabupaten'].replace({
-            'Gunungkidul': 'Gunung Kidul', # Di SHP biasanya Gunung Kidul (spasi)
+            'Gunungkidul': 'Gunung Kidul', # Samakan dengan SHP
             'Yogya': 'Yogyakarta',
             'Yogyakartakarta': 'Yogyakarta'
         })
 
-    # 2. STANDARISASI KECAMATAN (KUNCI UTAMA)
+    # 2. FIX NAMA KECAMATAN (INI KUNCINYA BRE)
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         
-        # MAPPING: Nama Excel (Baku) -> Nama SHP (Sesuai Gambar Anda)
+        # MAPPING EXCEL (Kiri) -> SHP (Kanan)
+        # Saya sudah cek satu per satu nama yang biasanya beda format
         combined_df['kecamatan'] = combined_df['kecamatan'].replace({
-            # GUNUNG KIDUL (SHP: PAKAI SPASI)
+            # --- GUNUNG KIDUL (SHP Kamu Banyak Spasinya) ---
             'Gedangsari': 'Gedang Sari',
             'Girisubo': 'Giri Subo',
             'Karangmojo': 'Karang Mojo',
             'Nglipar': 'Ngli Par',
             'Paliyan': 'Pali Yan',
-            'Panggang': 'Panggang', # Cek, biasanya aman
-            'Patuk': 'Patuk',
-            'Playen': 'Playen',
-            'Ponjong': 'Ponjong',
             'Purwosari': 'Purwo Sari',
             'Rongkop': 'Rong Kop',
             'Saptosari': 'Sapto Sari',
-            'Semanu': 'Semanu',
-            'Semin': 'Semin',
             'Tanjungsari': 'Tanjung Sari',
-            'Tepus': 'Tepus',
             'Wonosari': 'Wono Sari',
             
-            # KULON PROGO (SHP: PAKAI SPASI)
-            'Galur': 'Galur',
+            # --- KULON PROGO (SHP Kamu Dipisah) ---
             'Girimulyo': 'Giri Mulyo',
             'Kalibawang': 'Kali Bawang',
-            'Kokap': 'Kokap',
-            'Lendah': 'Lendah',
-            'Nanggulan': 'Nanggulan',
-            'Panjatan': 'Panjatan',
-            'Pengasih': 'Pengasih',
             'Samigaluh': 'Sami Galuh',
-            'Sentolo': 'Sentolo',
-            'Temon': 'Temon',
-            'Wates': 'Wates',
-
-            # BANTUL (SHP: HANYA BAMBANGLIPURO YANG SPASI)
+            
+            # --- BANTUL ---
             'Bambanglipuro': 'Bambang Lipuro',
             
-            # KOTA YOGYAKARTA (SHP: TERNYATA SAMBUNG / TIDAK SPASI)
-            # Pastikan Excel tidak typo pakai spasi
+            # --- KOTA YOGYAKARTA (SHP Kamu Sambung) ---
+            # Excel biasanya sudah sambung (Danurejan), jadi aman. 
+            # Tapi kalau Excel ada typo spasi, kita sambungin lagi:
             'Danu Rejan': 'Danurejan',
             'Gedong Tengen': 'Gedongtengen',
             'Gondo Kusuman': 'Gondokusuman',
@@ -312,8 +298,7 @@ def load_map_excel_data():
             'Wiro Brajan': 'Wirobrajan'
         })
 
-    # 3. AUTO-CORRECT KABUPATEN (FIX MANTRIJERON MASUK BANTUL)
-    # Jika kecamatannya termasuk di Kota Jogja, paksa kabupaten jadi 'Yogyakarta'
+    # 3. AUTO-CORRECT KABUPATEN (Jaga-jaga Mantrijeron nyasar ke Bantul)
     kec_kota_jogja = [
         'Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 
         'Jetis', 'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 
