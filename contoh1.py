@@ -260,24 +260,35 @@ def load_map_excel_data():
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
         
-        # --- PERBAIKAN PENTING: MENAMBAHKAN SPASI AGAR COCOK DENGAN SHP ---
+# --- PERBAIKAN TOTAL: MENYAMAKAN EXCEL KE SHP (DENGAN SPASI) ---
         combined_df['kecamatan'] = combined_df['kecamatan'].replace({
-            'Bambanglipuro': 'Bambang Lipuro',  # Ubah sambung jadi pisah
-            'Gedangsari': 'Gedang Sari',        # Ubah sambung jadi pisah
-            'Saptosari': 'Sapto Sari',
-            'Karangmojo': 'Karang Mojo',
-            'Girisubo': 'Giri Subo',
-            'Purwosari': 'Purwo Sari',
-            'Gondokusuman': 'Gondo Kusuman',
+            # KOTA YOGYAKARTA
             'Danurejan': 'Danu Rejan',
-            'Mergangsan': 'Mer Gangsan',
             'Gedongtengen': 'Gedong Tengen',
-            'Umbulharjo': 'Umbul Harjo',
-            'Pakualaman': 'Paku Alaman',
+            'Gondokusuman': 'Gondo Kusuman',
+            'Gondomanan': 'Gondo Manan',
             'Kotagede': 'Kota Gede',
             'Mantrijeron': 'Mantri Jeron',
+            'Mergangsan': 'Mer Gangsan',
+            'Pakualaman': 'Paku Alaman',
+            'Tegalrejo': 'Tegal Rejo',
             'Wirobrajan': 'Wiro Brajan',
-            'Tegalrejo': 'Tegal Rejo'
+            
+            # BANTUL
+            'Bambanglipuro': 'Bambang Lipuro',
+            
+            # GUNUNG KIDUL
+            'Gedangsari': 'Gedang Sari',
+            'Girisubo': 'Giri Subo',
+            'Karangmojo': 'Karang Mojo',
+            'Purwosari': 'Purwo Sari',
+            'Saptosari': 'Sapto Sari',
+            'Tanjungsari': 'Tanjung Sari',
+            
+            # KULON PROGO
+            'Girimulyo': 'Giri Mulyo',
+            'Kalibawang': 'Kali Bawang',
+            'Samigaluh': 'Sami Galuh'
         })
         
     return combined_df
