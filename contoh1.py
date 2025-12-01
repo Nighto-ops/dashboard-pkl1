@@ -37,10 +37,10 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS BERDASARKAN GRAND DESIGN ---
+# --- CUSTOM CSS BERDASARKAN GRAND DESIGN (UPDATE FIX DARK MODE) ---
 st.markdown("""
 <style>
-    /* IMPORT FONTS SESUAI GRAND DESIGN (Rakkas, dan alternatif dekat untuk TT Bells & Yodnam) */
+    /* IMPORT FONTS */
     @import url('https://fonts.googleapis.com/css2?family=Rakkas&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
 
     /* --- WARNA DARI GRAND DESIGN --- */
@@ -50,25 +50,24 @@ st.markdown("""
         --comp-gold: #F2C94C;
         --comp-teal: #4F8190;
         --comp-olive: #739159;
-        --text-dark: #4A3B32; /* Cokelat tua untuk teks isi */
+        --text-dark: #4A3B32; 
     }
 
-    /* 1. SETUP BACKGROUND UTAMA (BASE CREAM) */
+    /* 1. SETUP BACKGROUND UTAMA */
     .stApp {
         background-color: var(--base-cream);
-        font-family: 'Poppins', sans-serif; /* Yodnam substitute */
+        font-family: 'Poppins', sans-serif;
         color: var(--text-dark);
     }
 
-    /* 2. MENYESUAIKAN PADDING ATAS UNTUK HEADER BARU */
+    /* 2. HEADER PADDING */
     .block-container {
-        padding-top: 5rem !important; /* Diperbesar agar header image_12 tidak menutupi judul */
+        padding-top: 5rem !important;
         padding-bottom: 2rem;
         max-width: 100%;
     }
 
-    /* 3. TYPOGRAPHY JUDUL (HEADLINE & MAIN FONTS) */
-    /* H1 menggunakan RAKKAS (Headline) */
+    /* 3. TYPOGRAPHY */
     h1 {
         font-family: 'Rakkas', cursive !important;
         color: var(--base-terracotta) !important;
@@ -79,31 +78,34 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    /* H2, H3, H4 menggunakan Playfair Display (TT Bells substitute) */
     h2, h3, h4, .streamlit-expanderHeader {
         font-family: 'Playfair Display', serif !important;
         color: var(--base-terracotta) !important;
         font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR DESAIN */
-    [data-testid="stSidebar"] {
-        background-color: #FDF1D6; /* Cream sedikit lebih gelap/kuning */
+    /* 4. SIDEBAR */
+    section[data-testid="stSidebar"] {
+        background-color: #FDF1D6;
         border-right: 2px solid var(--base-terracotta);
     }
-    [data-testid="stSidebar"] h1 {
+    section[data-testid="stSidebar"] h1 {
         font-size: 1.8rem !important;
         color: var(--base-terracotta) !important;
         text-align: center;
     }
+    /* Memaksa teks sidebar tetap gelap meski user dark mode */
+    section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
+        color: var(--text-dark) !important;
+    }
 
-    /* 5. DESAIN TOMBOL (GRADASI GOLD KE TERRACOTTA) */
+    /* 5. TOMBOL */
     .stButton > button {
         background: linear-gradient(to right, var(--comp-gold), var(--base-terracotta)) !important;
         color: var(--base-cream) !important;
         border: none !important;
         box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
-        font-family: 'Poppins', sans-serif !important; /* Sub font */
+        font-family: 'Poppins', sans-serif !important;
         font-weight: 600 !important;
         border-radius: 8px !important;
         padding: 0.6rem 1.2rem;
@@ -115,7 +117,7 @@ st.markdown("""
         background: linear-gradient(to right, var(--base-terracotta), var(--comp-gold)) !important;
     }
 
-    /* 6. TAB MENU STYLE (Aksen Terracotta & Teal) */
+    /* 6. TAB MENU STYLE */
     .stTabs [data-baseweb="tab-list"] {
         background-color: transparent !important;
         border-bottom: 2px solid var(--comp-teal);
@@ -123,22 +125,45 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         font-family: 'Poppins', sans-serif;
         font-weight: 600;
-        color: var(--comp-teal); /* Warna Teal saat tidak aktif */
+        color: var(--comp-teal);
     }
     .stTabs [aria-selected="true"] {
-        color: var(--base-terracotta) !important; /* Terracotta saat aktif */
+        color: var(--base-terracotta) !important;
         border-bottom: 3px solid var(--base-terracotta) !important;
     }
 
-    /* 7. WIDGET INPUT & SELECTBOX */
+    /* 7. WIDGET INPUT (MULTISELECT, SELECTBOX) - FIX DARK MODE */
+    /* Memaksa background putih dan border gold */
     .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
-        background-color: #FFFFFF !important; /* Tetap putih agar bersih */
+        background-color: #FFFFFF !important;
         border-color: var(--comp-gold) !important;
-        color: var(--text-dark);
+        color: var(--text-dark) !important;
+    }
+    /* Memaksa text di dalam widget berwarna gelap */
+    .stMultiSelect div[data-baseweb="select"] span {
+        color: var(--text-dark) !important;
+    }
+    /* Warna Chips (Pilihan yang sudah dipilih) */
+    .stMultiSelect div[data-baseweb="tag"] {
+        background-color: var(--base-terracotta) !important;
+        color: white !important;
     }
     
-    /* 8. BOX & ALERT STYLING */
-    /* Info box di halaman depan */
+    /* 8. FILE UPLOADER - FIX DARK MODE */
+    div[data-testid="stFileUploader"] {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px dashed var(--base-terracotta);
+    }
+    div[data-testid="stFileUploader"] section {
+        background-color: #FDF1D6 !important; /* Warna krem muda */
+    }
+    div[data-testid="stFileUploader"] span {
+        color: var(--text-dark) !important;
+    }
+    
+    /* 9. BOX & ALERT STYLING */
     .welcome-box {
         background-color: #FFFBF0;
         padding: 25px;
@@ -148,7 +173,6 @@ st.markdown("""
         border-radius: 12px;
         margin-bottom: 25px;
     }
-    /* Streamlit Alerts */
     .stAlert {
         background-color: #FFFDF8;
         border: 1px solid var(--comp-gold);
@@ -159,7 +183,11 @@ st.markdown("""
     .stWarning { border-left-color: var(--comp-gold) !important; }
     .stError { border-left-color: #C0392B !important; }
 
-    /* 9. SEMBUNYIKAN FOOTER BAWAAN */
+    /* 10. TEXT COLOR GLOBAL override */
+    p, label, span, div {
+        color: var(--text-dark);
+    }
+
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
 </style>
