@@ -35,7 +35,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 # KONFIGURASI HALAMAN & CSS ELEGAN
 # =================================================================
-st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
+st.set_page_config(layout="wide", page_title="Riset 5-PKL 65")
 
 # --- CUSTOM CSS UNTUK TAMPILAN ELEGAN & HANGAT ---
 st.markdown("""
