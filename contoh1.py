@@ -237,6 +237,9 @@ with st.sidebar:
     if os.path.exists(LOGO_IMG):
         with col_logo:
             st.image(LOGO_IMG, use_container_width=True)
+    if os.path.exists(MASCOT_IMG):
+        with col_mascot:
+            st.image(MASCOT_IMG, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True) # Spasi
     st.title("Kontrol Panel")
