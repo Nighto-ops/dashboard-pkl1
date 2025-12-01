@@ -218,7 +218,7 @@ if os.path.exists(HEADER_IMG):
     st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
-# FUNGSI BANTUAN (MAP) - FIXED MATCHING SHP (DENGAN SPASI)
+# FUNGSI BANTUAN (MAP) - FIXED SESUAI GAMBAR SHP ASLI
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -244,54 +244,85 @@ def load_map_excel_data():
     else:
         return pd.DataFrame()
 
-    # FIX TYPO DI EXCEL
+    # 1. STANDARISASI KABUPATEN
     if 'kabupaten' in combined_df.columns:
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
         combined_df['kabupaten'] = combined_df['kabupaten'].str.title().str.strip()
         combined_df['kabupaten'] = combined_df['kabupaten'].replace({
-            'Gunungkidul': 'Gunung Kidul',
+            'Gunungkidul': 'Gunung Kidul', # Di SHP biasanya Gunung Kidul (spasi)
             'Yogya': 'Yogyakarta',
             'Yogyakartakarta': 'Yogyakarta'
         })
 
+    # 2. STANDARISASI KECAMATAN (KUNCI UTAMA)
     if 'kecamatan' in combined_df.columns:
-        combined_df['kecamatan'] = combined_df['kecamatan'].astype(str)
-        combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
-        combined_df['kecamatan'] = combined_df['kecamatan'].str.title().str.strip()
+        combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         
-        # --- PERBAIKAN TOTAL: MENYAMAKAN EXCEL KE SHP (DENGAN SPASI) ---
-        # Berdasarkan SHP Anda, nama-nama ini harus dipisah dengan spasi
+        # MAPPING: Nama Excel (Baku) -> Nama SHP (Sesuai Gambar Anda)
         combined_df['kecamatan'] = combined_df['kecamatan'].replace({
-            # KOTA YOGYAKARTA
-            'Danurejan': 'Danu Rejan',
-            'Gedongtengen': 'Gedong Tengen',
-            'Gondokusuman': 'Gondo Kusuman',
-            'Gondomanan': 'Gondo Manan',
-            'Kotagede': 'Kota Gede',
-            'Mantrijeron': 'Mantri Jeron',
-            'Mergangsan': 'Mer Gangsan',
-            'Pakualaman': 'Paku Alaman',
-            'Tegalrejo': 'Tegal Rejo',
-            'Wirobrajan': 'Wiro Brajan',
-            
-            # BANTUL (FIX: Bambang Lipuro pakai spasi di SHP)
-            'Bambanglipuro': 'Bambang Lipuro',
-            
-            # GUNUNG KIDUL (FIX: Gedang Sari pakai spasi di SHP)
+            # GUNUNG KIDUL (SHP: PAKAI SPASI)
             'Gedangsari': 'Gedang Sari',
             'Girisubo': 'Giri Subo',
             'Karangmojo': 'Karang Mojo',
+            'Nglipar': 'Ngli Par',
+            'Paliyan': 'Pali Yan',
+            'Panggang': 'Panggang', # Cek, biasanya aman
+            'Patuk': 'Patuk',
+            'Playen': 'Playen',
+            'Ponjong': 'Ponjong',
             'Purwosari': 'Purwo Sari',
+            'Rongkop': 'Rong Kop',
             'Saptosari': 'Sapto Sari',
+            'Semanu': 'Semanu',
+            'Semin': 'Semin',
             'Tanjungsari': 'Tanjung Sari',
+            'Tepus': 'Tepus',
+            'Wonosari': 'Wono Sari',
             
-            # KULON PROGO
+            # KULON PROGO (SHP: PAKAI SPASI)
+            'Galur': 'Galur',
             'Girimulyo': 'Giri Mulyo',
             'Kalibawang': 'Kali Bawang',
-            'Samigaluh': 'Sami Galuh'
+            'Kokap': 'Kokap',
+            'Lendah': 'Lendah',
+            'Nanggulan': 'Nanggulan',
+            'Panjatan': 'Panjatan',
+            'Pengasih': 'Pengasih',
+            'Samigaluh': 'Sami Galuh',
+            'Sentolo': 'Sentolo',
+            'Temon': 'Temon',
+            'Wates': 'Wates',
+
+            # BANTUL (SHP: HANYA BAMBANGLIPURO YANG SPASI)
+            'Bambanglipuro': 'Bambang Lipuro',
+            
+            # KOTA YOGYAKARTA (SHP: TERNYATA SAMBUNG / TIDAK SPASI)
+            # Pastikan Excel tidak typo pakai spasi
+            'Danu Rejan': 'Danurejan',
+            'Gedong Tengen': 'Gedongtengen',
+            'Gondo Kusuman': 'Gondokusuman',
+            'Gondo Manan': 'Gondomanan',
+            'Kota Gede': 'Kotagede',
+            'Mantri Jeron': 'Mantrijeron',
+            'Mer Gangsan': 'Mergangsan',
+            'Paku Alaman': 'Pakualaman',
+            'Tegal Rejo': 'Tegalrejo',
+            'Umbul Harjo': 'Umbulharjo',
+            'Wiro Brajan': 'Wirobrajan'
         })
-        
+
+    # 3. AUTO-CORRECT KABUPATEN (FIX MANTRIJERON MASUK BANTUL)
+    # Jika kecamatannya termasuk di Kota Jogja, paksa kabupaten jadi 'Yogyakarta'
+    kec_kota_jogja = [
+        'Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 
+        'Jetis', 'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 
+        'Ngampilan', 'Pakualaman', 'Tegalrejo', 'Umbulharjo', 'Wirobrajan'
+    ]
+    
+    if 'kabupaten' in combined_df.columns and 'kecamatan' in combined_df.columns:
+        combined_df.loc[combined_df['kecamatan'].isin(kec_kota_jogja), 'kabupaten'] = 'Yogyakarta'
+
     return combined_df
 
 @st.cache_data
@@ -398,7 +429,7 @@ if uploaded_file is None:
         with c_filter3:
             map_mode = st.radio("3. Mode Tampilan Peta:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True)
 
-        # RENDER PETA
+# RENDER PETA
         if selected_kab and selected_kec:
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
@@ -409,61 +440,75 @@ if uploaded_file is None:
             gdf_shape['kab_upper'] = gdf_shape[SHP_COL_KAB].astype(str).str.title().str.strip()
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
             gdf_shape['kab_upper'] = gdf_shape['kab_upper'].replace({
-                'Gunungkidul': 'Gunung Kidul',
+                'Gunungkidul': 'Gunung Kidul', # Samakan dengan Excel
                 'Yogya': 'Yogyakarta',
                 'Yogyakartakarta': 'Yogyakarta'
             })
             
             # 2. Bersihkan Nama Kecamatan di SHP
+            # PENTING: JANGAN DI-REPLACE LAGI. 
+            # Biarkan apa adanya (Title Case) agar sesuai dengan gambar SHP yang Anda kirim.
             gdf_shape['kec_upper'] = gdf_shape[SHP_COL_KEC].astype(str).str.title().str.strip()
-            gdf_shape['kec_upper'] = gdf_shape['kec_upper'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
 
+            # Filter SHP
             final_gdf = gdf_shape[
                 (gdf_shape['kab_upper'].isin(selected_kab)) &
                 (gdf_shape['kec_upper'].isin(selected_kec))
             ]
 
             if not final_gdf.empty:
-                # ... (Sisa kode visualisasi peta di bawahnya tetap sama)
                 stats_kec = final_df.groupby('kecamatan').size().reset_index(name='jumlah_lokasi')
+                
+                # Merge Data Excel ke SHP
                 gdf_viz = final_gdf.merge(stats_kec, left_on='kec_upper', right_on='kecamatan', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
 
+                # Setup Peta
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
                 m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
 
+                # Layer Choropleth
                 if map_mode in ["Gabungan", "Choropleth (Wilayah)"]:
                     cp = folium.Choropleth(
                         geo_data=gdf_viz,
                         name='Kepadatan Wilayah',
                         data=gdf_viz,
                         columns=['kec_upper', 'jumlah_lokasi'],
-                        key_on='feature.properties.kec_upper',
+                        key_on='feature.properties.kec_upper', # Pastikan ini sesuai kolom dummy kita
                         fill_color='YlOrRd', 
                         fill_opacity=0.7,
                         line_opacity=0.2,
                         legend_name='Jumlah Lokasi (Frekuensi)',
                         highlight=True
                     ).add_to(m)
-                    folium.GeoJsonTooltip(fields=['kec_upper', 'jumlah_lokasi'], aliases=['Kecamatan:', 'Jumlah Data:'], localize=True).add_to(cp.geojson)
+                    
+                    # Tooltip Peta
+                    folium.GeoJsonTooltip(
+                        fields=['kec_upper', 'jumlah_lokasi'], 
+                        aliases=['Kecamatan:', 'Jumlah Data:'], 
+                        localize=True
+                    ).add_to(cp.geojson)
 
+                # Layer Heatmap
                 if map_mode in ["Gabungan", "Heatmap (Titik)"]:
                     heat_data = final_df[['lattitude', 'longitude']].values.tolist()
                     HeatMap(heat_data, name='Heatmap', radius=15, gradient={0.4: '#FFD700', 0.65: '#FF8C00', 1: '#8B0000'}).add_to(m)
 
                 folium.LayerControl().add_to(m)
                 
-                # Frame Peta
+                # Frame Peta Elegan
                 st.markdown('<div style="box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 3px solid #E07A3F;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
+                # Tabel Detail
                 st.markdown("<br>", unsafe_allow_html=True)
                 with st.expander("Lihat Tabel Data Detail untuk Wilayah Terpilih"): 
                     st.dataframe(final_df, use_container_width=True)
             else:
-                st.warning(f"Wilayah tidak ditemukan di SHP. Pastikan ejaan 'Kabupaten' dan 'Kecamatan' di filter cocok dengan SHP.")
+                st.warning("Wilayah SHP tidak ditemukan. Kemungkinan filter Kabupaten/Kecamatan tidak cocok dengan data SHP.")
+                st.write("Nama Kabupaten di SHP (Filtered):", gdf_shape[gdf_shape['kab_upper'].isin(selected_kab)]['kab_upper'].unique())
         else:
             st.info("Silakan pilih Kabupaten dan Kecamatan pada panel filter di atas untuk menampilkan visualisasi peta.")
     else:
