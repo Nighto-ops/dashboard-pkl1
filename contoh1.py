@@ -60,13 +60,6 @@ st.markdown("""
         color: var(--text-dark);
     }
 
-    /* 2. HEADER PADDING (Agar judul tidak tertutup) */
-    .block-container {
-        padding-top: 5rem !important;
-        padding-bottom: 2rem;
-        max-width: 100%;
-    }
-
     /* --- FIX: MEMUNCULKAN TOMBOL TOOLBAR (TITIK TIGA) --- */
     [data-testid="stToolbar"] {
         visibility: visible !important;
