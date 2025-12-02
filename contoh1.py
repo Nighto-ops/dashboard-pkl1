@@ -60,18 +60,13 @@ st.markdown("""
         color: var(--text-dark);
     }
 
-    /* --- FIX: MEMUNCULKAN TOMBOL TOOLBAR (TITIK TIGA) --- */
-    [data-testid="stToolbar"] {
-        visibility: visible !important;
-        opacity: 1 !important;
-        display: block !important;
-        z-index: 9999999 !important; /* Layer paling atas */
-        right: 2rem;
-        top: 1rem;
-        background-color: rgba(253, 248, 228, 0.8); /* Background transparan agar terlihat di atas batik */
-        border-radius: 8px;
-        padding: 2px;
+    /* 2. HEADER PADDING (Agar judul tidak tertutup) */
+    .block-container {
+        padding-top: 5rem !important;
+        padding-bottom: 2rem;
+        max-width: 100%;
     }
+
     
     /* 3. TYPOGRAPHY */
     h1 {
