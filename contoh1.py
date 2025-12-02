@@ -33,11 +33,11 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
 # =================================================================
-# KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65 (FIXED)
+# KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65 
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, & TOOLBAR FIX ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, & TOOLBAR ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -197,9 +197,6 @@ st.markdown("""
     p, label, span, div {
         color: var(--text-dark);
     }
-
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -207,15 +204,9 @@ st.markdown("""
 # SETUP GAMBAR (SESUAI GRAND DESIGN & ASET BARU)
 # =================================================================
 # Menggunakan header full dan footer full yang baru
-HEADER_IMG = 'gambar/image_12.png'  # Header Batik Full Logo
 LOGO_IMG   = 'gambar/image_14.png'  # Logo Bulat untuk Sidebar
 MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
-HANDS_IMG  = 'gambar/image_13.png'  # Gambar Tangan (di atas footer)
-FOOTER_IMG = 'gambar/image_15.png'  # Footer Bar Full Sosmed
 
-# Tampilkan Header di paling atas
-if os.path.exists(HEADER_IMG):
-    st.image(HEADER_IMG, use_container_width=True)
 
 # =================================================================
 # FUNGSI BANTUAN (MAP) - SOLUSI ANTI-RIBET (HAPUS SPASI)
@@ -1436,17 +1427,3 @@ else:
                                 st.error(f"Error menjalankan LDA: {e}")
                     elif categorical_cols:
                         st.warning("Silakan pilih 1 variabel target (kategorikal) dan minimal 1 variabel prediktor (numerik).")
-
-# =================================================================
-# VISUAL: FOOTER IMAGE
-# =================================================================
-# Menampilkan tangan di atas footer bar
-st.markdown("<br><br>", unsafe_allow_html=True)
-col_h1, col_h2, col_h3 = st.columns([1, 2, 1])
-if os.path.exists(HANDS_IMG):
-    with col_h2:
-        st.image(HANDS_IMG, use_container_width=True)
-
-# Menampilkan footer bar penuh di paling bawah
-if os.path.exists(FOOTER_IMG):
-    st.image(FOOTER_IMG, use_container_width=True)
