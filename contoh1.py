@@ -38,7 +38,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
 # --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR ---
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (FIXED SIDEBAR) ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (NEW SIDEBAR COLOR) ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -46,12 +46,16 @@ st.markdown("""
 
     /* --- WARNA DARI GRAND DESIGN --- */
     :root {
-        --base-cream: #FDF8E4;
-        --base-terracotta: #E07A3F;
+        --base-cream: #FDF8E4;       /* Warna Background Utama */
+        --base-terracotta: #E07A3F;  /* Warna Aksen Utama */
         --comp-gold: #F2C94C;
         --comp-teal: #4F8190;
         --comp-olive: #739159;
         --text-dark: #4A3B32; 
+        
+        /* WARNA BARU UNTUK SIDEBAR (Pilih salah satu) */
+        --sidebar-bg: #FFFFFF;       /* Opsi: Putih Bersih (Paling Elegan & Kontras) */
+        /* --sidebar-bg: #F0F6F7; */ /* Alternatif: Teal Sangat Pucat (Kalau mau nuansa dingin) */
     }
 
     /* 1. SETUP BACKGROUND UTAMA */
@@ -67,7 +71,7 @@ st.markdown("""
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         height: 4rem !important;
-        z-index: 999990 !important; /* Di bawah toolbar tapi di atas konten */
+        z-index: 999990 !important;
     }
 
     /* --- TOOLBAR (TOMBOL SETTING) --- */
@@ -87,7 +91,7 @@ st.markdown("""
 
     /* 2. HEADER PADDING (KONTEN UTAMA) */
     .block-container {
-        padding-top: 6rem !important; /* Jarak agar konten tidak ketutup Navbar */
+        padding-top: 6rem !important; 
         padding-bottom: 2rem;
         max-width: 100%;
     }
@@ -109,13 +113,18 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR (PERBAIKAN DI SINI) */
+    /* 4. SIDEBAR (WARNA BARU) */
     section[data-testid="stSidebar"] {
-        background-color: #FDF1D6;
-        border-right: 2px solid var(--base-terracotta);
-        top: 0 !important; /* Paksa menempel ke atas */
-        height: 100vh !important; /* Full tinggi layar */
-        padding-top: 4rem !important; /* Memberi jarak dalam agar Logo tidak ketutup Navbar */
+        background-color: var(--sidebar-bg); /* Menggunakan warna Putih/Baru */
+        border-right: 3px solid var(--base-terracotta); /* Garis pemisah dipertebal */
+        
+        /* Agar tidak ketutup navbar tapi full height */
+        top: 0 !important; 
+        height: 100vh !important;
+        padding-top: 4rem !important; 
+        
+        /* Tambahan Shadow agar terlihat timbul */
+        box-shadow: 4px 0 10px rgba(0,0,0,0.05);
     }
     section[data-testid="stSidebar"] h1 {
         font-size: 1.8rem !important;
@@ -130,7 +139,7 @@ st.markdown("""
     /* 5. TOMBOL */
     .stButton > button {
         background: linear-gradient(to right, var(--comp-gold), var(--base-terracotta)) !important;
-        color: var(--base-cream) !important;
+        color: #FFF !important; /* Teks Putih agar kontras */
         border: none !important;
         box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
         font-family: 'Poppins', sans-serif !important;
@@ -190,18 +199,19 @@ st.markdown("""
     
     /* 9. BOX & ALERT STYLING */
     .welcome-box {
-        background-color: #FFFBF0;
+        background-color: #FFFFFF; /* Ubah jadi Putih agar kontras dgn background cream */
         padding: 25px;
         border-left: 6px solid var(--base-terracotta);
         border-top: 2px solid var(--comp-gold);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         border-radius: 12px;
         margin-bottom: 25px;
     }
     .stAlert {
-        background-color: #FFFDF8;
+        background-color: #FFFFFF;
         border: 1px solid var(--comp-gold);
         color: var(--text-dark);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     .stSuccess { border-left-color: var(--comp-olive) !important; }
     .stInfo { border-left-color: var(--comp-teal) !important; }
