@@ -67,7 +67,6 @@ st.markdown("""
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         height: 3.5rem !important;
-        z-index: 999990 !important;
     }
 
     /* --- TOOLBAR --- */
