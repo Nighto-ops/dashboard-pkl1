@@ -1,4 +1,3 @@
-import base64
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -33,122 +32,172 @@ from statsmodels.multivariate.manova import MANOVA
 from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
-# --- FUNGSI BANTUAN: UBAH GAMBAR JADI BASE64 (UNTUK NAVBAR) ---
-def get_img_as_base64(file):
-    try:
-        with open(file, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except:
-        return ""
-
-# SETUP PATH GAMBAR
-IMG_BPS  = 'gambar/bps.png'   # Pastikan file ini ada
-IMG_STIS = 'gambar/stis.png'  # Pastikan file ini ada
-IMG_PKL  = 'gambar/image_14.png'   # Logo PKL
-
-FULL_IMG   = 'gambar/Full.jpg'        
-MASCOT_IMG = 'gambar/image_10.png' # Maskot Sidebar
-
-# Convert 3 Logo Navbar ke Base64
-b64_bps  = get_img_as_base64(IMG_BPS)
-b64_stis = get_img_as_base64(IMG_STIS)
-b64_pkl  = get_img_as_base64(IMG_PKL)
-
 # =================================================================
 # KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65 
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS & INJECT NAVBAR HTML ---
-st.markdown(f"""
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (SIDEBAR NAIK) ---
+st.markdown("""
 <style>
     /* IMPORT FONTS */
     @import url('https://fonts.googleapis.com/css2?family=Rakkas&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
 
-    /* WARNA GRAND DESIGN */
-    :root {{
+    /* --- WARNA DARI GRAND DESIGN --- */
+    :root {
         --base-cream: #FDF8E4;
         --base-terracotta: #E07A3F;
         --comp-gold: #F2C94C;
         --comp-teal: #4F8190;
+        --comp-olive: #739159;
         --text-dark: #4A3B32; 
         --sidebar-bg: #FFFFFF;       
-    }}
+    }
 
-    .stApp {{
+    /* 1. SETUP BACKGROUND UTAMA */
+    .stApp {
         background-color: var(--base-cream);
         font-family: 'Poppins', sans-serif;
         color: var(--text-dark);
-    }}
+    }
 
-    /* --- CUSTOM NAVBAR (3 LOGO DI TENGAH) --- */
-    .custom-navbar {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 5rem;
-        background-color: rgba(253, 248, 228, 0.98);
+    /* --- NAVBAR / HEADER ATAS --- */
+    header[data-testid="stHeader"] {
+        background-color: rgba(253, 248, 228, 0.95) !important;
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        z-index: 999990;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 40px; /* Jarak antar logo */
-    }}
-    
-    .custom-navbar img {{
-        height: 3.5rem; /* Ukuran Logo */
-        width: auto;
-        transition: transform 0.3s ease;
-    }}
-    .custom-navbar img:hover {{ transform: scale(1.1); }}
+        height: 3.5rem !important;
+        z-index: 999990 !important;
+    }
 
-    /* Sembunyikan Header Bawaan Streamlit */
-    header[data-testid="stHeader"] {{ background-color: transparent !important; }}
+    /* --- TOOLBAR --- */
+    [data-testid="stToolbar"] {
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: block !important;
+        z-index: 99999999 !important;
+        right: 1rem;
+        top: 0.2rem;
+        background-color: transparent !important;
+        border: none !important;
+    }
+    [data-testid="stToolbar"] button {
+        color: var(--base-terracotta) !important;
+    }
 
-    /* Toolbar Settings (Pojok Kanan) */
-    [data-testid="stToolbar"] {{
-        right: 1rem; top: 1.5rem;
-        z-index: 999999;
-    }}
-    [data-testid="stToolbar"] button {{ color: var(--base-terracotta) !important; }}
-
-    /* Padding Konten agar turun dibawah Navbar */
-    .block-container {{
-        padding-top: 7rem !important;
+    /* 2. HEADER PADDING (KONTEN UTAMA) */
+    .block-container {
+        padding-top: 5rem !important; 
         padding-bottom: 2rem;
-    }}
+        max-width: 100%;
+    }
 
-    /* Typography & Sidebar Styles (Sama seperti sebelumnya) */
-    h1 {{ font-family: 'Rakkas', cursive !important; color: var(--base-terracotta) !important; }}
-    h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; color: var(--base-terracotta) !important; }}
-    
-    section[data-testid="stSidebar"] {{
+    /* 3. TYPOGRAPHY */
+    h1 {
+        font-family: 'Rakkas', cursive !important;
+        color: var(--base-terracotta) !important;
+        font-weight: 400 !important;
+        font-size: 3rem !important;
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    h2, h3, h4, .streamlit-expanderHeader {
+        font-family: 'Playfair Display', serif !important;
+        color: var(--base-terracotta) !important;
+        font-weight: 700 !important;
+    }
+
+    /* 4. SIDEBAR (PERBAIKAN POSISI NAIK) */
+    section[data-testid="stSidebar"] {
         background-color: var(--sidebar-bg);
         border-right: 3px solid var(--base-terracotta);
         box-shadow: 4px 0 10px rgba(0,0,0,0.05);
-    }}
-    section[data-testid="stSidebar"] .block-container {{ padding-top: 6rem !important; }}
+    }
     
-    /* Tombol & Input Styles */
-    .stButton > button {{
+    /* INI KUNCINYA: Mengatur jarak isi sidebar dari atas */
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 5rem !important; /* Jarak aman dari navbar */
+        padding-bottom: 2rem !important;
+    }
+
+    /* Judul Sidebar */
+    section[data-testid="stSidebar"] h1 {
+        font-size: 1.8rem !important;
+        color: var(--base-terracotta) !important;
+        text-align: center;
+        margin-top: 0 !important; /* Hapus margin bawaan */
+    }
+    
+    /* Fix teks sidebar */
+    section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
+        color: var(--text-dark) !important;
+    }
+
+    /* 5. TOMBOL */
+    .stButton > button {
         background: linear-gradient(to right, var(--comp-gold), var(--base-terracotta)) !important;
         color: #FFF !important;
         border: none !important;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
         border-radius: 8px !important;
-    }}
-    .stSelectbox > div > div, .stMultiSelect > div > div {{
+        padding: 0.6rem 1.2rem;
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.2) !important;
+        background: linear-gradient(to right, var(--base-terracotta), var(--comp-gold)) !important;
+    }
+
+    /* 6. TAB MENU STYLE */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: transparent !important;
+        border-bottom: 2px solid var(--comp-teal);
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        color: var(--comp-teal);
+    }
+    .stTabs [aria-selected="true"] {
+        color: var(--base-terracotta) !important;
+        border-bottom: 3px solid var(--base-terracotta) !important;
+    }
+
+    /* 7. WIDGET INPUT */
+    .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
         background-color: #FFFFFF !important;
         border-color: var(--comp-gold) !important;
         color: var(--text-dark) !important;
-    }}
-    .stMultiSelect div[data-baseweb="tag"] {{ background-color: var(--base-terracotta) !important; }}
-
-    /* Welcome Box */
-    .welcome-box {{
+    }
+    .stMultiSelect div[data-baseweb="select"] span {
+        color: var(--text-dark) !important;
+    }
+    .stMultiSelect div[data-baseweb="tag"] {
+        background-color: var(--base-terracotta) !important;
+        color: white !important;
+    }
+    
+    /* 8. FILE UPLOADER */
+    div[data-testid="stFileUploader"] {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px dashed var(--base-terracotta);
+    }
+    div[data-testid="stFileUploader"] section {
+        background-color: #FDF1D6 !important; 
+    }
+    div[data-testid="stFileUploader"] span {
+        color: var(--text-dark) !important;
+    }
+    
+    /* 9. BOX & ALERT STYLING */
+    .welcome-box {
         background-color: #FFFFFF;
         padding: 25px;
         border-left: 6px solid var(--base-terracotta);
@@ -156,23 +205,37 @@ st.markdown(f"""
         box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         border-radius: 12px;
         margin-bottom: 25px;
-    }}
-    
-    /* Override Text Color */
-    p, label, span, div {{ color: var(--text-dark); }}
-    footer, #MainMenu {{ visibility: hidden; }}
-</style>
+    }
+    .stAlert {
+        background-color: #FFFFFF;
+        border: 1px solid var(--comp-gold);
+        color: var(--text-dark);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .stSuccess { border-left-color: var(--comp-olive) !important; }
+    .stInfo { border-left-color: var(--comp-teal) !important; }
+    .stWarning { border-left-color: var(--comp-gold) !important; }
+    .stError { border-left-color: #C0392B !important; }
 
-<div class="custom-navbar">
-    <img src="data:image/png;base64,{b64_bps}" title="BPS">
-    <img src="data:image/png;base64,{b64_stis}" title="Politeknik Statistika STIS">
-    <img src="data:image/png;base64,{b64_pkl}" title="PKL 65">
-</div>
+    /* 10. TEXT COLOR GLOBAL override */
+    p, label, span, div {
+        color: var(--text-dark);
+    }
+
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+</style>
 """, unsafe_allow_html=True)
+# =================================================================
+# SETUP GAMBAR (SESUAI GRAND DESIGN & ASET BARU)
+# =================================================================
+# Menggunakan header full dan footer full yang baru
+LOGO_IMG   = 'gambar/image_14.png'  # Logo Bulat untuk Sidebar
+MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
 
 
 # =================================================================
-# FUNGSI BANTUAN (MAP) - SOLUSI NO-SPACE (HAPUS SPASI AGAR JODOH)
+# FUNGSI BANTUAN (MAP)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -198,24 +261,29 @@ def load_map_excel_data():
     else:
         return pd.DataFrame()
 
-    # 1. BERSIHKAN KABUPATEN & BUAT KEY
+    # 1. BERSIHKAN KABUPATEN
     if 'kabupaten' in combined_df.columns:
+        # Standarisasi teks biasa
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str).str.title().str.strip()
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
-        combined_df['kabupaten'] = combined_df['kabupaten'].replace({'Yogya': 'Yogyakarta', 'Yogyakartakarta': 'Yogyakarta'})
-        
-        # KUNCI: BUAT KEY TANPA SPASI (Misal: 'GUNUNG KIDUL' -> 'GUNUNGKIDUL')
+        # Normalisasi typo umum
+        combined_df['kabupaten'] = combined_df['kabupaten'].replace({
+            'Yogya': 'Yogyakarta',
+            'Yogyakartakarta': 'Yogyakarta'
+        })
+        # BUAT KOLOM KUNCI (HURUF BESAR & TANPA SPASI)
         combined_df['kab_key'] = combined_df['kabupaten'].str.upper().str.replace(" ", "")
 
-    # 2. BERSIHKAN KECAMATAN & BUAT KEY
+    # 2. BERSIHKAN KECAMATAN
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         
-        # KUNCI: BUAT KEY TANPA SPASI (Misal: 'GEDANG SARI' -> 'GEDANGSARI')
+        # BUAT KOLOM KUNCI (HURUF BESAR & TANPA SPASI) -> INI RAHASIANYA
         combined_df['kec_key'] = combined_df['kecamatan'].str.upper().str.replace(" ", "")
 
-    # 3. FIX MANTRIJERON (PAKSA MASUK KOTA JOGJA)
+    # 3. AUTO-CORRECT KABUPATEN (MANTRIJERON FIX)
+    # Kita cek berdasarkan 'kec_key' biar aman dari typo spasi
     kec_kota_jogja_keys = [
         'DANUREJAN', 'GEDONGTENGEN', 'GONDOKUSUMAN', 'GONDOMANAN', 
         'JETIS', 'KOTAGEDE', 'KRATON', 'KERATON', 'MANTRIJERON', 'MERGANGSAN', 
@@ -223,6 +291,8 @@ def load_map_excel_data():
     ]
     
     if 'kabupaten' in combined_df.columns and 'kec_key' in combined_df.columns:
+        # Jika kecamatannya ada di list kota jogja, ubah kabupaten jadi Yogyakarta
+        # Dan update kab_key nya juga jadi YOGYAKARTA
         mask = combined_df['kec_key'].isin(kec_kota_jogja_keys)
         combined_df.loc[mask, 'kabupaten'] = 'Yogyakarta'
         combined_df.loc[mask, 'kab_key'] = 'YOGYAKARTA'
@@ -267,17 +337,18 @@ def interpret_correlation(r):
 # SIDEBAR UTAMA DENGAN BRANDING PKL
 # =================================================================
 with st.sidebar:
+    # --- LOGO & MASKOT SIDEBAR ---
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # HANYA MASKOT (Image_10) - Logo PKL dihapus
+    col_logo, col_mascot = st.columns([1, 1.3])
+    if os.path.exists(LOGO_IMG):
+        with col_logo:
+            st.image(LOGO_IMG, use_container_width=True)
     if os.path.exists(MASCOT_IMG):
-        # Center Maskot
-        c1, c2, c3 = st.columns([0.5, 2, 0.5]) 
-        with c2:
+        with col_mascot:
             st.image(MASCOT_IMG, use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True) 
-    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True) # Spasi
+    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True) # Menggunakan H1 Rakkas
     st.markdown("---", unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload File Data (Format CSV/Excel)", type=['csv', 'xls', 'xlsx'])
 
@@ -289,10 +360,7 @@ with st.sidebar:
 if uploaded_file is None:
     # Judul Halaman Utama (Menggunakan Font RAKKAS dari CSS H1)
     st.markdown("<h1>DASHBOARD SEBARAN LOKASI POTENSIAL PEKERJA GIG PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
-    if os.path.exists(FULL_IMG):
-        c1, c2, c3 = st.columns([1, 2, 1]) # Mengatur lebar gambar agar tidak terlalu lebar
-        with c2:
-            st.image(FULL_IMG, use_container_width=True)
+    
     # Pesan Selamat Datang dengan Styling Baru
     st.markdown("""
     <div class="welcome-box">
@@ -337,39 +405,45 @@ if uploaded_file is None:
 
 # RENDER PETA
         if selected_kab and selected_kec:
+            # Filter Data Excel
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
                 (df_map['kecamatan'].isin(selected_kec))
             ]
             
-            # 1. SIAPKAN SHP - BUAT KEY YANG SAMA (NO SPACE)
-            # Kita hapus spasi di SHP juga agar jodoh dengan Excel
+            # 1. SIAPKAN SHP - BUAT KOLOM KUNCI YANG SAMA (NO SPACE)
+            # Kita tidak mengubah tampilan asli (nmkab/nmkec), tapi buat kolom baru untuk joining
             gdf_shape['kab_key'] = gdf_shape[SHP_COL_KAB].astype(str).str.upper().str.replace(" ", "").str.replace(r'^(KAB\.?|KABUPATEN|KOTA)\s+', '', regex=True)
             gdf_shape['kec_key'] = gdf_shape[SHP_COL_KEC].astype(str).str.upper().str.replace(" ", "")
             
-            # Fix khusus jika ada typo di SHP
+            # Bersihkan typo khusus di SHP key jika perlu (biasanya replace spasi sudah cukup)
             gdf_shape['kab_key'] = gdf_shape['kab_key'].replace({'GUNUNGKIDUL': 'GUNUNGKIDUL', 'YOGYA': 'YOGYAKARTA'})
 
-            # 2. KONVERSI PILIHAN USER KE KEY
+            # Ambil key dari pilihan user (yang berasal dari Excel)
+            # Kita harus convert pilihan user ke format key juga
             selected_kab_keys = [k.upper().replace(" ", "") for k in selected_kab]
             selected_kec_keys = [k.upper().replace(" ", "") for k in selected_kec]
 
-            # 3. FILTER SHP PAKAI KEY
+            # Filter SHP menggunakan KEY (bukan nama cantik)
             final_gdf = gdf_shape[
                 (gdf_shape['kab_key'].isin(selected_kab_keys)) &
                 (gdf_shape['kec_key'].isin(selected_kec_keys))
             ]
 
             if not final_gdf.empty:
+                # Hitung statistik per kecamatan
+                # Group by 'kec_key' agar aman
                 stats_kec = final_df.groupby('kec_key').size().reset_index(name='jumlah_lokasi')
                 
-                # Merge pakai Key
+                # Merge Data Excel ke SHP menggunakan KEY
                 gdf_viz = final_gdf.merge(stats_kec, on='kec_key', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
                 
-                # Ambil nama cantik dari SHP asli untuk Tooltip
+                # Agar tooltip tetap cantik, kita pastikan kolom nama asli ada
+                # Kita pakai nama dari SHP asli (nmkec) untuk label tampilan
                 gdf_viz['Nama Kecamatan'] = gdf_viz[SHP_COL_KEC].astype(str).str.title()
 
+                # Setup Peta
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
                 m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
@@ -379,8 +453,8 @@ if uploaded_file is None:
                         geo_data=gdf_viz,
                         name='Kepadatan Wilayah',
                         data=gdf_viz,
-                        columns=['kec_key', 'jumlah_lokasi'], # Join Key
-                        key_on='feature.properties.kec_key',  # Join Key
+                        columns=['kec_key', 'jumlah_lokasi'], # Join pakai Key
+                        key_on='feature.properties.kec_key',  # Join pakai Key
                         fill_color='YlOrRd', 
                         fill_opacity=0.7,
                         line_opacity=0.2,
@@ -388,6 +462,7 @@ if uploaded_file is None:
                         highlight=True
                     ).add_to(m)
                     
+                    # Tooltip pakai nama asli yang cantik
                     folium.GeoJsonTooltip(
                         fields=['Nama Kecamatan', 'jumlah_lokasi'], 
                         aliases=['Kecamatan:', 'Jumlah Data:'], 
@@ -400,6 +475,7 @@ if uploaded_file is None:
 
                 folium.LayerControl().add_to(m)
                 
+                # Frame Peta
                 st.markdown('<div style="box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 3px solid #E07A3F;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
