@@ -341,7 +341,7 @@ def interpret_correlation(r):
 # =================================================================
 with st.sidebar:
     # --- LOGO & MASKOT SIDEBAR ---
-    st.markdown(unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     col_logo, col_mascot = st.columns([1, 1.3])
     if os.path.exists(LOGO_IMG):
         with col_logo:
