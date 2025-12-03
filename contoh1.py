@@ -38,6 +38,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
 # --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (FIXED SIDEBAR) ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -60,33 +61,33 @@ st.markdown("""
         color: var(--text-dark);
     }
 
-    /* --- [BARU] NAVBAR / HEADER ATAS --- */
+    /* --- NAVBAR / HEADER ATAS --- */
     header[data-testid="stHeader"] {
         background-color: rgba(253, 248, 228, 0.95) !important; /* Cream Transparan */
-        border-bottom: 4px solid var(--base-terracotta); /* Garis tegas Terracotta */
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Bayangan halus */
-        height: 4rem !important; /* Tinggi fix */
+        border-bottom: 4px solid var(--base-terracotta);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        height: 4rem !important;
+        z-index: 999990 !important; /* Di bawah toolbar tapi di atas konten */
     }
 
-    /* --- [UPDATE] TOOLBAR AGAR PAS DI NAVBAR BARU --- */
+    /* --- TOOLBAR (TOMBOL SETTING) --- */
     [data-testid="stToolbar"] {
         visibility: visible !important;
         opacity: 1 !important;
         display: block !important;
         z-index: 99999999 !important;
         right: 1rem;
-        top: 0.5rem; /* Posisi disesuaikan agar pas di tengah navbar */
-        background-color: transparent !important; /* Background transparan */
+        top: 0.5rem;
+        background-color: transparent !important;
         border: none !important;
     }
-    /* Warna ikon toolbar (titik tiga) menjadi Terracotta agar terlihat */
     [data-testid="stToolbar"] button {
         color: var(--base-terracotta) !important;
     }
 
-    /* 2. HEADER PADDING (Agar judul konten tidak ketutup Navbar) */
+    /* 2. HEADER PADDING (KONTEN UTAMA) */
     .block-container {
-        padding-top: 6rem !important; /* Ditambah karena ada Navbar fix di atas */
+        padding-top: 6rem !important; /* Jarak agar konten tidak ketutup Navbar */
         padding-bottom: 2rem;
         max-width: 100%;
     }
@@ -108,18 +109,20 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR */
+    /* 4. SIDEBAR (PERBAIKAN DI SINI) */
     section[data-testid="stSidebar"] {
         background-color: #FDF1D6;
         border-right: 2px solid var(--base-terracotta);
-        margin-top: 4rem; /* Supaya sidebar tidak menutupi Navbar atas */
+        top: 0 !important; /* Paksa menempel ke atas */
+        height: 100vh !important; /* Full tinggi layar */
+        padding-top: 4rem !important; /* Memberi jarak dalam agar Logo tidak ketutup Navbar */
     }
     section[data-testid="stSidebar"] h1 {
         font-size: 1.8rem !important;
         color: var(--base-terracotta) !important;
         text-align: center;
     }
-    /* Memaksa teks sidebar tetap gelap meski user dark mode */
+    /* Fix teks sidebar */
     section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
         color: var(--text-dark) !important;
     }
@@ -157,7 +160,7 @@ st.markdown("""
         border-bottom: 3px solid var(--base-terracotta) !important;
     }
 
-    /* 7. WIDGET INPUT (MULTISELECT, SELECTBOX) - FIX DARK MODE */
+    /* 7. WIDGET INPUT - FIX DARK MODE */
     .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
         background-color: #FFFFFF !important;
         border-color: var(--comp-gold) !important;
@@ -171,7 +174,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* 8. FILE UPLOADER - FIX DARK MODE */
+    /* 8. FILE UPLOADER */
     div[data-testid="stFileUploader"] {
         background-color: #FFFFFF;
         border-radius: 10px;
@@ -179,7 +182,7 @@ st.markdown("""
         border: 1px dashed var(--base-terracotta);
     }
     div[data-testid="stFileUploader"] section {
-        background-color: #FDF1D6 !important; /* Warna krem muda */
+        background-color: #FDF1D6 !important; 
     }
     div[data-testid="stFileUploader"] span {
         color: var(--text-dark) !important;
@@ -214,7 +217,6 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
-
 # =================================================================
 # SETUP GAMBAR (SESUAI GRAND DESIGN & ASET BARU)
 # =================================================================
