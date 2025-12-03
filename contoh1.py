@@ -339,20 +339,19 @@ def interpret_correlation(r):
 # =================================================================
 # SIDEBAR UTAMA DENGAN BRANDING PKL
 # =================================================================
-# =================================================================
-# 5. SIDEBAR (LOGO SAJA - FIXED POSITION)
-# =================================================================
 with st.sidebar:
-    # HAPUS st.markdown("<br>") DI SINI AGAR LOGO NAIK
-    
-    # HANYA LOGO di Sidebar
+    # --- LOGO & MASKOT SIDEBAR ---
+    st.markdown(unsafe_allow_html=True)
+    col_logo, col_mascot = st.columns([1, 1.3])
     if os.path.exists(LOGO_IMG):
-        c1, c2, c3 = st.columns([1, 3, 1]) # Atur lebar kolom biar logo pas di tengah
-        with c2:
+        with col_logo:
             st.image(LOGO_IMG, use_container_width=True)
+    if os.path.exists(MASCOT_IMG):
+        with col_mascot:
+            st.image(MASCOT_IMG, use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)  # Jarak antara Logo dan Judul Kontrol Panel
-    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True) # Spasi
+    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True) # Menggunakan H1 Rakkas
     st.markdown("---", unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload File Data (Format CSV/Excel)", type=['csv', 'xls', 'xlsx'])
 
