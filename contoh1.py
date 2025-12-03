@@ -249,8 +249,8 @@ with c_stis:
         st.error("File STIS tidak ditemukan")
 
 with c_pkl:
-    if os.path.exists(IMG_PKL):
-        st.image(IMG_PKL, use_container_width=True)
+    if os.path.exists(LOGO_IMG):
+        st.image(LOGO_IMG, use_container_width=True)
     else:
         st.error("File PKL tidak ditemukan")
 
