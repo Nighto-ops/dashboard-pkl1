@@ -37,7 +37,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (SIDEBAR NAIK) ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR IMAGE ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -66,27 +66,28 @@ st.markdown("""
         background-color: rgba(253, 248, 228, 0.95) !important;
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        height: 3.5rem !important;
+        height: 5rem !important;
+        z-index: 999990 !important;
     }
 
-    /* --- TOOLBAR --- */
+    /* --- TOOLBAR (TOMBOL SETTING) --- */
     [data-testid="stToolbar"] {
         visibility: visible !important;
         opacity: 1 !important;
         display: block !important;
         z-index: 99999999 !important;
         right: 1rem;
-        top: 0.2rem;
-        background-color: transparent !important;
-        border: none !important;
+        top: 1.5rem;
+        background-color: rgba(255,255,255,0.5) !important;
+        border-radius: 5px;
     }
     [data-testid="stToolbar"] button {
         color: var(--base-terracotta) !important;
     }
 
-    /* 2. HEADER PADDING (KONTEN UTAMA) */
+    /* 2. HEADER PADDING */
     .block-container {
-        padding-top: 5rem !important; 
+        padding-top: 7rem !important;
         padding-bottom: 2rem;
         max-width: 100%;
     }
@@ -108,28 +109,22 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR (PERBAIKAN POSISI NAIK) */
+    /* 4. SIDEBAR */
     section[data-testid="stSidebar"] {
         background-color: var(--sidebar-bg);
         border-right: 3px solid var(--base-terracotta);
         box-shadow: 4px 0 10px rgba(0,0,0,0.05);
     }
-    
-    /* INI KUNCINYA: Mengatur jarak isi sidebar dari atas */
     section[data-testid="stSidebar"] .block-container {
-        padding-top: 5rem !important; /* Jarak aman dari navbar */
+        padding-top: 6rem !important;
         padding-bottom: 2rem !important;
     }
-
-    /* Judul Sidebar */
     section[data-testid="stSidebar"] h1 {
         font-size: 1.8rem !important;
         color: var(--base-terracotta) !important;
         text-align: center;
-        margin-top: 0 !important; /* Hapus margin bawaan */
+        margin-top: 0 !important; 
     }
-    
-    /* Fix teks sidebar */
     section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
         color: var(--text-dark) !important;
     }
@@ -216,11 +211,10 @@ st.markdown("""
     .stWarning { border-left-color: var(--comp-gold) !important; }
     .stError { border-left-color: #C0392B !important; }
 
-    /* 10. TEXT COLOR GLOBAL override */
+    /* 10. TEXT OVERRIDE */
     p, label, span, div {
         color: var(--text-dark);
     }
-
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
 </style>
@@ -229,12 +223,39 @@ st.markdown("""
 # SETUP GAMBAR (SESUAI GRAND DESIGN & ASET BARU)
 # =================================================================
 # Menggunakan header full dan footer full yang baru
+IMG_BPS  = 'gambar/bps.png'  
+IMG_STIS = 'gambar/stis.png'
 LOGO_IMG   = 'gambar/image_14.png'  # Logo Bulat untuk Sidebar
 MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
+FULL_IMG   = 'gambar/Full.jpg'
 
+# --- RENDER 3 LOGO DI TENGAH ---
+st.write("") # Spasi dikit dari atas
+
+# Layout Kolom: [Kosong] [BPS] [STIS] [PKL] [Kosong]
+# Angka [4, 1.5, 1.5, 1.5, 4] mengatur lebar agar logo ada di tengah & tidak kegedean
+c_space_l, c_bps, c_stis, c_pkl, c_space_r = st.columns([4, 1.5, 1.5, 1.5, 4])
+
+with c_bps:
+    if os.path.exists(IMG_BPS):
+        st.image(IMG_BPS, use_container_width=True)
+    else:
+        st.error("File BPS tidak ditemukan")
+
+with c_stis:
+    if os.path.exists(IMG_STIS):
+        st.image(IMG_STIS, use_container_width=True)
+    else:
+        st.error("File STIS tidak ditemukan")
+
+with c_pkl:
+    if os.path.exists(IMG_PKL):
+        st.image(IMG_PKL, use_container_width=True)
+    else:
+        st.error("File PKL tidak ditemukan")
 
 # =================================================================
-# FUNGSI BANTUAN (MAP)
+# FUNGSI BANTUAN (MAP) - SOLUSI NO-SPACE (HAPUS SPASI AGAR JODOH)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -260,29 +281,24 @@ def load_map_excel_data():
     else:
         return pd.DataFrame()
 
-    # 1. BERSIHKAN KABUPATEN
+    # 1. BERSIHKAN KABUPATEN & BUAT KEY
     if 'kabupaten' in combined_df.columns:
-        # Standarisasi teks biasa
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str).str.title().str.strip()
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
-        # Normalisasi typo umum
-        combined_df['kabupaten'] = combined_df['kabupaten'].replace({
-            'Yogya': 'Yogyakarta',
-            'Yogyakartakarta': 'Yogyakarta'
-        })
-        # BUAT KOLOM KUNCI (HURUF BESAR & TANPA SPASI)
+        combined_df['kabupaten'] = combined_df['kabupaten'].replace({'Yogya': 'Yogyakarta', 'Yogyakartakarta': 'Yogyakarta'})
+        
+        # KUNCI: BUAT KEY TANPA SPASI (Misal: 'GUNUNG KIDUL' -> 'GUNUNGKIDUL')
         combined_df['kab_key'] = combined_df['kabupaten'].str.upper().str.replace(" ", "")
 
-    # 2. BERSIHKAN KECAMATAN
+    # 2. BERSIHKAN KECAMATAN & BUAT KEY
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         
-        # BUAT KOLOM KUNCI (HURUF BESAR & TANPA SPASI) -> INI RAHASIANYA
+        # KUNCI: BUAT KEY TANPA SPASI (Misal: 'GEDANG SARI' -> 'GEDANGSARI')
         combined_df['kec_key'] = combined_df['kecamatan'].str.upper().str.replace(" ", "")
 
-    # 3. AUTO-CORRECT KABUPATEN (MANTRIJERON FIX)
-    # Kita cek berdasarkan 'kec_key' biar aman dari typo spasi
+    # 3. FIX MANTRIJERON (PAKSA MASUK KOTA JOGJA)
     kec_kota_jogja_keys = [
         'DANUREJAN', 'GEDONGTENGEN', 'GONDOKUSUMAN', 'GONDOMANAN', 
         'JETIS', 'KOTAGEDE', 'KRATON', 'KERATON', 'MANTRIJERON', 'MERGANGSAN', 
@@ -290,8 +306,6 @@ def load_map_excel_data():
     ]
     
     if 'kabupaten' in combined_df.columns and 'kec_key' in combined_df.columns:
-        # Jika kecamatannya ada di list kota jogja, ubah kabupaten jadi Yogyakarta
-        # Dan update kab_key nya juga jadi YOGYAKARTA
         mask = combined_df['kec_key'].isin(kec_kota_jogja_keys)
         combined_df.loc[mask, 'kabupaten'] = 'Yogyakarta'
         combined_df.loc[mask, 'kab_key'] = 'YOGYAKARTA'
@@ -404,45 +418,39 @@ if uploaded_file is None:
 
 # RENDER PETA
         if selected_kab and selected_kec:
-            # Filter Data Excel
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
                 (df_map['kecamatan'].isin(selected_kec))
             ]
             
-            # 1. SIAPKAN SHP - BUAT KOLOM KUNCI YANG SAMA (NO SPACE)
-            # Kita tidak mengubah tampilan asli (nmkab/nmkec), tapi buat kolom baru untuk joining
+            # 1. SIAPKAN SHP - BUAT KEY YANG SAMA (NO SPACE)
+            # Kita hapus spasi di SHP juga agar jodoh dengan Excel
             gdf_shape['kab_key'] = gdf_shape[SHP_COL_KAB].astype(str).str.upper().str.replace(" ", "").str.replace(r'^(KAB\.?|KABUPATEN|KOTA)\s+', '', regex=True)
             gdf_shape['kec_key'] = gdf_shape[SHP_COL_KEC].astype(str).str.upper().str.replace(" ", "")
             
-            # Bersihkan typo khusus di SHP key jika perlu (biasanya replace spasi sudah cukup)
+            # Fix khusus jika ada typo di SHP
             gdf_shape['kab_key'] = gdf_shape['kab_key'].replace({'GUNUNGKIDUL': 'GUNUNGKIDUL', 'YOGYA': 'YOGYAKARTA'})
 
-            # Ambil key dari pilihan user (yang berasal dari Excel)
-            # Kita harus convert pilihan user ke format key juga
+            # 2. KONVERSI PILIHAN USER KE KEY
             selected_kab_keys = [k.upper().replace(" ", "") for k in selected_kab]
             selected_kec_keys = [k.upper().replace(" ", "") for k in selected_kec]
 
-            # Filter SHP menggunakan KEY (bukan nama cantik)
+            # 3. FILTER SHP PAKAI KEY
             final_gdf = gdf_shape[
                 (gdf_shape['kab_key'].isin(selected_kab_keys)) &
                 (gdf_shape['kec_key'].isin(selected_kec_keys))
             ]
 
             if not final_gdf.empty:
-                # Hitung statistik per kecamatan
-                # Group by 'kec_key' agar aman
                 stats_kec = final_df.groupby('kec_key').size().reset_index(name='jumlah_lokasi')
                 
-                # Merge Data Excel ke SHP menggunakan KEY
+                # Merge pakai Key
                 gdf_viz = final_gdf.merge(stats_kec, on='kec_key', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
                 
-                # Agar tooltip tetap cantik, kita pastikan kolom nama asli ada
-                # Kita pakai nama dari SHP asli (nmkec) untuk label tampilan
+                # Ambil nama cantik dari SHP asli untuk Tooltip
                 gdf_viz['Nama Kecamatan'] = gdf_viz[SHP_COL_KEC].astype(str).str.title()
 
-                # Setup Peta
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
                 m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
@@ -452,8 +460,8 @@ if uploaded_file is None:
                         geo_data=gdf_viz,
                         name='Kepadatan Wilayah',
                         data=gdf_viz,
-                        columns=['kec_key', 'jumlah_lokasi'], # Join pakai Key
-                        key_on='feature.properties.kec_key',  # Join pakai Key
+                        columns=['kec_key', 'jumlah_lokasi'], # Join Key
+                        key_on='feature.properties.kec_key',  # Join Key
                         fill_color='YlOrRd', 
                         fill_opacity=0.7,
                         line_opacity=0.2,
@@ -461,7 +469,6 @@ if uploaded_file is None:
                         highlight=True
                     ).add_to(m)
                     
-                    # Tooltip pakai nama asli yang cantik
                     folium.GeoJsonTooltip(
                         fields=['Nama Kecamatan', 'jumlah_lokasi'], 
                         aliases=['Kecamatan:', 'Jumlah Data:'], 
@@ -474,7 +481,6 @@ if uploaded_file is None:
 
                 folium.LayerControl().add_to(m)
                 
-                # Frame Peta
                 st.markdown('<div style="box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 3px solid #E07A3F;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
