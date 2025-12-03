@@ -37,8 +37,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR ---
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (NEW SIDEBAR COLOR) ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (FIXED GAP) ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -46,16 +45,15 @@ st.markdown("""
 
     /* --- WARNA DARI GRAND DESIGN --- */
     :root {
-        --base-cream: #FDF8E4;       /* Warna Background Utama */
-        --base-terracotta: #E07A3F;  /* Warna Aksen Utama */
+        --base-cream: #FDF8E4;
+        --base-terracotta: #E07A3F;
         --comp-gold: #F2C94C;
         --comp-teal: #4F8190;
         --comp-olive: #739159;
         --text-dark: #4A3B32; 
         
-        /* WARNA BARU UNTUK SIDEBAR (Pilih salah satu) */
-        --sidebar-bg: #FFFFFF;       /* Opsi: Putih Bersih (Paling Elegan & Kontras) */
-        /* --sidebar-bg: #F0F6F7; */ /* Alternatif: Teal Sangat Pucat (Kalau mau nuansa dingin) */
+        /* WARNA SIDEBAR: Putih Bersih */
+        --sidebar-bg: #FFFFFF;       
     }
 
     /* 1. SETUP BACKGROUND UTAMA */
@@ -67,21 +65,21 @@ st.markdown("""
 
     /* --- NAVBAR / HEADER ATAS --- */
     header[data-testid="stHeader"] {
-        background-color: rgba(253, 248, 228, 0.95) !important; /* Cream Transparan */
+        background-color: rgba(253, 248, 228, 0.95) !important;
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        height: 4rem !important;
+        height: 3.5rem !important; /* Diperkecil sedikit tingginya */
         z-index: 999990 !important;
     }
 
-    /* --- TOOLBAR (TOMBOL SETTING) --- */
+    /* --- TOOLBAR --- */
     [data-testid="stToolbar"] {
         visibility: visible !important;
         opacity: 1 !important;
         display: block !important;
         z-index: 99999999 !important;
         right: 1rem;
-        top: 0.5rem;
+        top: 0.2rem; /* Naikkan sedikit */
         background-color: transparent !important;
         border: none !important;
     }
@@ -91,7 +89,7 @@ st.markdown("""
 
     /* 2. HEADER PADDING (KONTEN UTAMA) */
     .block-container {
-        padding-top: 6rem !important; 
+        padding-top: 5rem !important; 
         padding-bottom: 2rem;
         max-width: 100%;
     }
@@ -113,33 +111,37 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR (WARNA BARU) */
+    /* 4. SIDEBAR (GAP DIPERKECIL) */
     section[data-testid="stSidebar"] {
-        background-color: var(--sidebar-bg); /* Menggunakan warna Putih/Baru */
-        border-right: 3px solid var(--base-terracotta); /* Garis pemisah dipertebal */
+        background-color: var(--sidebar-bg);
+        border-right: 3px solid var(--base-terracotta);
         
-        /* Agar tidak ketutup navbar tapi full height */
         top: 0 !important; 
         height: 100vh !important;
-        padding-top: 4rem !important; 
+        /* UBAH DISINI: Dari 4rem jadi 3rem agar logo naik */
+        padding-top: 3rem !important; 
         
-        /* Tambahan Shadow agar terlihat timbul */
         box-shadow: 4px 0 10px rgba(0,0,0,0.05);
     }
     section[data-testid="stSidebar"] h1 {
-        font-size: 1.8rem !important;
+        font-size: 1.5rem !important; /* Font judul sidebar diperkecil dikit biar manis */
         color: var(--base-terracotta) !important;
         text-align: center;
+        margin-bottom: 0;
     }
     /* Fix teks sidebar */
     section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
         color: var(--text-dark) !important;
     }
+    /* Hilangkan jarak default elemen atas di sidebar */
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 0rem !important;
+    }
 
     /* 5. TOMBOL */
     .stButton > button {
         background: linear-gradient(to right, var(--comp-gold), var(--base-terracotta)) !important;
-        color: #FFF !important; /* Teks Putih agar kontras */
+        color: #FFF !important;
         border: none !important;
         box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
         font-family: 'Poppins', sans-serif !important;
@@ -169,7 +171,7 @@ st.markdown("""
         border-bottom: 3px solid var(--base-terracotta) !important;
     }
 
-    /* 7. WIDGET INPUT - FIX DARK MODE */
+    /* 7. WIDGET INPUT */
     .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
         background-color: #FFFFFF !important;
         border-color: var(--comp-gold) !important;
@@ -199,7 +201,7 @@ st.markdown("""
     
     /* 9. BOX & ALERT STYLING */
     .welcome-box {
-        background-color: #FFFFFF; /* Ubah jadi Putih agar kontras dgn background cream */
+        background-color: #FFFFFF;
         padding: 25px;
         border-left: 6px solid var(--base-terracotta);
         border-top: 2px solid var(--comp-gold);
@@ -337,19 +339,20 @@ def interpret_correlation(r):
 # =================================================================
 # SIDEBAR UTAMA DENGAN BRANDING PKL
 # =================================================================
+# =================================================================
+# 5. SIDEBAR (LOGO SAJA - FIXED POSITION)
+# =================================================================
 with st.sidebar:
-    # --- LOGO & MASKOT SIDEBAR ---
-    st.markdown("<br>", unsafe_allow_html=True)
-    col_logo, col_mascot = st.columns([1, 1.3])
+    # HAPUS st.markdown("<br>") DI SINI AGAR LOGO NAIK
+    
+    # HANYA LOGO di Sidebar
     if os.path.exists(LOGO_IMG):
-        with col_logo:
+        c1, c2, c3 = st.columns([1, 3, 1]) # Atur lebar kolom biar logo pas di tengah
+        with c2:
             st.image(LOGO_IMG, use_container_width=True)
-    if os.path.exists(MASCOT_IMG):
-        with col_mascot:
-            st.image(MASCOT_IMG, use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True) # Spasi
-    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True) # Menggunakan H1 Rakkas
+    st.markdown("<br>", unsafe_allow_html=True)  # Jarak antara Logo dan Judul Kontrol Panel
+    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True)
     st.markdown("---", unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload File Data (Format CSV/Excel)", type=['csv', 'xls', 'xlsx'])
 
