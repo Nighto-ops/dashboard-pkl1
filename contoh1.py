@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -32,166 +33,122 @@ from statsmodels.multivariate.manova import MANOVA
 from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calculate_kmo
 
+# --- FUNGSI BANTUAN: UBAH GAMBAR JADI BASE64 (UNTUK NAVBAR) ---
+def get_img_as_base64(file):
+    try:
+        with open(file, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except:
+        return ""
+
+# SETUP PATH GAMBAR
+IMG_BPS  = 'gambar/bps.png'   # Pastikan file ini ada
+IMG_STIS = 'gambar/stis.png'  # Pastikan file ini ada
+IMG_PKL  = 'gambar/image_14.png'   # Logo PKL
+
+FULL_IMG   = 'gambar/Full.jpg'        
+MASCOT_IMG = 'gambar/image_10.png' # Maskot Sidebar
+
+# Convert 3 Logo Navbar ke Base64
+b64_bps  = get_img_as_base64(IMG_BPS)
+b64_stis = get_img_as_base64(IMG_STIS)
+b64_pkl  = get_img_as_base64(IMG_PKL)
+
 # =================================================================
 # KONFIGURASI HALAMAN & CSS GRAND DESIGN PKL 65 
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR IMAGE ---
-st.markdown("""
+# --- CUSTOM CSS & INJECT NAVBAR HTML ---
+st.markdown(f"""
 <style>
     /* IMPORT FONTS */
     @import url('https://fonts.googleapis.com/css2?family=Rakkas&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
 
-    /* --- WARNA DARI GRAND DESIGN --- */
-    :root {
+    /* WARNA GRAND DESIGN */
+    :root {{
         --base-cream: #FDF8E4;
         --base-terracotta: #E07A3F;
         --comp-gold: #F2C94C;
         --comp-teal: #4F8190;
-        --comp-olive: #739159;
         --text-dark: #4A3B32; 
         --sidebar-bg: #FFFFFF;       
-    }
+    }}
 
-    /* 1. SETUP BACKGROUND UTAMA */
-    .stApp {
+    .stApp {{
         background-color: var(--base-cream);
         font-family: 'Poppins', sans-serif;
         color: var(--text-dark);
-    }
+    }}
 
-    /* --- NAVBAR / HEADER ATAS --- */
-    header[data-testid="stHeader"] {
-        background-color: rgba(253, 248, 228, 0.95) !important;
+    /* --- CUSTOM NAVBAR (3 LOGO DI TENGAH) --- */
+    .custom-navbar {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5rem;
+        background-color: rgba(253, 248, 228, 0.98);
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        height: 5rem !important;
-        z-index: 999990 !important;
-    }
+        z-index: 999990;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 40px; /* Jarak antar logo */
+    }}
+    
+    .custom-navbar img {{
+        height: 3.5rem; /* Ukuran Logo */
+        width: auto;
+        transition: transform 0.3s ease;
+    }}
+    .custom-navbar img:hover {{ transform: scale(1.1); }}
 
-    /* --- TOOLBAR (TOMBOL SETTING) --- */
-    [data-testid="stToolbar"] {
-        visibility: visible !important;
-        opacity: 1 !important;
-        display: block !important;
-        z-index: 99999999 !important;
-        right: 1rem;
-        top: 1.5rem;
-        background-color: rgba(255,255,255,0.5) !important;
-        border-radius: 5px;
-    }
-    [data-testid="stToolbar"] button {
-        color: var(--base-terracotta) !important;
-    }
+    /* Sembunyikan Header Bawaan Streamlit */
+    header[data-testid="stHeader"] {{ background-color: transparent !important; }}
 
-    /* 2. HEADER PADDING */
-    .block-container {
+    /* Toolbar Settings (Pojok Kanan) */
+    [data-testid="stToolbar"] {{
+        right: 1rem; top: 1.5rem;
+        z-index: 999999;
+    }}
+    [data-testid="stToolbar"] button {{ color: var(--base-terracotta) !important; }}
+
+    /* Padding Konten agar turun dibawah Navbar */
+    .block-container {{
         padding-top: 7rem !important;
         padding-bottom: 2rem;
-        max-width: 100%;
-    }
+    }}
 
-    /* 3. TYPOGRAPHY */
-    h1 {
-        font-family: 'Rakkas', cursive !important;
-        color: var(--base-terracotta) !important;
-        font-weight: 400 !important;
-        font-size: 3rem !important;
-        margin-top: 0.5rem;
-        margin-bottom: 1.5rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    h2, h3, h4, .streamlit-expanderHeader {
-        font-family: 'Playfair Display', serif !important;
-        color: var(--base-terracotta) !important;
-        font-weight: 700 !important;
-    }
-
-    /* 4. SIDEBAR */
-    section[data-testid="stSidebar"] {
+    /* Typography & Sidebar Styles (Sama seperti sebelumnya) */
+    h1 {{ font-family: 'Rakkas', cursive !important; color: var(--base-terracotta) !important; }}
+    h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; color: var(--base-terracotta) !important; }}
+    
+    section[data-testid="stSidebar"] {{
         background-color: var(--sidebar-bg);
         border-right: 3px solid var(--base-terracotta);
         box-shadow: 4px 0 10px rgba(0,0,0,0.05);
-    }
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 6rem !important;
-        padding-bottom: 2rem !important;
-    }
-    section[data-testid="stSidebar"] h1 {
-        font-size: 1.8rem !important;
-        color: var(--base-terracotta) !important;
-        text-align: center;
-        margin-top: 0 !important; 
-    }
-    section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
-        color: var(--text-dark) !important;
-    }
-
-    /* 5. TOMBOL */
-    .stButton > button {
+    }}
+    section[data-testid="stSidebar"] .block-container {{ padding-top: 6rem !important; }}
+    
+    /* Tombol & Input Styles */
+    .stButton > button {{
         background: linear-gradient(to right, var(--comp-gold), var(--base-terracotta)) !important;
         color: #FFF !important;
         border: none !important;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
-        font-family: 'Poppins', sans-serif !important;
-        font-weight: 600 !important;
         border-radius: 8px !important;
-        padding: 0.6rem 1.2rem;
-        transition: all 0.3s ease;
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 10px rgba(0,0,0,0.2) !important;
-        background: linear-gradient(to right, var(--base-terracotta), var(--comp-gold)) !important;
-    }
-
-    /* 6. TAB MENU STYLE */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: transparent !important;
-        border-bottom: 2px solid var(--comp-teal);
-    }
-    .stTabs [data-baseweb="tab"] {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 600;
-        color: var(--comp-teal);
-    }
-    .stTabs [aria-selected="true"] {
-        color: var(--base-terracotta) !important;
-        border-bottom: 3px solid var(--base-terracotta) !important;
-    }
-
-    /* 7. WIDGET INPUT */
-    .stSelectbox > div > div, .stMultiSelect > div > div, .stTextInput > div > div, .stSlider > div > div {
+    }}
+    .stSelectbox > div > div, .stMultiSelect > div > div {{
         background-color: #FFFFFF !important;
         border-color: var(--comp-gold) !important;
         color: var(--text-dark) !important;
-    }
-    .stMultiSelect div[data-baseweb="select"] span {
-        color: var(--text-dark) !important;
-    }
-    .stMultiSelect div[data-baseweb="tag"] {
-        background-color: var(--base-terracotta) !important;
-        color: white !important;
-    }
-    
-    /* 8. FILE UPLOADER */
-    div[data-testid="stFileUploader"] {
-        background-color: #FFFFFF;
-        border-radius: 10px;
-        padding: 10px;
-        border: 1px dashed var(--base-terracotta);
-    }
-    div[data-testid="stFileUploader"] section {
-        background-color: #FDF1D6 !important; 
-    }
-    div[data-testid="stFileUploader"] span {
-        color: var(--text-dark) !important;
-    }
-    
-    /* 9. BOX & ALERT STYLING */
-    .welcome-box {
+    }}
+    .stMultiSelect div[data-baseweb="tag"] {{ background-color: var(--base-terracotta) !important; }}
+
+    /* Welcome Box */
+    .welcome-box {{
         background-color: #FFFFFF;
         padding: 25px;
         border-left: 6px solid var(--base-terracotta);
@@ -199,60 +156,20 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         border-radius: 12px;
         margin-bottom: 25px;
-    }
-    .stAlert {
-        background-color: #FFFFFF;
-        border: 1px solid var(--comp-gold);
-        color: var(--text-dark);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .stSuccess { border-left-color: var(--comp-olive) !important; }
-    .stInfo { border-left-color: var(--comp-teal) !important; }
-    .stWarning { border-left-color: var(--comp-gold) !important; }
-    .stError { border-left-color: #C0392B !important; }
-
-    /* 10. TEXT OVERRIDE */
-    p, label, span, div {
-        color: var(--text-dark);
-    }
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
+    }}
+    
+    /* Override Text Color */
+    p, label, span, div {{ color: var(--text-dark); }}
+    footer, #MainMenu {{ visibility: hidden; }}
 </style>
+
+<div class="custom-navbar">
+    <img src="data:image/png;base64,{b64_bps}" title="BPS">
+    <img src="data:image/png;base64,{b64_stis}" title="Politeknik Statistika STIS">
+    <img src="data:image/png;base64,{b64_pkl}" title="PKL 65">
+</div>
 """, unsafe_allow_html=True)
-# =================================================================
-# SETUP GAMBAR (SESUAI GRAND DESIGN & ASET BARU)
-# =================================================================
-# Menggunakan header full dan footer full yang baru
-IMG_BPS  = 'gambar/bps.png'  
-IMG_STIS = 'gambar/stis.png'
-LOGO_IMG   = 'gambar/image_14.png'  # Logo Bulat untuk Sidebar
-MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
-FULL_IMG   = 'gambar/Full.jpg'
 
-# --- RENDER 3 LOGO DI TENGAH ---
-st.write("") # Spasi dikit dari atas
-
-# Layout Kolom: [Kosong] [BPS] [STIS] [PKL] [Kosong]
-# Angka [4, 1.5, 1.5, 1.5, 4] mengatur lebar agar logo ada di tengah & tidak kegedean
-c_space_l, c_bps, c_stis, c_pkl, c_space_r = st.columns([4, 1.5, 1.5, 1.5, 4])
-
-with c_bps:
-    if os.path.exists(IMG_BPS):
-        st.image(IMG_BPS, use_container_width=True)
-    else:
-        st.error("File BPS tidak ditemukan")
-
-with c_stis:
-    if os.path.exists(IMG_STIS):
-        st.image(IMG_STIS, use_container_width=True)
-    else:
-        st.error("File STIS tidak ditemukan")
-
-with c_pkl:
-    if os.path.exists(LOGO_IMG):
-        st.image(LOGO_IMG, use_container_width=True)
-    else:
-        st.error("File PKL tidak ditemukan")
 
 # =================================================================
 # FUNGSI BANTUAN (MAP) - SOLUSI NO-SPACE (HAPUS SPASI AGAR JODOH)
@@ -350,18 +267,17 @@ def interpret_correlation(r):
 # SIDEBAR UTAMA DENGAN BRANDING PKL
 # =================================================================
 with st.sidebar:
-    # --- LOGO & MASKOT SIDEBAR ---
     st.markdown("<br>", unsafe_allow_html=True)
-    col_logo, col_mascot = st.columns([1, 1.3])
-    if os.path.exists(LOGO_IMG):
-        with col_logo:
-            st.image(LOGO_IMG, use_container_width=True)
+    
+    # HANYA MASKOT (Image_10) - Logo PKL dihapus
     if os.path.exists(MASCOT_IMG):
-        with col_mascot:
+        # Center Maskot
+        c1, c2, c3 = st.columns([0.5, 2, 0.5]) 
+        with c2:
             st.image(MASCOT_IMG, use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True) # Spasi
-    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True) # Menggunakan H1 Rakkas
+    st.markdown("<br>", unsafe_allow_html=True) 
+    st.markdown("<h1>KONTROL PANEL</h1>", unsafe_allow_html=True)
     st.markdown("---", unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Upload File Data (Format CSV/Excel)", type=['csv', 'xls', 'xlsx'])
 
@@ -373,7 +289,10 @@ with st.sidebar:
 if uploaded_file is None:
     # Judul Halaman Utama (Menggunakan Font RAKKAS dari CSS H1)
     st.markdown("<h1>DASHBOARD SEBARAN LOKASI POTENSIAL PEKERJA GIG PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
-    
+    if os.path.exists(FULL_IMG):
+        c1, c2, c3 = st.columns([1, 2, 1]) # Mengatur lebar gambar agar tidak terlalu lebar
+        with c2:
+            st.image(FULL_IMG, use_container_width=True)
     # Pesan Selamat Datang dengan Styling Baru
     st.markdown("""
     <div class="welcome-box">
