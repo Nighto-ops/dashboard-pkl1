@@ -37,7 +37,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (FIXED GAP) ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR (SIDEBAR NAIK) ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -51,8 +51,6 @@ st.markdown("""
         --comp-teal: #4F8190;
         --comp-olive: #739159;
         --text-dark: #4A3B32; 
-        
-        /* WARNA SIDEBAR: Putih Bersih */
         --sidebar-bg: #FFFFFF;       
     }
 
@@ -68,7 +66,7 @@ st.markdown("""
         background-color: rgba(253, 248, 228, 0.95) !important;
         border-bottom: 4px solid var(--base-terracotta);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        height: 3.5rem !important; /* Diperkecil sedikit tingginya */
+        height: 3.5rem !important;
         z-index: 999990 !important;
     }
 
@@ -79,7 +77,7 @@ st.markdown("""
         display: block !important;
         z-index: 99999999 !important;
         right: 1rem;
-        top: 0.2rem; /* Naikkan sedikit */
+        top: 0.2rem;
         background-color: transparent !important;
         border: none !important;
     }
@@ -111,31 +109,30 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* 4. SIDEBAR (GAP DIPERKECIL) */
+    /* 4. SIDEBAR (PERBAIKAN POSISI NAIK) */
     section[data-testid="stSidebar"] {
         background-color: var(--sidebar-bg);
         border-right: 3px solid var(--base-terracotta);
-        
-        top: 0 !important; 
-        height: 100vh !important;
-        /* UBAH DISINI: Dari 4rem jadi 3rem agar logo naik */
-        padding-top: 3rem !important; 
-        
         box-shadow: 4px 0 10px rgba(0,0,0,0.05);
     }
+    
+    /* INI KUNCINYA: Mengatur jarak isi sidebar dari atas */
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 5rem !important; /* Jarak aman dari navbar */
+        padding-bottom: 2rem !important;
+    }
+
+    /* Judul Sidebar */
     section[data-testid="stSidebar"] h1 {
-        font-size: 1.5rem !important; /* Font judul sidebar diperkecil dikit biar manis */
+        font-size: 1.8rem !important;
         color: var(--base-terracotta) !important;
         text-align: center;
-        margin-bottom: 0;
+        margin-top: 0 !important; /* Hapus margin bawaan */
     }
+    
     /* Fix teks sidebar */
     section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
         color: var(--text-dark) !important;
-    }
-    /* Hilangkan jarak default elemen atas di sidebar */
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 0rem !important;
     }
 
     /* 5. TOMBOL */
