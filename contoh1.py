@@ -37,7 +37,7 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity, calcu
 # =================================================================
 st.set_page_config(layout="wide", page_title="Dashboard Analisis Statistik PKL 65")
 
-# --- CUSTOM CSS: DESIGN, DARK MODE FIX, & TOOLBAR ---
+# --- CUSTOM CSS: DESIGN, DARK MODE FIX, TOOLBAR & NAVBAR ---
 st.markdown("""
 <style>
     /* IMPORT FONTS */
@@ -60,14 +60,37 @@ st.markdown("""
         color: var(--text-dark);
     }
 
-    /* 2. HEADER PADDING (Agar judul tidak tertutup) */
+    /* --- [BARU] NAVBAR / HEADER ATAS --- */
+    header[data-testid="stHeader"] {
+        background-color: rgba(253, 248, 228, 0.95) !important; /* Cream Transparan */
+        border-bottom: 4px solid var(--base-terracotta); /* Garis tegas Terracotta */
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Bayangan halus */
+        height: 4rem !important; /* Tinggi fix */
+    }
+
+    /* --- [UPDATE] TOOLBAR AGAR PAS DI NAVBAR BARU --- */
+    [data-testid="stToolbar"] {
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: block !important;
+        z-index: 99999999 !important;
+        right: 1rem;
+        top: 0.5rem; /* Posisi disesuaikan agar pas di tengah navbar */
+        background-color: transparent !important; /* Background transparan */
+        border: none !important;
+    }
+    /* Warna ikon toolbar (titik tiga) menjadi Terracotta agar terlihat */
+    [data-testid="stToolbar"] button {
+        color: var(--base-terracotta) !important;
+    }
+
+    /* 2. HEADER PADDING (Agar judul konten tidak ketutup Navbar) */
     .block-container {
-        padding-top: 5rem !important;
+        padding-top: 6rem !important; /* Ditambah karena ada Navbar fix di atas */
         padding-bottom: 2rem;
         max-width: 100%;
     }
 
-    
     /* 3. TYPOGRAPHY */
     h1 {
         font-family: 'Rakkas', cursive !important;
@@ -89,6 +112,7 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         background-color: #FDF1D6;
         border-right: 2px solid var(--base-terracotta);
+        margin-top: 4rem; /* Supaya sidebar tidak menutupi Navbar atas */
     }
     section[data-testid="stSidebar"] h1 {
         font-size: 1.8rem !important;
@@ -185,6 +209,9 @@ st.markdown("""
     p, label, span, div {
         color: var(--text-dark);
     }
+
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -197,7 +224,7 @@ MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
 
 
 # =================================================================
-# FUNGSI BANTUAN (MAP) - SOLUSI ANTI-RIBET (HAPUS SPASI)
+# FUNGSI BANTUAN (MAP)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -321,13 +348,13 @@ with st.sidebar:
 # === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
 if uploaded_file is None:
     # Judul Halaman Utama (Menggunakan Font RAKKAS dari CSS H1)
-    st.markdown("<h1>DASHBOARD SEBARAN LOKASI PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>DASHBOARD SEBARAN LOKASI POTENSIAL PEKERJA GIG PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
     
     # Pesan Selamat Datang dengan Styling Baru
     st.markdown("""
     <div class="welcome-box">
         <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
-        <p style='font-size: 1.1rem;'>Halaman ini menyajikan peta interaktif persebaran lokasi di D.I. Yogyakarta. Visualisasi ini dirancang untuk memberikan gambaran spasial terkait data lapangan.</p>
+        <p style='font-size: 1.1rem;'>Halaman ini menyajikan peta interaktif persebaran lokasi pekerja Gig di D.I. Yogyakarta. Visualisasi ini dirancang untuk memberikan gambaran spasial terkait data lapangan.</p>
         <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b> (seperti Uji Regresi, ANOVA, MANOVA, dan Clustering), silakan unggah dataset Anda melalui panel di sisi kiri.</p>
     </div>
     """, unsafe_allow_html=True)
