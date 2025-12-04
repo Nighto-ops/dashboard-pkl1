@@ -235,7 +235,7 @@ MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
 
 
 # =================================================================
-# FUNGSI BANTUAN (MAP)
+# FUNGSI BANTUAN (MAP) - SOLUSI COMPOSITE KEY (BANTUL_JETIS vs YOGYA_JETIS)
 # =================================================================
 @st.cache_data
 def load_map_excel_data():
@@ -261,29 +261,24 @@ def load_map_excel_data():
     else:
         return pd.DataFrame()
 
-    # 1. BERSIHKAN KABUPATEN
+    # 1. BERSIHKAN KABUPATEN & BUAT KAB_KEY
     if 'kabupaten' in combined_df.columns:
-        # Standarisasi teks biasa
         combined_df['kabupaten'] = combined_df['kabupaten'].astype(str).str.title().str.strip()
         combined_df['kabupaten'] = combined_df['kabupaten'].str.replace(r'^(Kab\.?|Kabupaten|Kota)\s+', '', regex=True)
-        # Normalisasi typo umum
-        combined_df['kabupaten'] = combined_df['kabupaten'].replace({
-            'Yogya': 'Yogyakarta',
-            'Yogyakartakarta': 'Yogyakarta'
-        })
-        # BUAT KOLOM KUNCI (HURUF BESAR & TANPA SPASI)
+        combined_df['kabupaten'] = combined_df['kabupaten'].replace({'Yogya': 'Yogyakarta', 'Yogyakartakarta': 'Yogyakarta'})
+        
+        # Key Kabupaten (Tanpa Spasi)
         combined_df['kab_key'] = combined_df['kabupaten'].str.upper().str.replace(" ", "")
 
-    # 2. BERSIHKAN KECAMATAN
+    # 2. BERSIHKAN KECAMATAN & BUAT KEC_KEY
     if 'kecamatan' in combined_df.columns:
         combined_df['kecamatan'] = combined_df['kecamatan'].astype(str).str.title().str.strip()
         combined_df['kecamatan'] = combined_df['kecamatan'].str.replace(r'^(Kec\.?|Kecamatan|Kapanewon|Kemantren)\s+', '', regex=True)
         
-        # BUAT KOLOM KUNCI (HURUF BESAR & TANPA SPASI) -> INI RAHASIANYA
+        # Key Kecamatan (Tanpa Spasi)
         combined_df['kec_key'] = combined_df['kecamatan'].str.upper().str.replace(" ", "")
 
-    # 3. AUTO-CORRECT KABUPATEN (MANTRIJERON FIX)
-    # Kita cek berdasarkan 'kec_key' biar aman dari typo spasi
+    # 3. FIX MANTRIJERON (Pindah ke Kota)
     kec_kota_jogja_keys = [
         'DANUREJAN', 'GEDONGTENGEN', 'GONDOKUSUMAN', 'GONDOMANAN', 
         'JETIS', 'KOTAGEDE', 'KRATON', 'KERATON', 'MANTRIJERON', 'MERGANGSAN', 
@@ -291,11 +286,22 @@ def load_map_excel_data():
     ]
     
     if 'kabupaten' in combined_df.columns and 'kec_key' in combined_df.columns:
-        # Jika kecamatannya ada di list kota jogja, ubah kabupaten jadi Yogyakarta
-        # Dan update kab_key nya juga jadi YOGYAKARTA
-        mask = combined_df['kec_key'].isin(kec_kota_jogja_keys)
-        combined_df.loc[mask, 'kabupaten'] = 'Yogyakarta'
-        combined_df.loc[mask, 'kab_key'] = 'YOGYAKARTA'
+        # Logika: Jika Kecamatan ada di daftar Kota Jogja, paksa Kabupatennnya jadi Yogyakarta
+        mask_kota = combined_df['kec_key'].isin(kec_kota_jogja_keys)
+        
+        # TAPI HATI-HATI: JETIS ada di Bantul juga.
+        # Jadi kita hanya ubah jika data aslinya BUKAN Bantul tapi masuk list kota (kasus Mantrijeron)
+        # Untuk Jetis, kita percayakan pada data asli inputan mahasiswa (semoga input kabupatennya benar)
+        
+        # Khusus Mantrijeron (yang sering salah masuk Bantul)
+        mask_mantri = combined_df['kec_key'].isin(['MANTRIJERON', 'KRATON', 'NGAMPILAN'])
+        combined_df.loc[mask_mantri, 'kabupaten'] = 'Yogyakarta'
+        combined_df.loc[mask_mantri, 'kab_key'] = 'YOGYAKARTA'
+
+    # 4. [PENTING] BUAT UNIQUE KEY (GABUNGAN KAB + KEC)
+    # Ini solusinya: BANTUL_JETIS beda dengan YOGYAKARTA_JETIS
+    if 'kab_key' in combined_df.columns and 'kec_key' in combined_df.columns:
+        combined_df['unique_key'] = combined_df['kab_key'] + "_" + combined_df['kec_key']
 
     return combined_df
 
@@ -405,45 +411,44 @@ if uploaded_file is None:
 
 # RENDER PETA
         if selected_kab and selected_kec:
-            # Filter Data Excel
             final_df = df_map[
                 (df_map['kabupaten'].isin(selected_kab)) & 
                 (df_map['kecamatan'].isin(selected_kec))
             ]
             
-            # 1. SIAPKAN SHP - BUAT KOLOM KUNCI YANG SAMA (NO SPACE)
-            # Kita tidak mengubah tampilan asli (nmkab/nmkec), tapi buat kolom baru untuk joining
+            # 1. SIAPKAN SHP & BUAT KEY
             gdf_shape['kab_key'] = gdf_shape[SHP_COL_KAB].astype(str).str.upper().str.replace(" ", "").str.replace(r'^(KAB\.?|KABUPATEN|KOTA)\s+', '', regex=True)
             gdf_shape['kec_key'] = gdf_shape[SHP_COL_KEC].astype(str).str.upper().str.replace(" ", "")
             
-            # Bersihkan typo khusus di SHP key jika perlu (biasanya replace spasi sudah cukup)
+            # Fix typo SHP
             gdf_shape['kab_key'] = gdf_shape['kab_key'].replace({'GUNUNGKIDUL': 'GUNUNGKIDUL', 'YOGYA': 'YOGYAKARTA'})
 
-            # Ambil key dari pilihan user (yang berasal dari Excel)
-            # Kita harus convert pilihan user ke format key juga
+            # --- [SOLUSI JETIS] BUAT UNIQUE KEY DI SHP JUGA ---
+            gdf_shape['unique_key'] = gdf_shape['kab_key'] + "_" + gdf_shape['kec_key']
+            # --------------------------------------------------
+
+            # Konversi filter user ke key
             selected_kab_keys = [k.upper().replace(" ", "") for k in selected_kab]
             selected_kec_keys = [k.upper().replace(" ", "") for k in selected_kec]
 
-            # Filter SHP menggunakan KEY (bukan nama cantik)
+            # Filter SHP
             final_gdf = gdf_shape[
                 (gdf_shape['kab_key'].isin(selected_kab_keys)) &
                 (gdf_shape['kec_key'].isin(selected_kec_keys))
             ]
 
             if not final_gdf.empty:
-                # Hitung statistik per kecamatan
-                # Group by 'kec_key' agar aman
-                stats_kec = final_df.groupby('kec_key').size().reset_index(name='jumlah_lokasi')
+                # Hitung statistik berdasarkan UNIQUE KEY (Bukan nama kecamatan)
+                stats_kec = final_df.groupby('unique_key').size().reset_index(name='jumlah_lokasi')
                 
-                # Merge Data Excel ke SHP menggunakan KEY
-                gdf_viz = final_gdf.merge(stats_kec, on='kec_key', how='left')
+                # Merge menggunakan UNIQUE KEY
+                gdf_viz = final_gdf.merge(stats_kec, on='unique_key', how='left')
                 gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
                 
-                # Agar tooltip tetap cantik, kita pastikan kolom nama asli ada
-                # Kita pakai nama dari SHP asli (nmkec) untuk label tampilan
+                # Siapkan label tooltip
                 gdf_viz['Nama Kecamatan'] = gdf_viz[SHP_COL_KEC].astype(str).str.title()
+                gdf_viz['Nama Kabupaten'] = gdf_viz[SHP_COL_KAB].astype(str).str.title()
 
-                # Setup Peta
                 bounds = final_gdf.total_bounds
                 center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
                 m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
@@ -453,8 +458,8 @@ if uploaded_file is None:
                         geo_data=gdf_viz,
                         name='Kepadatan Wilayah',
                         data=gdf_viz,
-                        columns=['kec_key', 'jumlah_lokasi'], # Join pakai Key
-                        key_on='feature.properties.kec_key',  # Join pakai Key
+                        columns=['unique_key', 'jumlah_lokasi'], # JOIN PAKAI UNIQUE KEY
+                        key_on='feature.properties.unique_key',  # JOIN PAKAI UNIQUE KEY
                         fill_color='YlOrRd', 
                         fill_opacity=0.7,
                         line_opacity=0.2,
@@ -462,10 +467,10 @@ if uploaded_file is None:
                         highlight=True
                     ).add_to(m)
                     
-                    # Tooltip pakai nama asli yang cantik
+                    # Tooltip yang lebih informatif (Ada nama Kab dan Kec)
                     folium.GeoJsonTooltip(
-                        fields=['Nama Kecamatan', 'jumlah_lokasi'], 
-                        aliases=['Kecamatan:', 'Jumlah Data:'], 
+                        fields=['Nama Kabupaten', 'Nama Kecamatan', 'jumlah_lokasi'], 
+                        aliases=['Kabupaten:', 'Kecamatan:', 'Jumlah Data:'], 
                         localize=True
                     ).add_to(cp.geojson)
 
@@ -475,7 +480,6 @@ if uploaded_file is None:
 
                 folium.LayerControl().add_to(m)
                 
-                # Frame Peta
                 st.markdown('<div style="box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; border: 3px solid #E07A3F;">', unsafe_allow_html=True)
                 st_folium(m, width=1200, height=650)
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -484,7 +488,7 @@ if uploaded_file is None:
                 with st.expander("Lihat Tabel Data Detail"): 
                     st.dataframe(final_df, use_container_width=True)
             else:
-                st.warning("Wilayah tidak ditemukan di Peta. Coba ganti filter.")
+                st.warning("Wilayah tidak ditemukan di Peta.")
         else:
             st.info("Silakan pilih Kabupaten dan Kecamatan pada panel filter di atas.")
     else:
