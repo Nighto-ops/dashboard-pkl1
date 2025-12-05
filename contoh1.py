@@ -1186,11 +1186,11 @@ else:
             **Apa fungsi halaman ini?** Jika Anda memiliki banyak variabel (misal: 10-20 variabel) dan bingung membacanya, metode ini akan meringkasnya menjadi beberapa "Komponen" atau "Faktor" utama tanpa membuang banyak informasi penting.
             """)
             
-            st.warning("⚠️ **Catatan Teknis:** Data akan otomatis distandarisasi (skala disamakan) agar analisis akurat.")
+            st.warning("**Catatan Teknis:** Data akan otomatis distandarisasi (skala disamakan) agar analisis akurat.")
             st.markdown("---")
 
             if len(numeric_cols) < 2:
-                 st.error("❌ Analisis ini memerlukan setidaknya 2 kolom numerik (angka).")
+                 st.error("Analisis ini memerlukan setidaknya 2 kolom numerik (angka).")
             else:
                 try:
                     # 1. Standarisasi Data (Wajib untuk PCA/EFA)
@@ -1338,7 +1338,7 @@ else:
                 efa_vars = st.multiselect("Pilih variabel untuk EFA:", numeric_cols, default=numeric_cols, key='efa_vars')
                 
                 if len(efa_vars) < 3:
-                    st.warning("⚠️ EFA membutuhkan minimal 3 variabel agar hasilnya valid.")
+                    st.warning("EFA membutuhkan minimal 3 variabel agar hasilnya valid.")
                 else:
                     df_efa_ready = df_scaled[efa_vars]
 
@@ -1355,16 +1355,16 @@ else:
                         with c_kmo1:
                             st.metric("Nilai KMO (Kaiser-Meyer-Olkin)", f"{kmo_model:.3f}")
                             if kmo_model > 0.6:
-                                st.success("✅ **Data Cukup Baik** (KMO > 0.6). Sampel mencukupi.")
+                                st.success("**Data Cukup Baik** (KMO > 0.6). Sampel mencukupi.")
                             else:
-                                st.error("❌ **Data Kurang** (KMO < 0.6). Tambah data atau kurangi variabel.")
+                                st.error("**Data Kurang** (KMO < 0.6). Tambah data atau kurangi variabel.")
                         
                         with c_kmo2:
                             st.metric("P-value Bartlett", f"{p_value_bartlett:.4f}")
                             if p_value_bartlett < 0.05:
-                                st.success("✅ **Variabel Saling Berhubungan** (P < 0.05). EFA bisa dilanjutkan.")
+                                st.success("**Variabel Saling Berhubungan** (P < 0.05). EFA bisa dilanjutkan.")
                             else:
-                                st.error("❌ **Variabel Tidak Berhubungan** (P > 0.05). EFA tidak berguna.")
+                                st.error("**Variabel Tidak Berhubungan** (P > 0.05). EFA tidak berguna.")
 
                         # 3. Scree Plot Eigenvalues (Kaiser Criterion)
                         st.write("**Berapa Faktor yang harus dibentuk? (Kaiser Criterion: Eigenvalue > 1)**")
@@ -1378,7 +1378,7 @@ else:
                         st.plotly_chart(fig_ev, use_container_width=True)
                         
                         suggested_factors = sum(ev > 1)
-                        st.info(f"💡 **Rekomendasi:** Berdasarkan grafik di atas (nilai > 1), disarankan membuat **{suggested_factors} Faktor**.")
+                        st.info(f"**Rekomendasi:** Berdasarkan grafik di atas (nilai > 1), disarankan membuat **{suggested_factors} Faktor**.")
 
                     # --- STEP 3: EKSEKUSI EFA ---
                     st.markdown("##### Langkah 3: Hasil Utama EFA")
@@ -1413,7 +1413,7 @@ else:
                             st.dataframe(var_efa)
                             
                             # Interpretasi Otomatis Sederhana
-                            st.write("### 📝 Interpretasi Faktor")
+                            st.write("### Interpretasi Faktor")
                             for i in range(n_factors_efa):
                                 col_name = f'Faktor {i+1}'
                                 # Ambil variabel yang loadingnya > 0.4 (cutoff umum)
