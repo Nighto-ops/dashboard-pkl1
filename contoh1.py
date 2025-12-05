@@ -1423,145 +1423,182 @@ else:
                         except Exception as e:
                             st.error(f"Terjadi error: {e}. Coba kurangi jumlah faktor atau ganti metode rotasi.")
 
-        # -------------------------------------------------------------
+# -------------------------------------------------------------
         # TAB 7: KLASIFIKASI & CLUSTERING (BAB 11 & 12)
         # -------------------------------------------------------------
         with tab_class:
             st.header("Klasifikasi & Clustering")
-            st.info("Metode ini membantu Anda mengelompokkan data Anda.")
+            st.info("Modul ini digunakan untuk mengelompokkan data (Clustering) atau memprediksi kategori (Klasifikasi).")
+            
+            method_cls = st.radio("Pilih Metode Analisis:", 
+                ["Clustering (K-Means) - Pengelompokan Otomatis", "Diskriminan (LDA) - Prediksi Kategori"], 
+                horizontal=True)
+            
             st.markdown("---")
 
-            if not numeric_cols:
-                 st.error("Analisis ini memerlukan setidaknya satu kolom numerik.")
-            else:
-                # --- Clustering (Bab 12 - Unsupervised) ---
-                st.subheader("Clustering (K-Means)")
-                st.info("Tujuan: Menemukan kelompok-kelompok (cluster) yang 'alami' dalam data Anda (unsupervised).")
-                
-                col1, col2 = st.columns([1, 2])
-                with col1:
-                    cluster_vars = st.multiselect(
-                        "Pilih variabel numerik untuk Clustering:",
-                        numeric_cols,
-                        default=numeric_cols if len(numeric_cols) >= 2 else [],
-                        key='clust_vars'
-                    )
-                    n_clusters = st.slider(
-                        "Pilih jumlah Cluster (K):",
-                        min_value=2,
-                        max_value=10,
-                        value=3,
-                        key='n_clust'
-                    )
-                
-                with col2:
-                    if len(cluster_vars) >= 2:
-                        if st.button("Jalankan K-Means Clustering", key='clust_btn'):
-                            try:
-                                df_scaled_clust = pd.DataFrame(StandardScaler().fit_transform(df[cluster_vars]), columns=cluster_vars)
-                                kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-                                cluster_labels = kmeans.fit_predict(df_scaled_clust)
-                                
-                                df_clean_clust = df[cluster_vars].dropna()
-                                df_clean_clust['Cluster'] = cluster_labels
-                                
-                                st.write(f"**Visualisasi Cluster ({cluster_vars[0]} vs {cluster_vars[1]})**")
-                                # Menggunakan palet warna Grand Design
-                                fig_clust = px.scatter(
-                                    df_clean_clust,
-                                    x=cluster_vars[0],
-                                    y=cluster_vars[1],
-                                    color='Cluster',
-                                    title=f"Hasil Clustering K-Means (K={n_clusters})",
-                                    color_continuous_scale=['#F2C94C', '#4F8190', '#739159', '#E07A3F']
-                                )
-                                fig_clust.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
-                                st.plotly_chart(fig_clust, use_container_width=True)
-                                
-                                st.write("**Pusat Cluster (Cluster Centers)**")
-                                st.dataframe(pd.DataFrame(kmeans.cluster_centers_, columns=cluster_vars, index=[f'Cluster {i}' for i in range(n_clusters)]))
+            # =========================================================
+            # SKENARIO 1: CLUSTERING (K-MEANS)
+            # =========================================================
+            if method_cls == "Clustering (K-Means) - Pengelompokan Otomatis":
+                st.subheader("K-Means Clustering")
+                st.markdown("""
+                **Tujuan:** Mengelompokkan data yang memiliki karakteristik mirip ke dalam satu grup (Cluster).
+                Contoh: Mengelompokkan daerah berdasarkan tingkat kemiskinan dan pengangguran.
+                """)
 
-                                # Interpretasi hasil
-                                with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
-                                    st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                                    st.markdown(f"**1. Visualisasi Cluster:** Menunjukkan sebaran {n_clusters} kelompok. Apakah terlihat terpisah dengan baik?")
-                                    st.markdown(f"**2. Pusat Cluster:** Menunjukkan nilai *rata-rata* (standardisasi) dari setiap variabel untuk setiap cluster. Gunakan ini untuk memberi 'nama' atau 'persona' pada setiap cluster.")
-                                    
-                            except Exception as e:
-                                st.error(f"Error menjalankan Clustering: {e}")
-                    else:
-                        st.warning("Silakan pilih minimal 2 variabel untuk clustering.")
-
-                st.markdown("---")
-
-                # --- Discriminant Analysis (Bab 11 - Supervised) ---
-                st.subheader("Analisis Diskriminan Linear (LDA)")
-                st.info("Tujuan: Menemukan 'fungsi' (kombinasi linear) yang paling baik **memisahkan** kelompok yang sudah diketahui (supervised).")
+                # 1. Pilih Variabel
+                cl_vars = st.multiselect("Pilih variabel pembentuk cluster (Numerik):", numeric_cols, key='km_vars')
                 
-                col3, col4 = st.columns([1, 2])
-                with col3:
-                    if not categorical_cols:
-                        st.warning("Analisis Diskriminan memerlukan 1 variabel kategorikal (Target) untuk diprediksi.")
-                        lda_target = None
-                        lda_predictors = []
-                    else:
-                        lda_target = st.selectbox("Pilih Variabel Target (Kategorikal):", categorical_cols, key='lda_target')
+                if len(cl_vars) >= 2:
+                    # Pre-processing: Standarisasi Data (Wajib untuk K-Means)
+                    X_cl = df[cl_vars].dropna()
+                    scaler = StandardScaler()
+                    X_std = scaler.fit_transform(X_cl)
+                    
+                    # --- ANALISIS PENDUKUNG: ELBOW METHOD ---
+                    st.markdown("#### 1. Analisis Pendukung: Metode Elbow")
+                    with st.expander("Bantuan: Cara menentukan jumlah cluster yang tepat", expanded=True):
+                        st.write("Grafik ini membantu Anda memilih jumlah cluster. Cari titik di mana garis mulai melandai (seperti siku tangan).")
                         
-                        available_lda_x = [col for col in numeric_cols]
-                        lda_predictors = st.multiselect(
-                            "Pilih Variabel Prediktor (Numerik):",
-                            available_lda_x,
-                            default=available_lda_x if len(available_lda_x) >= 2 else [],
-                            key='lda_preds'
-                        )
+                        inertias = []
+                        K_range = range(1, 11) # Coba 1 sampai 10 cluster
+                        for k in K_range:
+                            km = KMeans(n_clusters=k, random_state=42, n_init=10)
+                            km.fit(X_std)
+                            inertias.append(km.inertia_)
+                        
+                        fig_elb = px.line(x=list(K_range), y=inertias, markers=True, title="Metode Elbow (Cari Titik Siku)")
+                        fig_elb.update_layout(xaxis_title="Jumlah Cluster (k)", yaxis_title="Inersia (Error)", plot_bgcolor='rgba(0,0,0,0)')
+                        st.plotly_chart(fig_elb, use_container_width=True)
+
+                    # --- PROSES UTAMA ---
+                    st.markdown("#### 2. Proses Clustering")
+                    k_num = st.slider("Berdasarkan grafik di atas, pilih jumlah cluster:", 2, 10, 3, key='n_clust_slider')
+                    
+                    if st.button("Bentuk Cluster", key='btn_km_run'):
+                        # Eksekusi K-Means
+                        kmeans = KMeans(n_clusters=k_num, random_state=42, n_init=10)
+                        labels = kmeans.fit_predict(X_std)
+                        
+                        # Gabungkan hasil
+                        df_res = X_cl.copy()
+                        df_res['Cluster'] = labels
+                        df_res['Cluster'] = df_res['Cluster'].astype(str) # Ubah ke string agar jadi kategori warna
+                        
+                        # Visualisasi Scatter Plot
+                        c1, c2 = st.columns([2, 1])
+                        with c1:
+                            st.write("**Visualisasi Sebaran Cluster**")
+                            # Plot menggunakan 2 variabel pertama yang dipilih pengguna
+                            fig_cl = px.scatter(
+                                df_res, x=cl_vars[0], y=cl_vars[1], 
+                                color='Cluster',
+                                title=f"Peta Cluster ({cl_vars[0]} vs {cl_vars[1]})",
+                                color_discrete_sequence=px.colors.qualitative.Bold
+                            )
+                            fig_cl.update_layout(plot_bgcolor='rgba(0,0,0,0)')
+                            st.plotly_chart(fig_cl, use_container_width=True)
+                        
+                        with c2:
+                            st.write("**Profil Rata-rata per Cluster**")
+                            st.caption("Tabel ini menunjukkan karakteristik setiap kelompok.")
+                            # Hitung rata-rata tiap cluster
+                            summary_cl = df_res.groupby('Cluster')[cl_vars].mean()
+                            # Tampilkan dataframe (tanpa background_gradient untuk menghindari error matplotlib)
+                            st.dataframe(summary_cl)
+                            
+                        # Interpretasi Otomatis
+                        st.write("### 📝 Interpretasi Profil")
+                        for cluster_id in sorted(summary_cl.index):
+                            # Cari variabel yang nilainya paling tinggi di cluster ini
+                            max_col = summary_cl.loc[cluster_id].idxmax()
+                            max_val = summary_cl.loc[cluster_id].max()
+                            st.info(f"**Cluster {cluster_id}:** Cenderung memiliki nilai **{max_col}** yang tinggi (Rata-rata: {max_val:.2f}).")
+
+                else:
+                    st.warning("Silakan pilih minimal 2 variabel numerik.")
+
+            # =========================================================
+            # SKENARIO 2: DISKRIMINAN (LDA)
+            # =========================================================
+            elif method_cls == "Diskriminan (LDA) - Prediksi Kategori":
+                st.subheader("Linear Discriminant Analysis (LDA)")
+                st.markdown("""
+                **Tujuan:** Mempelajari pola dari data yang sudah ada kategorinya (Supervised), untuk melihat seberapa akurat variabel pembeda memisahkan kelompok.
+                """)
+
+                # 1. Pilih Variabel
+                c_lda1, c_lda2 = st.columns(2)
+                with c_lda1:
+                    lda_target = st.selectbox("Variabel Target (Kategori/Grouping):", categorical_cols, key='lda_t')
+                with c_lda2:
+                    lda_preds = st.multiselect("Variabel Pembeda (Numerik):", numeric_cols, key='lda_p')
                 
-                with col4:
-                    if categorical_cols and lda_target and len(lda_predictors) >= 1:
-                        if st.button("Jalankan Analisis Diskriminan", key='lda_btn'):
-                            try:
-                                data_lda = df[[lda_target] + lda_predictors].dropna()
-                                X_lda = data_lda[lda_predictors]
-                                y_lda = data_lda[lda_target]
-                                
-                                X_scaled_lda = StandardScaler().fit_transform(X_lda)
-                                
-                                n_classes = len(y_lda.unique())
-                                n_components_lda = min(n_classes - 1, len(lda_predictors))
+                if st.button("Jalankan Analisis Diskriminan", key='btn_lda_run'):
+                    if lda_target and len(lda_preds) > 0:
+                        try:
+                            # Persiapan Data
+                            df_lda = df[[lda_target] + lda_preds].dropna()
+                            X_lda = df_lda[lda_preds]
+                            y_lda = df_lda[lda_target]
+                            
+                            # Cek jumlah kategori
+                            n_classes = len(y_lda.unique())
+                            if n_classes < 2:
+                                st.error("Variabel target harus memiliki minimal 2 kategori.")
+                                st.stop()
 
-                                if n_components_lda < 1:
-                                    st.error(f"Error: Jumlah diskriminan harus > 0. (Kelas: {n_classes}, Prediktor: {len(lda_predictors)})")
+                            # Eksekusi LDA
+                            lda = LinearDiscriminantAnalysis()
+                            lda.fit(X_lda, y_lda)
+                            y_pred = lda.predict(X_lda)
+                            
+                            # Hitung Akurasi (Resubstitution)
+                            acc = np.mean(y_pred == y_lda)
+                            
+                            # Tampilkan Hasil Utama
+                            col_res1, col_res2 = st.columns(2)
+                            with col_res1:
+                                st.metric("Akurasi Model", f"{acc*100:.2f}%")
+                            
+                            with col_res2:
+                                if acc > 0.8:
+                                    st.success("**Sangat Baik.** Variabel pembeda mampu memisahkan kelompok dengan tegas.")
+                                elif acc > 0.6:
+                                    st.warning("**Cukup.** Ada beberapa data yang tumpang tindih antar kelompok.")
                                 else:
-                                    lda = LinearDiscriminantAnalysis(n_components=n_components_lda)
-                                    X_lda_transformed = lda.fit_transform(X_scaled_lda, y_lda)
-                                    
-                                    lda_accuracy = lda.score(X_scaled_lda, y_lda)
-                                    
-                                    st.write(f"**Akurasi Model:** `{lda_accuracy*100:.2f}%`")
-                                    
-                                    st.write("**Koefisien Diskriminan (Bobot Variabel)**")
-                                    st.dataframe(pd.DataFrame(lda.scalings_, index=lda_predictors, columns=[f'LD{i+1}' for i in range(n_components_lda)]))
+                                    st.error("**Kurang Baik.** Variabel yang dipilih tidak cukup kuat untuk membedakan kelompok.")
 
-                                    # Menggunakan palet warna Grand Design
-                                    if n_components_lda >= 2:
-                                        lda_plot_df = pd.DataFrame(X_lda_transformed, columns=['LD1', 'LD2'])
-                                        lda_plot_df['Target'] = y_lda.values
-                                        fig_lda = px.scatter(lda_plot_df, x='LD1', y='LD2', color='Target', title='Plot Fungsi Diskriminan', color_discrete_sequence=['#F2C94C', '#4F8190', '#739159', '#E07A3F'])
-                                        fig_lda.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
-                                        st.plotly_chart(fig_lda, use_container_width=True)
-                                    elif n_components_lda == 1:
-                                        lda_plot_df = pd.DataFrame(X_lda_transformed, columns=['LD1'])
-                                        lda_plot_df['Target'] = y_lda.values
-                                        fig_lda = px.histogram(lda_plot_df, x='LD1', color='Target', title='Plot Fungsi Diskriminan 1D', marginal='box', color_discrete_sequence=['#F2C94C', '#4F8190', '#739159', '#E07A3F'])
-                                        fig_lda.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
-                                        st.plotly_chart(fig_lda, use_container_width=True)
-                                    
-                                    # Interpretasi hasil
-                                    with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
-                                        st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                                        st.markdown(f"**1. Akurasi Model:** Model ini **{lda_accuracy*100:.2f}%** akurat dalam menebak '{lda_target}' berdasarkan prediktor.")
-                                        st.markdown(f"**2. Koefisien Diskriminan:** Angka yang besar (jauh dari 0) menunjukkan variabel tersebut adalah pembeda yang *kuat* antar kelompok.")
-                                        st.markdown(f"**3. Plot Fungsi Diskriminan:** Menunjukkan seberapa baik model memisahkan kelompok. Semakin jauh jarak antar warna, semakin baik.")
-                            except Exception as e:
-                                st.error(f"Error menjalankan LDA: {e}")
-                    elif categorical_cols:
-                        st.warning("Silakan pilih 1 variabel target (kategorikal) dan minimal 1 variabel prediktor (numerik).")
+                            # Koefisien Diskriminan
+                            st.write("### Koefisien Diskriminan (Bobot Pembeda)")
+                            st.caption("Semakin besar angka (positif/negatif), semakin penting variabel tersebut dalam membedakan kelompok.")
+                            
+                            # Buat DataFrame Koefisien
+                            n_comps = min(n_classes - 1, len(lda_preds))
+                            coef_df = pd.DataFrame(
+                                lda.scalings_[:, :n_comps], 
+                                index=lda_preds, 
+                                columns=[f'Fungsi LD{i+1}' for i in range(n_comps)]
+                            )
+                            st.dataframe(coef_df)
+                            
+                            # Plot Proyeksi LDA (Jika memungkinkan)
+                            if n_comps >= 1:
+                                st.write("### Visualisasi Sebaran Kategori")
+                                X_lda_proj = lda.transform(X_lda)
+                                df_proj = pd.DataFrame(X_lda_proj, columns=[f'LD{i+1}' for i in range(n_comps)])
+                                df_proj['Kategori'] = y_lda.values
+                                
+                                if n_comps == 1:
+                                    # Histogram 1D
+                                    fig_lda = px.histogram(df_proj, x='LD1', color='Kategori', barmode='overlay', title="Distribusi Pemisah (1 Dimensi)")
+                                else:
+                                    # Scatter 2D
+                                    fig_lda = px.scatter(df_proj, x='LD1', y='LD2', color='Kategori', title="Peta Sebaran LDA (2 Dimensi)")
+                                
+                                st.plotly_chart(fig_lda, use_container_width=True)
+
+                        except Exception as e:
+                            st.error(f"Terjadi error: {e}. Pastikan variabel target tidak memiliki nilai tunggal.")
+                    else:
+                        st.warning("Mohon lengkapi pilihan variabel Target dan Prediktor.")
