@@ -1178,142 +1178,250 @@ else:
                         st.warning("Variabel Kelompok 1 dan 2 tidak boleh sama.")
 
         # -------------------------------------------------------------
-        # TAB 6: REDUKSI DIMENSI (PCA & EFA) (BAB 8 & 9)
+        # TAB 6: REDUKSI DIMENSI (PCA & EFA)
         # -------------------------------------------------------------
         with tab_dim:
-            st.header("Reduksi Dimensi")
-            st.info("Metode ini membantu menyederhanakan data Anda dengan mengurangi jumlah variabel.")
-            st.warning("Penting: Kami akan **otomatis menstandardisasi data Anda** (mean=0, std=1) sebelum analisis.")
+            st.header("Reduksi Dimensi (Penyederhanaan Data)")
+            st.info("""
+            **Apa fungsi halaman ini?** Jika Anda memiliki banyak variabel (misal: 10-20 variabel) dan bingung membacanya, metode ini akan meringkasnya menjadi beberapa "Komponen" atau "Faktor" utama tanpa membuang banyak informasi penting.
+            """)
+            
+            st.warning("⚠️ **Catatan Teknis:** Data akan otomatis distandarisasi (skala disamakan) agar analisis akurat.")
             st.markdown("---")
 
             if len(numeric_cols) < 2:
-                 st.error("Analisis ini memerlukan setidaknya 2 kolom numerik.")
+                 st.error("❌ Analisis ini memerlukan setidaknya 2 kolom numerik (angka).")
             else:
                 try:
-                    # Selalu standarisasi data untuk PCA/EFA
-                    df_scaled = pd.DataFrame(StandardScaler().fit_transform(df[numeric_cols]), columns=numeric_cols)
+                    # 1. Standarisasi Data (Wajib untuk PCA/EFA)
+                    scaler = StandardScaler()
+                    df_scaled = pd.DataFrame(scaler.fit_transform(df[numeric_cols]), columns=numeric_cols)
                 except Exception as e:
                     st.error(f"Gagal melakukan standarisasi data: {e}")
                     st.stop() 
 
-                # --- PCA (Bab 8) ---
-                st.subheader("Principal Component Analysis (PCA)")
-                st.info("Tujuan: Meringkas (mereduksi) beberapa variabel numerik menjadi lebih sedikit 'komponen' baru.")
-                
-                col1, col2 = st.columns([1, 2])
-                with col1:
-                    pca_vars = st.multiselect("Pilih variabel untuk PCA:", numeric_cols, default=numeric_cols, key='pca_vars')
-                    if len(pca_vars) < 2:
-                        st.warning("Pilih minimal 2 variabel untuk PCA.")
-                    else:
-                        n_components_pca = st.slider(
-                            "Pilih jumlah Komponen PCA:",
-                            min_value=1,
-                            max_value=len(pca_vars),
-                            value=max(1, len(pca_vars)//2),
-                            key='n_pca'
-                        )
-                
-                with col2:
-                    if len(pca_vars) >= 2:
-                        if st.button("Jalankan PCA", key='pca_btn'):
-                            try:
-                                df_scaled_pca = df_scaled[pca_vars]
-                                pca = PCA(n_components=n_components_pca)
-                                pca.fit(df_scaled_pca)
-                                
-                                st.write("**Scree Plot (Proporsi Varians yang Dijelaskan)**")
-                                scree_data = pd.DataFrame({
-                                    'Komponen': [f'PC{i+1}' for i in range(len(pca.explained_variance_ratio_))],
-                                    'Explained Variance': pca.explained_variance_ratio_
-                                })
-                                # Warna Grand Design
-                                fig_scree = px.bar(scree_data, x='Komponen', y='Explained Variance', title='Scree Plot', color_discrete_sequence=['#F2C94C'])
-                                fig_scree.add_trace(go.Scatter(x=scree_data['Komponen'], y=scree_data['Explained Variance'].cumsum(), name='Kumulatif', line=dict(color='#E07A3F')))
-                                fig_scree.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_family="Poppins")
-                                st.plotly_chart(fig_scree, use_container_width=True)
-                                
-                                st.write("**Component Loadings (Bobot Variabel)**")
-                                st.dataframe(pd.DataFrame(pca.components_.T, index=pca_vars, columns=[f'PC{i+1}' for i in range(n_components_pca)]))
+                # =========================================================
+                # BAGIAN 1: PCA (Principal Component Analysis)
+                # =========================================================
+                st.subheader("1. Principal Component Analysis (PCA)")
+                st.markdown("""
+                **Tujuan:** Meringkas data menjadi indeks atau komponen baru. 
+                Contoh: Menggabungkan "Pendapatan", "Aset", dan "Pengeluaran" menjadi satu komponen bernama "Kekayaan".
+                """)
 
-                                # Interpretasi hasil
-                                with st.expander("Lihat Penjelasan dan Interpretasi Hasil"):
-                                    st.subheader("Bagaimana Cara Membaca Hasil Ini?")
-                                    st.markdown(f"""
-                                    **1. Scree Plot:** Garis 'Kumulatif' menunjukkan seberapa banyak info (varians) yang dipertahankan.
-                                    * **Hasil Anda:** {n_components_pca} komponen utama Anda menjelaskan **{pca.explained_variance_ratio_.sum()*100:.2f}%** dari total variasi.
-                                    **2. Component Loadings:** Menunjukkan "resep" dari setiap Komponen Utama (PC).
-                                    * Cari angka *loading* yang besar (jauh dari 0) untuk menamai komponen (misal: PC1 adalah "Faktor Senioritas").
-                                    """)
-                            except Exception as e:
-                                st.error(f"Error menjalankan PCA: {e}")
+                # --- STEP 1: PILIH VARIABEL ---
+                st.markdown("##### Langkah 1: Pilih Variabel")
+                pca_vars = st.multiselect("Pilih variabel yang ingin diringkas:", numeric_cols, default=numeric_cols, key='pca_vars')
+                
+                if len(pca_vars) < 2:
+                    st.warning("Silakan pilih minimal 2 variabel.")
+                else:
+                    df_pca_ready = df_scaled[pca_vars]
+
+                    # --- STEP 2: ANALISIS PENDUKUNG (SCREE PLOT) ---
+                    st.markdown("##### Langkah 2: Analisis Pendukung (Menentukan Jumlah Komponen)")
+                    with st.expander("📊 Lihat Grafik Siku (Scree Plot) untuk bantuan", expanded=True):
+                        # Hitung PCA Full dulu untuk melihat varians
+                        pca_full = PCA()
+                        pca_full.fit(df_pca_ready)
+                        var_exp = pca_full.explained_variance_ratio_
+                        cum_var = np.cumsum(var_exp)
+                        
+                        # Plotting Scree Plot
+                        scree_df = pd.DataFrame({
+                            'Komponen': range(1, len(var_exp)+1),
+                            'Varians (%)': var_exp * 100,
+                            'Kumulatif (%)': cum_var * 100
+                        })
+                        
+                        col_scr1, col_scr2 = st.columns([2, 1])
+                        with col_scr1:
+                            fig_scree = go.Figure()
+                            fig_scree.add_trace(go.Bar(x=scree_df['Komponen'], y=scree_df['Varians (%)'], name='Varians per Komponen', marker_color='#F2C94C'))
+                            fig_scree.add_trace(go.Scatter(x=scree_df['Komponen'], y=scree_df['Kumulatif (%)'], name='Total Informasi (Kumulatif)', line=dict(color='#E07A3F', width=3)))
+                            fig_scree.add_hline(y=70, line_dash="dash", line_color="green", annotation_text="Target Informasi 70%")
+                            fig_scree.update_layout(title="Scree Plot (Berapa komponen yang harus diambil?)", xaxis_title="Komponen Ke-", yaxis_title="Informasi (%)", height=400)
+                            st.plotly_chart(fig_scree, use_container_width=True)
+                        
+                        with col_scr2:
+                            st.info("""
+                            **Tips Memilih:**
+                            1. Cari titik di mana grafik batang mulai landai (seperti siku).
+                            2. Atau lihat garis oranye: Berapa komponen yang dibutuhkan untuk mencapai **>70%** informasi?
+                            """)
+                            st.dataframe(scree_df.set_index('Komponen').style.format("{:.2f}%"), height=300)
+
+                    # --- STEP 3: EKSEKUSI PCA ---
+                    st.markdown("##### Langkah 3: Hasil Utama PCA")
+                    n_components_pca = st.slider("Berdasarkan grafik di atas, pilih jumlah Komponen:", 1, len(pca_vars), 2, key='n_pca')
+                    
+                    if st.button("Proses PCA & Tampilkan Biplot", key='btn_pca'):
+                        pca_final = PCA(n_components=n_components_pca)
+                        components = pca_final.fit_transform(df_pca_ready)
+                        loadings = pca_final.components_.T * np.sqrt(pca_final.explained_variance_)
+                        
+                        # --- INTERPRETASI LOADINGS (BOBOT) ---
+                        st.write("### 1. Tabel Bobot (Loadings)")
+                        st.caption("Angka yang besar (positif/negatif) menunjukkan variabel tersebut sangat berpengaruh dalam membentuk komponen.")
+                        loadings_df = pd.DataFrame(
+                            pca_final.components_.T, 
+                            index=pca_vars, 
+                            columns=[f'Komponen {i+1}' for i in range(n_components_pca)]
+                        )
+                        # Highlight nilai tinggi
+                        st.dataframe(loadings_df.style.background_gradient(cmap="Oranges"), use_container_width=True)
+
+                        # --- BIPLOT (VISUALISASI 2D) ---
+                        if n_components_pca >= 2:
+                            st.write("### 2. Biplot (Peta Variabel & Observasi)")
+                            st.caption("Visualisasi ini menggabungkan sebaran data (titik) dan arah variabel (panah).")
+                            
+                            fig_bi = go.Figure()
+                            
+                            # A. Plot Titik Data (Scores)
+                            fig_bi.add_trace(go.Scatter(
+                                x=components[:,0], y=components[:,1],
+                                mode='markers', name='Data Observasi',
+                                marker=dict(color='#4F8190', opacity=0.5, size=8),
+                                text=df.index
+                            ))
+                            
+                            # B. Plot Panah (Loadings) - Di-scale agar terlihat
+                            scale_factor = np.max(np.abs(components)) / np.max(np.abs(loadings[:, :2])) # Skala otomatis
+                            
+                            for i, feature in enumerate(pca_vars):
+                                fig_bi.add_shape(
+                                    type='line', x0=0, y0=0,
+                                    x1=loadings[i, 0] * scale_factor,
+                                    y1=loadings[i, 1] * scale_factor,
+                                    line=dict(color='#E07A3F', width=2)
+                                )
+                                fig_bi.add_annotation(
+                                    x=loadings[i, 0] * scale_factor,
+                                    y=loadings[i, 1] * scale_factor,
+                                    text=feature, showarrow=False,
+                                    font=dict(color="#E07A3F", size=12, weight="bold")
+                                )
+                            
+                            var_ratio = pca_final.explained_variance_ratio_
+                            fig_bi.update_layout(
+                                title=f"Biplot (Komponen 1: {var_ratio[0]:.1%} vs Komponen 2: {var_ratio[1]:.1%})",
+                                xaxis_title=f"Komponen 1 ({var_ratio[0]:.1%})",
+                                yaxis_title=f"Komponen 2 ({var_ratio[1]:.1%})",
+                                plot_bgcolor='rgba(0,0,0,0)'
+                            )
+                            st.plotly_chart(fig_bi, use_container_width=True)
+                            
+                            # Interpretasi Biplot untuk orang awam
+                            st.info("""
+                            **Cara Membaca Biplot:**
+                            * **Sudut antar Panah:**
+                                * Panah yang berdekatan (sudut sempit) = Variabel saling berhubungan kuat (positif).
+                                * Panah berlawanan arah = Berhubungan terbalik (negatif).
+                                * Panah tegak lurus (90 derajat) = Tidak berhubungan.
+                            * **Arah Panah:** Menunjukkan variabel mana yang mendominasi komponen tersebut.
+                            """)
 
                 st.markdown("---")
 
-                # --- EFA (Bab 9) ---
-                st.subheader("Exploratory Factor Analysis (EFA)")
-                st.info("Tujuan: Menemukan 'faktor' (konsep tersembunyi/laten) yang mendasari sekumpulan variabel.")
+                # =========================================================
+                # BAGIAN 2: EFA (Exploratory Factor Analysis)
+                # =========================================================
+                st.subheader("2. Exploratory Factor Analysis (EFA)")
+                st.markdown("""
+                **Tujuan:** Menemukan "Konsep Tersembunyi" (Faktor Laten) yang menyebabkan variabel-variabel saling berkorelasi.
+                Contoh: Nilai Matematika, Fisika, Kimia tinggi mungkin disebabkan oleh faktor tersembunyi yaitu "Kecerdasan Eksakta".
+                """)
+
+                # --- STEP 1: PILIH VARIABEL ---
+                st.markdown("##### Langkah 1: Pilih Variabel")
+                efa_vars = st.multiselect("Pilih variabel untuk EFA:", numeric_cols, default=numeric_cols, key='efa_vars')
                 
-                col3, col4 = st.columns([1, 2])
-                with col3:
-                    efa_vars = st.multiselect("Pilih variabel untuk EFA:", numeric_cols, default=numeric_cols, key='efa_vars')
-                    if len(efa_vars) < 3:
-                          st.warning("Pilih minimal 3 variabel untuk EFA.")
-                    else:
-                        n_components_efa = st.slider(
-                            "Pilih jumlah Faktor:",
-                            min_value=1,
-                            max_value=len(efa_vars)-1,
-                            value=max(1, len(efa_vars)//2),
-                            key='n_efa'
-                        )
-                        rotation = st.radio("Pilih metode Rotasi:", ["varimax", "promax"], key='efa_rot')
+                if len(efa_vars) < 3:
+                    st.warning("⚠️ EFA membutuhkan minimal 3 variabel agar hasilnya valid.")
+                else:
+                    df_efa_ready = df_scaled[efa_vars]
 
-                with col4:
-                    if len(efa_vars) >= 3:
-                        if st.button("Jalankan EFA", key='efa_btn'):
-                            try:
-                                df_scaled_efa = df_scaled[efa_vars]
-                                # Uji Kelayakan
-                                chi_square_value, p_value_bartlett = calculate_bartlett_sphericity(df_scaled_efa)
-                                kmo_all, kmo_model = calculate_kmo(df_scaled_efa)
-                                
-                                st.write("**Uji Kelayakan Data (KMO & Bartlett)**")
-                                st.write(f"* **Kaiser-Meyer-Olkin (KMO) Measure:** `{kmo_model:.4f}`")
-                                st.write(f"* **Bartlett's Test p-value:** `{p_value_bartlett:.4f}`")
+                    # --- STEP 2: UJI KELAYAKAN (ANALISIS PENDUKUNG) ---
+                    st.markdown("##### Langkah 2: Uji Kelayakan Data (Analisis Pendukung)")
+                    
+                    if st.button("Cek Apakah Data Layak di-EFA?", key='btn_kmo'):
+                        # 1. Bartlett's Test
+                        chi_square_value, p_value_bartlett = calculate_bartlett_sphericity(df_efa_ready)
+                        # 2. KMO Test
+                        kmo_all, kmo_model = calculate_kmo(df_efa_ready)
+                        
+                        c_kmo1, c_kmo2 = st.columns(2)
+                        with c_kmo1:
+                            st.metric("Nilai KMO (Kaiser-Meyer-Olkin)", f"{kmo_model:.3f}")
+                            if kmo_model > 0.6:
+                                st.success("✅ **Data Cukup Baik** (KMO > 0.6). Sampel mencukupi.")
+                            else:
+                                st.error("❌ **Data Kurang** (KMO < 0.6). Tambah data atau kurangi variabel.")
+                        
+                        with c_kmo2:
+                            st.metric("P-value Bartlett", f"{p_value_bartlett:.4f}")
+                            if p_value_bartlett < 0.05:
+                                st.success("✅ **Variabel Saling Berhubungan** (P < 0.05). EFA bisa dilanjutkan.")
+                            else:
+                                st.error("❌ **Variabel Tidak Berhubungan** (P > 0.05). EFA tidak berguna.")
 
-                                # Interpretasi hasil
-                                with st.expander("Lihat Penjelasan Uji Kelayakan"):
-                                    st.markdown(f"""
-                                    **Tujuan Uji:** Ini adalah tes "Boleh Jalan" untuk EFA.
-                                    1.  **KMO:** Harus > 0.6.
-                                    2.  **Bartlett:** P-value harus <= 0.05.
-                                    """)
-                                    if kmo_model < 0.6:
-                                        st.error("**Kesimpulan KMO:** Nilai KMO < 0.6. Data **kurang ideal**.")
-                                    else:
-                                        st.success("**Kesimpulan KMO:** Nilai KMO > 0.6. Data **cukup baik**.")
-                                    
-                                    if p_value_bartlett > 0.05:
-                                        st.error("**Kesimpulan Bartlett:** P-value > 0.05. Variabel tidak berkorelasi. EFA **tidak disarankan**.")
-                                    else:
-                                        st.success("**Kesimpulan Bartlett:** P-value < 0.05. Variabel **berkorelasi**, bagus untuk EFA.")
-                                
-                                if kmo_model >= 0.6 and p_value_bartlett <= 0.05:
-                                    fa = FactorAnalyzer(n_factors=n_components_efa, rotation=rotation)
-                                    fa.fit(df_scaled_efa)
-                                    
-                                    st.write(f"**Factor Loadings (Rotasi {rotation})**")
-                                    st.dataframe(pd.DataFrame(fa.loadings_, index=efa_vars, columns=[f'Faktor {i+1}' for i in range(n_components_efa)]))
-                                    
-                                    with st.expander("Lihat Penjelasan Factor Loadings"):
-                                        st.markdown(f"""
-                                        **Tujuan:** Memberi "nama" pada {n_components_efa} faktor tersembunyi.
-                                        **Lihat:** Cari angka *loading* yang besar (misal > 0.6) di setiap kolom Faktor.
-                                        **Aturan:** Idealnya, satu variabel hanya punya *loading* tinggi di **satu** faktor saja.
-                                        """)
-                            except Exception as e:
-                                st.error(f"Error menjalankan EFA: {e}")
+                        # 3. Scree Plot Eigenvalues (Kaiser Criterion)
+                        st.write("**Berapa Faktor yang harus dibentuk? (Kaiser Criterion: Eigenvalue > 1)**")
+                        fa_temp = FactorAnalyzer(rotation=None)
+                        fa_temp.fit(df_efa_ready)
+                        ev, v = fa_temp.get_eigenvalues()
+                        
+                        fig_ev = px.line(x=range(1, len(ev)+1), y=ev, markers=True, title="Scree Plot Eigenvalue")
+                        fig_ev.add_hline(y=1, line_dash="dash", line_color="red", annotation_text="Batas Eigenvalue = 1")
+                        fig_ev.update_layout(xaxis_title="Faktor Ke-", yaxis_title="Eigenvalue")
+                        st.plotly_chart(fig_ev, use_container_width=True)
+                        
+                        suggested_factors = sum(ev > 1)
+                        st.info(f"💡 **Rekomendasi:** Berdasarkan grafik di atas (nilai > 1), disarankan membuat **{suggested_factors} Faktor**.")
+
+                    # --- STEP 3: EKSEKUSI EFA ---
+                    st.markdown("##### Langkah 3: Hasil Utama EFA")
+                    
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        n_factors_efa = st.slider("Jumlah Faktor:", 1, len(efa_vars)-1, 2, key='n_efa')
+                    with col_e2:
+                        rot_method = st.selectbox("Metode Rotasi:", ["varimax", "promax", "quartimax", "oblimin"], index=0, key='rot_efa', help="Varimax menghasilkan faktor yang saling tegak lurus (beda tegas). Promax membolehkan korelasi antar faktor.")
+
+                    if st.button("Bentuk Faktor", key='btn_efa_run'):
+                        try:
+                            fa = FactorAnalyzer(n_factors=n_factors_efa, rotation=rot_method)
+                            fa.fit(df_efa_ready)
+                            
+                            # Loadings
+                            loadings_efa = pd.DataFrame(
+                                fa.loadings_, 
+                                index=efa_vars, 
+                                columns=[f'Faktor {i+1}' for i in range(n_factors_efa)]
+                            )
+                            
+                            st.write("### Matriks Faktor (Pattern Matrix)")
+                            st.write("Angka ini menunjukkan seberapa kuat hubungan variabel dengan faktor yang terbentuk.")
+                            
+                            # Tampilkan dengan heatmap style
+                            st.dataframe(loadings_efa.style.background_gradient(cmap="Greens"), use_container_width=True)
+                            
+                            # Varians dijelaskan
+                            st.write("### Total Varians Dijelaskan")
+                            var_efa = pd.DataFrame(fa.get_factor_variance(), index=["SS Loadings", "Proportion Var", "Cumulative Var"], columns=[f'Faktor {i+1}' for i in range(n_factors_efa)])
+                            st.dataframe(var_efa)
+                            
+                            # Interpretasi Otomatis Sederhana
+                            st.write("### 📝 Interpretasi Faktor")
+                            for i in range(n_factors_efa):
+                                col_name = f'Faktor {i+1}'
+                                # Ambil variabel yang loadingnya > 0.4 (cutoff umum)
+                                dominant_vars = loadings_efa[abs(loadings_efa[col_name]) > 0.4].index.tolist()
+                                st.success(f"**{col_name}** paling mewakili variabel: **{', '.join(dominant_vars)}**")
+
+                        except Exception as e:
+                            st.error(f"Terjadi error: {e}. Coba kurangi jumlah faktor atau ganti metode rotasi.")
 
         # -------------------------------------------------------------
         # TAB 7: KLASIFIKASI & CLUSTERING (BAB 11 & 12)
