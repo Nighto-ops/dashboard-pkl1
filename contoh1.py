@@ -1220,7 +1220,7 @@ else:
 
                     # --- STEP 2: ANALISIS PENDUKUNG (SCREE PLOT) ---
                     st.markdown("##### Langkah 2: Analisis Pendukung (Menentukan Jumlah Komponen)")
-                    with st.expander("📊 Lihat Grafik Siku (Scree Plot) untuk bantuan", expanded=True):
+                    with st.expander("Lihat Grafik Siku (Scree Plot) untuk bantuan", expanded=True):
                         # Hitung PCA Full dulu untuk melihat varians
                         pca_full = PCA()
                         pca_full.fit(df_pca_ready)
@@ -1508,7 +1508,7 @@ else:
                             st.dataframe(summary_cl)
                             
                         # Interpretasi Otomatis
-                        st.write("### 📝 Interpretasi Profil")
+                        st.write("### Interpretasi Profil")
                         for cluster_id in sorted(summary_cl.index):
                             # Cari variabel yang nilainya paling tinggi di cluster ini
                             max_col = summary_cl.loc[cluster_id].idxmax()
