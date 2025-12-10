@@ -383,7 +383,7 @@ if uploaded_file is None:
     if not df_map.empty and gdf_shape is not None:
         
         # --- TAB NAVIGASI PETA ---
-        tab_sebaran, tab_iso = st.tabs(["🗺️ Peta Sebaran (Wilayah & Titik)", "⏱️ Peta Jangkauan (Isochrone)"])
+        tab_sebaran, tab_iso = st.tabs(["Peta Sebaran (Wilayah & Titik)", "Peta Jangkauan (Isochrone)"])
 
         # =================================================================
         # TAB 1: PETA SEBARAN (Choropleth & Heatmap)
@@ -507,7 +507,7 @@ if uploaded_file is None:
             iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
             
             with iso_col1:
-                api_key = st.text_input("🔑 ORS API Key", type="password", help="Dapatkan gratis di openrouteservice.org")
+                api_key = st.text_input("ORS API Key", type="password", help="Dapatkan gratis di openrouteservice.org")
                 travel_mode = st.selectbox("Moda Transportasi", 
                                             ["driving-car", "cycling-regular", "foot-walking"],
                                             format_func=lambda x: "🚗 Mobil" if "car" in x else "🚲 Sepeda" if "cycling" in x else "🚶 Jalan Kaki",
@@ -530,7 +530,7 @@ if uploaded_file is None:
                     center_point_name = None
 
             # Tombol Eksekusi
-            run_iso = st.button("📍 Hitung Area Jangkauan", use_container_width=True, key="btn_iso")
+            run_iso = st.button("Hitung Area Jangkauan", use_container_width=True, key="btn_iso")
 
             # --- Render Map Isochrone ---
             # Default Map Center (Yogyakarta)
@@ -538,7 +538,7 @@ if uploaded_file is None:
 
             if run_iso:
                 if not api_key:
-                    st.warning("⚠️ Mohon masukkan API Key OpenRouteService terlebih dahulu.")
+                    st.warning("Mohon masukkan API Key OpenRouteService terlebih dahulu.")
                 elif center_point_name:
                     try:
                         # Ambil koordinat lokasi terpilih
