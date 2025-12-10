@@ -387,7 +387,7 @@ if uploaded_file is None:
         tab_sebaran, tab_iso = st.tabs(["🗺️ Peta Sebaran (Wilayah & Titik)", "⏱️ Peta Jangkauan & Label"])
 
         # =================================================================
-        # TAB 1: PETA SEBARAN (TETAP SAMA)
+        # TAB 1: PETA SEBARAN (LOGIKA LAMA - TETAP ADA)
         # =================================================================
         with tab_sebaran:
             st.subheader("Filter Visualisasi Sebaran")
@@ -464,7 +464,7 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
         # =================================================================
-        # TAB 2: PETA JANGKAUAN (ISOCHRONE + LABEL) - UPDATE FILTER KABUPATEN
+        # TAB 2: PETA JANGKAUAN (ISOCHRONE) - FIXED SESSION STATE
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan (Berdasarkan Kecepatan & Waktu)")
@@ -475,18 +475,26 @@ if uploaded_file is None:
             </div>
             """, unsafe_allow_html=True)
 
+            # --- 0. INISIALISASI SESSION STATE (PENYELAMAT DATA) ---
+            if 'iso_geojson' not in st.session_state:
+                st.session_state['iso_geojson'] = None
+            if 'iso_center_coord' not in st.session_state:
+                st.session_state['iso_center_coord'] = None # [lat, lon]
+            if 'iso_center_name' not in st.session_state:
+                st.session_state['iso_center_name'] = ""
+            if 'iso_speed' not in st.session_state:
+                st.session_state['iso_speed'] = 30
+
             # --- 1. FILTER & KONTROL ---
             iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
             
             with iso_col1:
                 st.markdown("##### 1. Filter Data")
-                
-                # [BARU] A. Filter Kabupaten (Hierarki Tertinggi)
+                # Filter Kabupaten
                 if 'kabupaten' in df_map.columns:
                     list_kab_iso = sorted(df_map['kabupaten'].unique().tolist())
                     list_kab_iso.insert(0, "SEMUA KABUPATEN")
                     pilih_kab_iso = st.selectbox("Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
-                    
                     if pilih_kab_iso == "SEMUA KABUPATEN":
                         df_iso_step0 = df_map.copy()
                     else:
@@ -494,7 +502,7 @@ if uploaded_file is None:
                 else:
                     df_iso_step0 = df_map.copy()
 
-                # [UPDATE] B. Filter Kecamatan (Berdasarkan Hasil Filter Kabupaten)
+                # Filter Kecamatan
                 list_kec_iso = sorted(df_iso_step0['kecamatan'].unique().tolist())
                 list_kec_iso.insert(0, "SEMUA KECAMATAN")
                 pilih_kec_iso = st.selectbox("Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
@@ -504,7 +512,7 @@ if uploaded_file is None:
                 else:
                     df_iso_step1 = df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
 
-                # [UPDATE] C. Filter Kode Venue (Berdasarkan Hasil Filter Kecamatan)
+                # Filter Kode Venue
                 if 'kode_venue' in df_iso_step1.columns:
                     df_iso_step1['kode_venue_clean'] = df_iso_step1['kode_venue'].astype(str).replace('nan', '-')
                     list_kode_iso = sorted(df_iso_step1['kode_venue_clean'].unique().tolist())
@@ -525,7 +533,6 @@ if uploaded_file is None:
             
             with iso_col3:
                 st.markdown("##### 3. Titik Pusat")
-                # Dropdown hanya menampilkan lokasi hasil filter agar mudah dicari
                 if not df_iso_final.empty:
                     list_lokasi = sorted(df_iso_final['title'].astype(str).unique().tolist())
                     center_point_name = st.selectbox("Pilih Lokasi Pusat:", list_lokasi, key="iso_center_select")
@@ -539,106 +546,117 @@ if uploaded_file is None:
             # Tombol Eksekusi
             run_iso = st.button("📍 Hitung Jangkauan & Tampilkan Label", use_container_width=True, key="btn_iso_run")
 
-            # --- 2. RENDER PETA ---
-            # Default Center
-            if center_point_name and not df_iso_final.empty:
-                try:
-                    row_preview = df_iso_final[df_iso_final['title'] == center_point_name].iloc[0]
-                    def_lat, def_lon = row_preview['lattitude'], row_preview['longitude']
-                    zoom_start = 14
-                except:
-                    def_lat, def_lon = -7.7956, 110.3695; zoom_start = 11
-            else:
-                def_lat, def_lon = -7.7956, 110.3695; zoom_start = 11 # Default Jogja
-
-            m_iso = folium.Map(location=[def_lat, def_lon], zoom_start=zoom_start, tiles='CartoDB positron')
-
-            # Logic Eksekusi
+            # --- 2. LOGIKA PROSES (UPDATE STATE) ---
+            # Jika tombol ditekan, kita update session state
             if run_iso:
-                selected_center_row = None
-                
-                # A. LAYER ISOCHRONE (POLIGON WARNA)
                 if api_key and center_point_name:
                     try:
                         # Ambil Data Pusat
                         selected_center_row = df_iso_final[df_iso_final['title'] == center_point_name].iloc[0]
                         c_lat, c_lon = selected_center_row['lattitude'], selected_center_row['longitude']
 
-                        # KONVERSI KECEPATAN KE JARAK
-                        # Rumus: Jarak (meter) = (Menit / 60) * Speed(km/jam) * 1000
+                        # Simpan Data Pusat ke State
+                        st.session_state['iso_center_coord'] = [c_lat, c_lon]
+                        st.session_state['iso_center_name'] = center_point_name
+                        st.session_state['iso_speed'] = speed_val
+
+                        # Hitung Isochrone
                         times_min = [20, 15, 10, 5] 
                         ranges_m = [(t/60) * speed_val * 1000 for t in times_min]
                         
-                        colors = ['#d7191c', '#fdae61', '#a6d96a', '#1a9641'] # Merah -> Hijau
-                        labels = ['15-20 mnt', '10-15 mnt', '5-10 mnt', '< 5 mnt']
-
                         client = openrouteservice.Client(key=api_key)
                         
                         with st.spinner("Sedang menghitung area jangkauan..."):
                             iso_res = client.isochrones(
                                 locations=[[c_lon, c_lat]],
                                 profile='driving-car',
-                                range_type='distance', # KUNCI: Hitung berdasarkan jarak
+                                range_type='distance',
                                 range=ranges_m,
                                 units='m'
                             )
-
-                            for i, feature in enumerate(iso_res['features']):
-                                col = colors[i] if i < len(colors) else 'gray'
-                                lbl = labels[i] if i < len(labels) else ''
-                                
-                                folium.GeoJson(
-                                    feature,
-                                    style_function=lambda x, col=col: {
-                                        'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.4
-                                    },
-                                    tooltip=f"Jangkauan {lbl} ({speed_val} km/jam)"
-                                ).add_to(m_iso)
-                        
-                        # Marker Bintang Pusat
-                        folium.Marker(
-                            [c_lat, c_lon],
-                            icon=folium.Icon(color='red', icon='star', prefix='fa'),
-                            tooltip=f"PUSAT: {center_point_name}"
-                        ).add_to(m_iso)
-                        
-                        st.success(f"Berhasil menampilkan jangkauan dengan kecepatan {speed_val} km/jam.")
+                            # Simpan Hasil API ke State
+                            st.session_state['iso_geojson'] = iso_res
+                            st.success(f"Berhasil! Menampilkan jangkauan {center_point_name} @ {speed_val} km/jam.")
 
                     except Exception as e:
-                        st.error(f"Gagal memuat Isochrone (Cek API Key): {e}")
+                        st.error(f"Gagal memuat Isochrone: {e}")
                 elif not api_key:
-                    st.warning("⚠️ API Key kosong. Hanya menampilkan titik lokasi.")
+                    st.warning("⚠️ API Key kosong. Masukkan API Key untuk melihat area jangkauan.")
+                
+            # --- 3. RENDER PETA (DARI STATE & DATA) ---
+            # Peta selalu dirender ulang berdasarkan state terakhir, tidak peduli tombolnya mati/hidup
+            
+            # Tentukan Center Peta
+            if st.session_state['iso_center_coord']:
+                map_center = st.session_state['iso_center_coord']
+                map_zoom = 14
+            elif center_point_name and not df_iso_final.empty: # Preview center dari dropdown jika belum hitung
+                 try:
+                    row_preview = df_iso_final[df_iso_final['title'] == center_point_name].iloc[0]
+                    map_center = [row_preview['lattitude'], row_preview['longitude']]
+                    map_zoom = 14
+                 except:
+                     map_center = [-7.7956, 110.3695]; map_zoom = 11
+            else:
+                map_center = [-7.7956, 110.3695]; map_zoom = 11
 
-                # B. LAYER LABEL & TITIK (SELALU MUNCUL)
-                for _, row in df_iso_final.iterrows():
-                    # Skip titik pusat (sudah ada bintang)
-                    if selected_center_row is not None and row['title'] == selected_center_row['title']:
-                        continue
+            m_iso = folium.Map(location=map_center, zoom_start=map_zoom, tiles='CartoDB positron')
+
+            # A. GAMBAR ISOCHRONE (Jika ada di Session State)
+            if st.session_state['iso_geojson']:
+                colors = ['#d7191c', '#fdae61', '#a6d96a', '#1a9641'] # Merah -> Hijau
+                labels = ['15-20 mnt', '10-15 mnt', '5-10 mnt', '< 5 mnt']
+                spd = st.session_state['iso_speed']
+
+                for i, feature in enumerate(st.session_state['iso_geojson']['features']):
+                    col = colors[i] if i < len(colors) else 'gray'
+                    lbl = labels[i] if i < len(labels) else ''
                     
-                    try:
-                        lat_pt, lon_pt = row['lattitude'], row['longitude']
-                        kode_text = str(row.get('kode_venue', '?')).replace('nan', '?')
-                        nama_pt = str(row.get('title', 'Lokasi'))
+                    folium.GeoJson(
+                        feature,
+                        style_function=lambda x, col=col: {
+                            'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.4
+                        },
+                        tooltip=f"Jangkauan {lbl} ({spd} km/jam)"
+                    ).add_to(m_iso)
+                
+                # Marker Bintang Pusat (Dari State)
+                folium.Marker(
+                    st.session_state['iso_center_coord'],
+                    icon=folium.Icon(color='red', icon='star', prefix='fa'),
+                    tooltip=f"PUSAT: {st.session_state['iso_center_name']}"
+                ).add_to(m_iso)
 
-                        # 1. Titik Biru
-                        folium.CircleMarker(
-                            location=[lat_pt, lon_pt],
-                            radius=4, color='blue', fill=True, fill_color='cyan', fill_opacity=0.8,
-                            popup=f"<b>{nama_pt}</b><br>Kode: {kode_text}",
-                            tooltip=f"{nama_pt} ({kode_text})"
-                        ).add_to(m_iso)
+            # B. GAMBAR TITIK + LABEL KODE (Selalu dari Data Filtered)
+            for _, row in df_iso_final.iterrows():
+                # Skip titik pusat agar tidak tertumpuk bintang
+                if st.session_state['iso_center_name'] and row['title'] == st.session_state['iso_center_name']:
+                    continue
+                
+                try:
+                    lat_pt, lon_pt = row['lattitude'], row['longitude']
+                    kode_text = str(row.get('kode_venue', '?')).replace('nan', '?')
+                    nama_pt = str(row.get('title', 'Lokasi'))
 
-                        # 2. Label Huruf (DivIcon)
-                        folium.Marker(
-                            location=[lat_pt, lon_pt],
-                            icon=DivIcon(
-                                icon_size=(150,36),
-                                icon_anchor=(6, 14), # Posisi teks di atas titik
-                                html=f'<div style="font-size: 10pt; font-weight: bold; color: black; text-shadow: 1px 1px 0 #fff;">{kode_text}</div>'
-                            )
-                        ).add_to(m_iso)
-                    except:
-                        continue # Skip jika ada data error
+                    # Titik Biru
+                    folium.CircleMarker(
+                        location=[lat_pt, lon_pt],
+                        radius=4, color='blue', fill=True, fill_color='cyan', fill_opacity=0.8,
+                        popup=f"<b>{nama_pt}</b><br>Kode: {kode_text}",
+                        tooltip=f"{nama_pt} ({kode_text})"
+                    ).add_to(m_iso)
+
+                    # Label Huruf
+                    folium.Marker(
+                        location=[lat_pt, lon_pt],
+                        icon=DivIcon(
+                            icon_size=(150,36),
+                            icon_anchor=(6, 14), 
+                            html=f'<div style="font-size: 10pt; font-weight: bold; color: black; text-shadow: 1px 1px 0 #fff;">{kode_text}</div>'
+                        )
+                    ).add_to(m_iso)
+                except:
+                    continue
 
             # Tampilkan Widget Peta
             st.markdown('<div style="box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 12px; border: 2px solid #F2C94C; overflow: hidden;">', unsafe_allow_html=True)
@@ -647,6 +665,7 @@ if uploaded_file is None:
 
     else:
         st.warning("Data peta (file Excel atau SHP) belum tersedia di folder 'data/'. Pastikan file .xlsx dan .shp telah diunggah dengan benar.")
+        
 # === JIKA FILE SUDAH DIUPLOAD (KODE ASLI STATISTIK) ===
 else:
     # Inisialisasi
