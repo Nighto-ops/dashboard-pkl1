@@ -517,7 +517,7 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
 # =================================================================
-        # TAB 2: PETA JANGKAUAN (MODIFIKASI: TANPA FILTER KECAMATAN)
+        # TAB 2: PETA JANGKAUAN (MODIFIKASI: FILTER RADIUS OTOMATIS)
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan & Jarak Tempuh")
@@ -530,8 +530,10 @@ if uploaded_file is None:
             else:
                 st.markdown("""
                 <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
-                    <small><b>Mode Analisis Radius:</b> Filter Kecamatan dimatikan agar analisis lebih luas. 
-                    <br>Pilih <b>Titik Pusat</b>, sistem akan menghitung jangkauan ke segala arah (lintas kecamatan).</small>
+                    <small><b>Mode Smart Radius:</b> 
+                    <br>1. Pilih Titik Pusat.
+                    <br>2. Klik Hitung.
+                    <br>3. Peta hanya akan menampilkan titik-titik yang <b>masuk dalam jangkauan (radius)</b> saja.</small>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -550,7 +552,7 @@ if uploaded_file is None:
                 with iso_col1:
                     st.markdown("##### 1. Filter Data")
                     
-                    # A. Filter Kabupaten (Tetap Ada agar data tidak terlalu berat)
+                    # A. Filter Kabupaten
                     if 'kabupaten' in df_iso.columns:
                         list_kab_iso = sorted(df_iso['kabupaten'].astype(str).unique().tolist())
                         list_kab_iso.insert(0, "SEMUA KABUPATEN")
@@ -563,10 +565,7 @@ if uploaded_file is None:
                     else:
                         df_iso_step0 = df_iso.copy()
 
-                    # [HAPUS] Filter Kecamatan Dihilangkan Sesuai Request
-                    # Langsung lanjut ke Filter Kode Venue menggunakan df_iso_step0
-
-                    # B. Filter Kode Venue
+                    # B. Filter Kode Venue (Langsung, tanpa Kecamatan)
                     col_kode = 'kode_venue' if 'kode_venue' in df_iso_step0.columns else None
                     if col_kode:
                         unique_kodes = sorted(df_iso_step0[col_kode].astype(str).unique().tolist())
@@ -587,14 +586,13 @@ if uploaded_file is None:
                     speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30)
                     
                     st.markdown("---")
-                    # Fitur Isodistance (Hitung Jarak)
                     enable_isodistance = st.checkbox("Aktifkan Hitung Jarak (Isodistance)", value=False)
                     
                     target_name_selection = "SEMUA TITIK" 
                     if enable_isodistance and not df_iso_final.empty:
                         c_name = 'nama_venue' if 'nama_venue' in df_iso_final.columns else 'title'
                         list_dest = sorted(df_iso_final[c_name].astype(str).unique().tolist())
-                        list_dest.insert(0, "SEMUA TITIK")
+                        list_dest.insert(0, "SEMUA TITIK DALAM RADIUS")
                         target_name_selection = st.selectbox("Pilih Tujuan:", list_dest)
 
                 # --- KOLOM 3: TITIK PUSAT ---
@@ -609,27 +607,26 @@ if uploaded_file is None:
                         center_point_name = None
                         st.info("Data kosong.")
 
-                    st.caption(f"Menampilkan **{len(df_iso_final)}** titik potensial.")
+                    st.caption(f"Total Data Awal: **{len(df_iso_final)}** titik.")
                     run_iso = st.button("📍 Hitung Analisis", use_container_width=True, key="btn_iso_run")
 
-                # --- 3. LOGIKA PROSES ---
+                # --- 3. LOGIKA PROSES (DENGAN FILTER RADIUS) ---
                 if run_iso:
                     if api_key and center_point_name:
                         try:
-                            # Ambil Data Pusat
+                            # 1. Persiapan Data Pusat
                             row_pusat = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
                             lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
                             c_lat, c_lon = row_pusat[lat_c], row_pusat['longitude']
 
-                            # Simpan State
                             st.session_state['iso_center_coord'] = [c_lat, c_lon]
                             st.session_state['iso_center_name'] = center_point_name
                             st.session_state['iso_speed'] = speed_val
                             
                             client = openrouteservice.Client(key=api_key)
 
-                            # A. HITUNG ISOCHRONE
-                            with st.spinner("1/2 Menghitung area jangkauan..."):
+                            # 2. HITUNG ISOCHRONE
+                            with st.spinner("1/3 Menghitung area jangkauan..."):
                                 ranges_m = [(t/60) * speed_val * 1000 for t in [25, 20, 15, 10, 5]]
                                 iso_res = client.isochrones(
                                     locations=[[c_lon, c_lat]], profile='driving-car',
@@ -638,38 +635,57 @@ if uploaded_file is None:
                                 iso_res['features'] = sorted(iso_res['features'], key=lambda x: x['properties']['value'], reverse=True)
                                 st.session_state['iso_geojson'] = iso_res
 
-                            # B. HITUNG ISODISTANCE (JARAK REAL)
-                            if enable_isodistance:
-                                with st.spinner("2/2 Menghitung jarak real..."):
-                                    if target_name_selection == "SEMUA TITIK":
-                                        df_targets = df_iso_final[df_iso_final[col_nama] != center_point_name]
+                            # 3. FILTER TITIK DALAM RADIUS (LOGIKA BARU)
+                            # Kita gunakan library shapely untuk cek apakah titik ada di dalam poligon terbesar
+                            with st.spinner("2/3 Memfilter titik dalam radius..."):
+                                from shapely.geometry import shape, Point
+                                
+                                # Ambil poligon terluar (index 0 karena sudah disort reverse=True)
+                                outer_polygon = shape(iso_res['features'][0]['geometry'])
+                                
+                                # Fungsi cek
+                                def is_in_radius(row):
+                                    point = Point(row['longitude'], row[lat_c])
+                                    return outer_polygon.contains(point)
+                                
+                                # Terapkan filter ke dataframe sementara
+                                df_inside = df_iso_final[df_iso_final.apply(is_in_radius, axis=1)]
+                                
+                                if len(df_inside) == 0:
+                                    st.warning("Tidak ada titik lain yang masuk dalam jangkauan isochrone ini.")
+
+                            # 4. HITUNG ISODISTANCE (Hanya untuk titik yang SUDAH DIFILTER)
+                            if enable_isodistance and not df_inside.empty:
+                                with st.spinner(f"3/3 Menghitung jarak real untuk {len(df_inside)} titik..."):
+                                    if target_name_selection == "SEMUA TITIK DALAM RADIUS":
+                                        df_targets = df_inside[df_inside[col_nama] != center_point_name]
                                     else:
-                                        df_targets = df_iso_final[df_iso_final[col_nama] == target_name_selection]
+                                        df_targets = df_inside[df_inside[col_nama] == target_name_selection]
                                     
                                     st.session_state['iso_targets'] = df_targets[col_nama].tolist()
 
-                                    locations = [[c_lon, c_lat]] 
-                                    dest_names = []
-                                    
-                                    # Limitasi API (Max 50 titik)
-                                    for _, r in df_targets.head(49).iterrows():
-                                        locations.append([r['longitude'], r[lat_c]])
-                                        dest_names.append(r[col_nama])
-                                    
-                                    if len(df_targets) > 49:
-                                        st.toast("⚠️ Data dipotong: Hanya 50 titik terdekat yang dihitung jaraknya.", icon="⚠️")
-
-                                    matrix = client.distance_matrix(
-                                        locations=locations, profile='driving-car', metrics=['distance'], units='km'
-                                    )
-                                    distances = matrix['distances'][0][1:]
-                                    result_data = list(zip(dest_names, distances))
-                                    st.session_state['iso_matrix_data'] = result_data
+                                    if not df_targets.empty:
+                                        locations = [[c_lon, c_lat]] 
+                                        dest_names = []
+                                        
+                                        # Limitasi API (Max 50 titik terdekat)
+                                        for _, r in df_targets.head(49).iterrows():
+                                            locations.append([r['longitude'], r[lat_c]])
+                                            dest_names.append(r[col_nama])
+                                        
+                                        matrix = client.distance_matrix(
+                                            locations=locations, profile='driving-car', metrics=['distance'], units='km'
+                                        )
+                                        distances = matrix['distances'][0][1:]
+                                        result_data = list(zip(dest_names, distances))
+                                        st.session_state['iso_matrix_data'] = result_data
+                                    else:
+                                        st.session_state['iso_matrix_data'] = None
                             else:
                                 st.session_state['iso_matrix_data'] = None
                                 st.session_state['iso_targets'] = []
 
-                            st.success(f"Analisis Selesai! Pusat: {center_point_name}")
+                            st.success(f"Selesai! Ditemukan {len(df_inside)} titik dalam jangkauan.")
 
                         except Exception as e:
                             st.error(f"Gagal: {e}")
@@ -726,16 +742,29 @@ if uploaded_file is None:
                     """
                     m_iso.get_root().html.add_child(folium.Element(dist_legend_html))
                     
-                    # Garis putus-putus jika 1 target
                     if len(st.session_state['iso_matrix_data']) == 1:
                         target_name = st.session_state['iso_matrix_data'][0][0]
+                        # Cari di df_iso_final (karena df_inside lokal)
                         row_t = df_iso_final[df_iso_final[col_nama] == target_name].iloc[0]
                         lat_c_col = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
                         folium.PolyLine(locations=[st.session_state['iso_center_coord'], [row_t[lat_c_col], row_t['longitude']]], color="red", weight=2, dash_array='5, 5', opacity=0.8).add_to(m_iso)
 
-                # LAYER TITIK & LABEL
+                # LAYER TITIK & LABEL (YANG SUDAH DI-FILTER SECARA VISUAL)
                 lat_c_col = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                for _, row in df_iso_final.iterrows():
+                
+                # Tentukan DataFrame mana yang akan di-plot
+                df_to_plot = df_iso_final
+                
+                # JIKA SUDAH ADA HASIL ISOCHRONE, KITA FILTER LAGI DISINI AGAR PETA RAPI
+                if st.session_state['iso_geojson']:
+                    try:
+                        from shapely.geometry import shape, Point
+                        outer_poly = shape(st.session_state['iso_geojson']['features'][0]['geometry'])
+                        df_to_plot = df_iso_final[df_iso_final.apply(lambda x: outer_poly.contains(Point(x['longitude'], x[lat_c_col])), axis=1)]
+                    except:
+                        pass # Fallback ke semua data jika error
+
+                for _, row in df_to_plot.iterrows():
                     # Skip pusat
                     if st.session_state['iso_center_name'] and row[col_nama] == st.session_state['iso_center_name']: continue
                     
