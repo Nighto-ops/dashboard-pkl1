@@ -17,7 +17,7 @@ st.set_page_config(layout="wide", page_title="Peta Sebaran Venue")
 def load_data():
     try:
         # Membaca format CSV (Pemisah titik koma, Desimal koma)
-        df = pd.read_csv("data/Sleman_Kode.csv", sep=";", decimal=",", dtype=str)
+        df = pd.read_excel("data/Sleman_Kode.xlsx", sep=";", decimal=",", dtype=str)
         
         # Bersihkan nama kolom
         df.columns = df.columns.str.strip().str.lower()
