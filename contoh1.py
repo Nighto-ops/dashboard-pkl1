@@ -363,8 +363,254 @@ with st.sidebar:
 # =================================================================
 # LOGIKA UTAMA
 # =================================================================
+# === JIKA BELUM UPLOAD FILE (FITUR PETA - DASHBOARD UTAMA) ===
+if uploaded_file is None:
+    # --- JUDUL & SAMBUTAN ---
+    st.markdown("<h1>DASHBOARD SEBARAN LOKASI POTENSIAL PEKERJA GIG PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="welcome-box">
+        <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
+        <p style='font-size: 1.1rem;'>Halaman ini menyajikan peta interaktif persebaran lokasi pekerja Gig di D.I. Yogyakarta.</p>
+        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b> (Regresi, ANOVA, MANOVA), silakan unggah dataset Anda di panel kiri.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # --- LOAD DATA PETA ---
+    df_map = load_map_excel_data()
+    gdf_shape = load_shp_data()
 
-# === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
+    if not df_map.empty and gdf_shape is not None:
+        
+        # --- TAB NAVIGASI PETA ---
+        tab_sebaran, tab_iso = st.tabs(["🗺️ Peta Sebaran (Wilayah & Titik)", "⏱️ Peta Jangkauan (Isochrone)"])
+
+        # =================================================================
+        # TAB 1: PETA SEBARAN (Choropleth & Heatmap)
+        # =================================================================
+        with tab_sebaran:
+            st.subheader("Filter Visualisasi Sebaran")
+            
+            # --- Filter Panel ---
+            c_filter1, c_filter2, c_filter3 = st.columns(3)
+            with c_filter1:
+                list_kab = sorted(df_map['kabupaten'].unique().tolist())
+                selected_kab = st.multiselect("1. Pilih Kabupaten:", list_kab, default=list_kab, key='map_kab')
+            with c_filter2:
+                if selected_kab:
+                    df_filtered_kab = df_map[df_map['kabupaten'].isin(selected_kab)]
+                    list_kec = sorted(df_filtered_kab['kecamatan'].unique().tolist())
+                else:
+                    list_kec = []
+                selected_kec = st.multiselect("2. Pilih Kecamatan:", list_kec, default=list_kec, key='map_kec')
+            with c_filter3:
+                map_mode = st.radio("3. Mode Tampilan:", ["Gabungan", "Choropleth (Wilayah)", "Heatmap (Titik)"], horizontal=True, key='map_mode_radio')
+
+            # --- Render Peta ---
+            if selected_kab and selected_kec:
+                # 1. Filter Data Utama
+                final_df = df_map[
+                    (df_map['kabupaten'].isin(selected_kab)) & 
+                    (df_map['kecamatan'].isin(selected_kec))
+                ]
+                
+                # 2. Filter & Siapkan SHP (Pencocokan Key)
+                gdf_shape['kab_key'] = gdf_shape[SHP_COL_KAB].astype(str).str.upper().str.replace(" ", "").str.replace(r'^(KAB\.?|KABUPATEN|KOTA)\s+', '', regex=True)
+                gdf_shape['kec_key'] = gdf_shape[SHP_COL_KEC].astype(str).str.upper().str.replace(" ", "")
+                
+                # Fix typo/beda penulisan manual
+                gdf_shape['kab_key'] = gdf_shape['kab_key'].replace({'GUNUNGKIDUL': 'GUNUNGKIDUL', 'YOGYA': 'YOGYAKARTA'})
+                
+                # Buat Unique Key
+                gdf_shape['unique_key'] = gdf_shape['kab_key'] + "_" + gdf_shape['kec_key']
+
+                # Key Filter User
+                selected_kab_keys = [k.upper().replace(" ", "") for k in selected_kab]
+                selected_kec_keys = [k.upper().replace(" ", "") for k in selected_kec]
+
+                # Filter SHP
+                final_gdf = gdf_shape[
+                    (gdf_shape['kab_key'].isin(selected_kab_keys)) &
+                    (gdf_shape['kec_key'].isin(selected_kec_keys))
+                ]
+
+                if not final_gdf.empty:
+                    # Hitung Statistik per Kecamatan
+                    stats_kec = final_df.groupby('unique_key').size().reset_index(name='jumlah_lokasi')
+                    gdf_viz = final_gdf.merge(stats_kec, on='unique_key', how='left')
+                    gdf_viz['jumlah_lokasi'] = gdf_viz['jumlah_lokasi'].fillna(0)
+                    gdf_viz['Nama Kecamatan'] = gdf_viz[SHP_COL_KEC].astype(str).str.title()
+                    gdf_viz['Nama Kabupaten'] = gdf_viz[SHP_COL_KAB].astype(str).str.title()
+
+                    # Setup Map Base
+                    bounds = final_gdf.total_bounds
+                    center = [(bounds[1]+bounds[3])/2, (bounds[0]+bounds[2])/2]
+                    m_sebaran = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
+
+                    # Layer 1: Choropleth
+                    if map_mode in ["Gabungan", "Choropleth (Wilayah)"]:
+                        cp = folium.Choropleth(
+                            geo_data=gdf_viz,
+                            name='Kepadatan Wilayah',
+                            data=gdf_viz,
+                            columns=['unique_key', 'jumlah_lokasi'],
+                            key_on='feature.properties.unique_key',
+                            fill_color='YlOrRd',
+                            fill_opacity=0.7,
+                            line_opacity=0.2,
+                            legend_name='Jumlah Lokasi',
+                            highlight=True
+                        ).add_to(m_sebaran)
+                        
+                        # Tooltip Hover
+                        folium.GeoJsonTooltip(
+                            fields=['Nama Kabupaten', 'Nama Kecamatan', 'jumlah_lokasi'],
+                            aliases=['Kabupaten:', 'Kecamatan:', 'Jumlah Data:'],
+                            localize=True
+                        ).add_to(cp.geojson)
+
+                    # Layer 2: Heatmap
+                    if map_mode in ["Gabungan", "Heatmap (Titik)"]:
+                        heat_data = final_df[['lattitude', 'longitude']].values.tolist()
+                        HeatMap(heat_data, name='Heatmap', radius=15, 
+                                gradient={0.4: '#FFD700', 0.65: '#FF8C00', 1: '#8B0000'}).add_to(m_sebaran)
+
+                    folium.LayerControl().add_to(m_sebaran)
+                    
+                    # Tampilkan Peta
+                    st.markdown('<div style="box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 12px; border: 2px solid #E07A3F; overflow: hidden;">', unsafe_allow_html=True)
+                    st_folium(m_sebaran, width=1200, height=600, key="folium_sebaran")
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                    # Tabel Data di Bawah Peta
+                    with st.expander("Lihat Tabel Data Detail (Hasil Filter)"):
+                        st.dataframe(final_df, use_container_width=True)
+
+                else:
+                    st.warning("Wilayah SHP tidak ditemukan. Cek kembali nama kecamatan di file SHP.")
+            else:
+                st.info("Silakan pilih Kabupaten dan Kecamatan di panel filter.")
+
+        # =================================================================
+        # TAB 2: PETA JANGKAUAN (ISOCHRONE)
+        # =================================================================
+        with tab_iso:
+            st.subheader("Analisis Jangkauan Waktu (Isochrone)")
+            st.markdown("""
+            <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
+                <small><b>Isochrone</b> memvisualisasikan area yang dapat dijangkau dari satu titik pusat dalam batas waktu tertentu. 
+                Sangat berguna untuk melihat cakupan layanan (service area) berdasarkan kondisi jalan nyata.</small>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # --- Input Parameter ---
+            iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
+            
+            with iso_col1:
+                api_key = st.text_input("🔑 ORS API Key", type="password", help="Dapatkan gratis di openrouteservice.org")
+                travel_mode = st.selectbox("Moda Transportasi", 
+                                            ["driving-car", "cycling-regular", "foot-walking"],
+                                            format_func=lambda x: "🚗 Mobil" if "car" in x else "🚲 Sepeda" if "cycling" in x else "🚶 Jalan Kaki",
+                                            key="iso_mode")
+            
+            with iso_col2:
+                range_val = st.slider("Max Waktu (Menit)", 5, 60, 15, step=5, key="iso_range")
+                interval_val = st.slider("Interval Kontur (Menit)", 5, range_val, 5, step=5, key="iso_interval")
+
+            with iso_col3:
+                # Dropdown cari lokasi dari data yang diupload
+                st.write("**Pilih Titik Pusat (Dari Data):**")
+                
+                # Cek ketersediaan kolom Nama/Title
+                if 'title' in df_map.columns:
+                    search_options = df_map['title'].astype(str).unique().tolist()
+                    center_point_name = st.selectbox("Cari Nama Lokasi:", search_options, key="iso_search")
+                else:
+                    st.warning("Kolom 'title' tidak ditemukan di data excel. Menggunakan default index.")
+                    center_point_name = None
+
+            # Tombol Eksekusi
+            run_iso = st.button("📍 Hitung Area Jangkauan", use_container_width=True, key="btn_iso")
+
+            # --- Render Map Isochrone ---
+            # Default Map Center (Yogyakarta)
+            m_iso = folium.Map(location=[-7.7956, 110.3695], zoom_start=11, tiles='CartoDB positron')
+
+            if run_iso:
+                if not api_key:
+                    st.warning("⚠️ Mohon masukkan API Key OpenRouteService terlebih dahulu.")
+                elif center_point_name:
+                    try:
+                        # Ambil koordinat lokasi terpilih
+                        row_center = df_map[df_map['title'] == center_point_name].iloc[0]
+                        c_lat = row_center['lattitude'] 
+                        c_lon = row_center['longitude']
+
+                        # Update Center Map
+                        m_iso.location = [c_lat, c_lon]
+                        m_iso.zoom_start = 13
+
+                        # Marker Pusat
+                        folium.Marker(
+                            [c_lat, c_lon],
+                            popup=f"<b>Pusat: {center_point_name}</b>",
+                            tooltip="Titik Pusat",
+                            icon=folium.Icon(color="red", icon="star", prefix='fa')
+                        ).add_to(m_iso)
+
+                        # Call API ORS
+                        client = openrouteservice.Client(key=api_key)
+                        ranges = [i * 60 for i in range(interval_val, range_val + 1, interval_val)] # Konversi ke detik
+                        
+                        with st.spinner("Sedang menghitung poligon jangkauan..."):
+                            iso_response = client.isochrones(
+                                locations=[[c_lon, c_lat]], # ORS format: [Lon, Lat]
+                                profile=travel_mode,
+                                range=ranges,
+                                attributes=['total_pop']
+                            )
+
+                            # Styling Function (Grand Design Palette)
+                            # Warna gradasi: Kuning (dekat) -> Merah Bata (sedang) -> Coklat Gelap (jauh)
+                            colors_iso = ['#F2C94C', '#E07A3F', '#D35400', '#A04000', '#6E2C00'] 
+                            
+                            def style_iso(feature):
+                                val_sec = feature['properties']['value']
+                                # Tentukan index warna berdasarkan interval
+                                idx = int(val_sec / (interval_val * 60)) - 1
+                                idx = max(0, min(idx, len(colors_iso)-1)) # Safety index
+                                
+                                return {
+                                    'fillColor': colors_iso[idx],
+                                    'color': '#4A3B32', # Garis tepi gelap
+                                    'weight': 1,
+                                    'fillOpacity': 0.5
+                                }
+
+                            # Tambah GeoJson ke Peta
+                            folium.GeoJson(
+                                iso_response,
+                                name="Area Jangkauan",
+                                style_function=style_iso,
+                                tooltip=folium.GeoJsonTooltip(
+                                    fields=['value', 'total_pop'], 
+                                    aliases=['Waktu (detik):', 'Estimasi Populasi:'],
+                                    localize=True
+                                )
+                            ).add_to(m_iso)
+                            
+                            st.success(f"Analisis Selesai! Menampilkan area jangkauan {travel_mode} max {range_val} menit.")
+
+                    except Exception as e:
+                        st.error(f"Terjadi kesalahan API atau Data: {e}")
+            
+            # Tampilkan Peta Isochrone
+            st.markdown('<div style="box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 12px; border: 2px solid #F2C94C; overflow: hidden;">', unsafe_allow_html=True)
+            st_folium(m_iso, width=1200, height=600, key="folium_iso")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    else:
+        st.warning("Data peta (file Excel atau SHP) belum tersedia di folder 'data/'. Pastikan file .xlsx dan .shp telah diunggah dengan benar.")# === JIKA BELUM UPLOAD FILE (FITUR PETA) ===
 if uploaded_file is None:
     # Judul Halaman Utama (Menggunakan Font RAKKAS dari CSS H1)
     st.markdown("<h1>DASHBOARD SEBARAN LOKASI POTENSIAL PEKERJA GIG PKL 65<br>D.I. YOGYAKARTA</h1>", unsafe_allow_html=True)
