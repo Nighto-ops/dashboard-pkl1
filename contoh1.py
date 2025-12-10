@@ -510,7 +510,7 @@ if uploaded_file is None:
                 api_key = st.text_input("ORS API Key", type="password", help="Dapatkan gratis di openrouteservice.org")
                 travel_mode = st.selectbox("Moda Transportasi", 
                                             ["driving-car", "cycling-regular", "foot-walking"],
-                                            format_func=lambda x: "🚗 Mobil" if "car" in x else "🚲 Sepeda" if "cycling" in x else "🚶 Jalan Kaki",
+                                            format_func=lambda x: "Mobil" if "car" in x else "Sepeda" if "cycling" in x else "Jalan Kaki",
                                             key="iso_mode")
             
             with iso_col2:
