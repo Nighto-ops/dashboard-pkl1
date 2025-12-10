@@ -421,7 +421,7 @@ if uploaded_file is None:
         df_map.columns = df_map.columns.str.lower().str.strip().str.replace(' ', '_')
         
         # --- TAB NAVIGASI PETA ---
-        tab_sebaran, tab_iso = st.tabs(["🗺️ Peta Sebaran (Wilayah & Titik)", "⏱️ Peta Jangkauan & Label"])
+        tab_sebaran, tab_iso = st.tabs(["Peta Sebaran (Wilayah & Titik)", "Peta Jangkauan & Label"])
 
         # =================================================================
         # TAB 1: PETA SEBARAN (Choropleth & Heatmap)
@@ -526,7 +526,7 @@ if uploaded_file is None:
             df_iso = load_iso_data()
             
             if df_iso is None or df_iso.empty:
-                st.warning("⚠️ Data khusus kode venue (file *_kode.xlsx) tidak ditemukan.")
+                st.warning("Data khusus kode venue (file *_kode.xlsx) tidak ditemukan.")
             else:
                 st.markdown("""
                 <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
@@ -576,7 +576,7 @@ if uploaded_file is None:
                 # --- KOLOM 2: PARAMETER & DROPDOWN DINAMIS ---
                 with iso_col2:
                     st.markdown("##### 2. Parameter")
-                    api_key = st.text_input("🔑 ORS API Key", type="password", help="Wajib diisi.")
+                    api_key = st.text_input("ORS API Key", type="password", help="Wajib diisi.")
                     speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30)
                     
                     st.markdown("---")
@@ -599,11 +599,11 @@ if uploaded_file is None:
                             list_dest_dynamic = sorted(st.session_state['df_inside_radius'][c_name_state].astype(str).unique().tolist())
                             list_dest_dynamic.insert(0, "SEMUA TITIK DALAM RADIUS")
                             
-                            st.success(f"✅ {len(list_dest_dynamic)-1} Titik dalam radius")
+                            st.success(f"{len(list_dest_dynamic)-1} Titik dalam radius")
                             target_name_selection = st.selectbox("Pilih Tujuan (Dari Radius):", list_dest_dynamic)
                         else:
                             # Jika belum ada hasil radius
-                            st.info("ℹ️ Klik 'Hitung' dulu untuk memunculkan daftar titik.")
+                            st.info("Klik 'Hitung' dulu untuk memunculkan daftar titik.")
                             target_name_selection = st.selectbox("Pilih Tujuan:", ["(Hasil Radius akan muncul di sini)"], disabled=True)
 
                 # --- KOLOM 3: TITIK PUSAT ---
@@ -621,7 +621,7 @@ if uploaded_file is None:
                     st.caption(f"Total Data Awal: **{len(df_iso_final)}** titik.")
                     
                     # Tombol ini akan memicu perhitungan Radius -> Filter Data -> Simpan ke State
-                    run_iso = st.button("📍 Hitung & Filter Radius", use_container_width=True, key="btn_iso_run")
+                    run_iso = st.button("Hitung & Filter Radius", use_container_width=True, key="btn_iso_run")
 
                 # --- 3. LOGIKA PROSES UTAMA ---
                 if run_iso or (st.session_state['iso_geojson'] is not None and enable_isodistance): 
@@ -630,7 +630,7 @@ if uploaded_file is None:
                     
                     # Pastikan API Key dan Pusat ada (validasi ulang untuk safety)
                     if not api_key or not center_point_name:
-                        if run_iso and not api_key: st.warning("⚠️ API Key kosong.")
+                        if run_iso and not api_key: st.warning("API Key kosong.")
                     else:
                         try:
                             # 1. PERSIAPAN DATA (Re-fetch row pusat untuk memastikan konsistensi)
@@ -713,7 +713,7 @@ if uploaded_file is None:
                                             dest_names.append(r[col_nama])
                                         
                                         if len(df_targets) > 49:
-                                            st.toast("⚠️ Max 50 titik dihitung jaraknya.", icon="⚠️")
+                                            st.toast("Max 50 titik dihitung jaraknya.", icon="⚠️")
 
                                         # Panggil API Matrix (Hanya jika perlu update)
                                         # Disini kita panggil setiap render agar responsif ganti target
