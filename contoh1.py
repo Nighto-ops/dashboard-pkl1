@@ -308,36 +308,59 @@ def load_map_excel_data():
 
     return combined_df
 
-@st.cache_data
+# --- FUNGSI 2: LOAD DATA ISOCHRONE (UPDATE: BISA CSV & DEBUG INFO) ---
+@st.cache_data(ttl=600) # Data akan refresh otomatis setiap 10 menit
 def load_iso_data():
     folder_path = 'data'
     df_list = []
-    if os.path.exists(folder_path):
-        for file in os.listdir(folder_path):
-            # Syarat: File Excel DAN ADA '_kode' di namanya
-            if (file.endswith('.xlsx') or file.endswith('.xls')) and ('_kode' in file.lower()):
-                file_path = os.path.join(folder_path, file)
-                try:
+    loaded_files = [] # Untuk debug
+    
+    # Cek apakah folder data ada
+    if not os.path.exists(folder_path):
+        return pd.DataFrame(), []
+
+    for file in os.listdir(folder_path):
+        # Syarat: File Excel/CSV DAN ada '_kode' di namanya (case insensitive)
+        if ('_kode' in file.lower()):
+            file_path = os.path.join(folder_path, file)
+            try:
+                # Cek ekstensi
+                if file.endswith(('.xlsx', '.xls')):
                     temp_df = pd.read_excel(file_path)
-                    
-                    # --- CLEANING SPESIFIK UNTUK ISOCHRONE ---
-                    # 1. Lowercase header & ganti spasi jadi _
-                    temp_df.columns = temp_df.columns.str.lower().str.strip().str.replace(' ', '_')
-                    
-                    # 2. Rename 'title' jadi 'nama_venue' (karena di file kode biasanya pakai 'title')
-                    if 'title' in temp_df.columns:
-                        temp_df = temp_df.rename(columns={'title': 'nama_venue'})
-                    
-                    # 3. Pastikan kode_venue string
+                elif file.endswith('.csv'):
+                    # Coba baca CSV dengan delimiter umum
+                    try:
+                        temp_df = pd.read_csv(file_path, sep=';') # Coba titik koma
+                        if temp_df.shape[1] < 2: # Kalau gagal kolomnya dikit, coba koma
+                            temp_df = pd.read_csv(file_path, sep=',')
+                    except:
+                        continue
+                else:
+                    continue # Skip file lain
+
+                # --- CLEANING DATA ---
+                temp_df.columns = temp_df.columns.str.lower().str.strip().str.replace(' ', '_')
+                
+                # Rename 'title' -> 'nama_venue'
+                if 'title' in temp_df.columns:
+                    temp_df = temp_df.rename(columns={'title': 'nama_venue'})
+                
+                # Pastikan ada kolom wajib
+                col_nama = 'nama_venue' if 'nama_venue' in temp_df.columns else None
+                if col_nama and 'latitude' in temp_df.columns and 'longitude' in temp_df.columns:
+                    # Pastikan kode_venue string
                     if 'kode_venue' in temp_df.columns:
                         temp_df['kode_venue'] = temp_df['kode_venue'].astype(str)
-                        
+                    
                     df_list.append(temp_df)
-                except: pass
+                    loaded_files.append(file)
+            except Exception as e:
+                print(f"Gagal baca {file}: {e}")
 
     if df_list:
-        return pd.concat(df_list, ignore_index=True)
-    return pd.DataFrame()
+        combined = pd.concat(df_list, ignore_index=True)
+        return combined, loaded_files
+    return pd.DataFrame(), []
 
 @st.cache_data
 def load_shp_data():
@@ -517,22 +540,35 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
 # =================================================================
-        # TAB 2: PETA JANGKAUAN + DROPDOWN FILTER RADIUS
+        # TAB 2: PETA JANGKAUAN + REFRESH BUTTON
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan & Jarak Tempuh")
             
+            # Tombol Refresh Cache (PENTING untuk file baru)
+            if st.button("🔄 Refresh Data (Klik jika file baru tidak muncul)", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+
             # --- LOAD DATA KHUSUS ---
-            df_iso = load_iso_data()
+            # Kita unpack return value (Dataframe dan List File)
+            df_iso, loaded_files = load_iso_data()
+            
+            # Tampilkan info file apa saja yang berhasil dibaca (Untuk Debugging)
+            if loaded_files:
+                with st.expander(f"Berhasil memuat {len(loaded_files)} file _kode"):
+                    st.write(loaded_files)
+                    st.caption(f"Total Baris Data: {len(df_iso)}")
             
             if df_iso is None or df_iso.empty:
-                st.warning("Data khusus kode venue (file *_kode.xlsx) tidak ditemukan.")
+                st.warning("Data khusus kode venue (file *_kode.xlsx/csv) tidak ditemukan di folder 'data'.")
             else:
                 st.markdown("""
                 <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
-                    <small><b>Workflow:</b> 
-                    <br>1. Pilih Titik Pusat & Klik <b>'Hitung'</b>.
-                    <br>2. Setelah area radius muncul, dropdown <b>'Pilih Tujuan'</b> akan otomatis terisi hanya dengan lokasi yang terjangkau.</small>
+                    <small><b>Mode Smart Radius:</b> 
+                    <br>1. Tentukan Titik Pusat.
+                    <br>2. Peta akan membuat area jangkauan (Isochrone).
+                    <br>3. Sistem otomatis <b>membuang titik di luar area</b> dan <b>menghitung jarak</b> hanya untuk titik di dalam area.</small>
                 </div>
                 """, unsafe_allow_html=True)
 
