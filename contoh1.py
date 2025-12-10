@@ -544,6 +544,24 @@ if uploaded_file is None:
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan & Jarak Tempuh")
+            # --- 1. LEGENDA KLASIFIKASI VENUE (FITUR BARU) ---
+            with st.expander("Klik untuk melihat Legenda Kode Venue (Klasifikasi)", expanded=False):
+                st.markdown("""
+                **Keterangan Kode Klasifikasi:**
+                
+                | Kode | Kategori | Detail Venue |
+                | :---: | :--- | :--- |
+                | **A** | **Pangkalan Ojek** | Pangkalan, Pickup/Drop off point |
+                | **B** | **Pusat Transportasi** | Terminal, Stasiun, Bandara, Halte |
+                | **C** | **Pusat Jual Beli** | Mall, Pusat Grosir, Plaza |
+                | **D** | **Pusat Pendidikan** | Universitas, Sekolah (kecuali SD/sederajat) |
+                | **E** | **Pusat Kesehatan** | Rumah Sakit, RSUD |
+                | **F** | **Pusat Kuliner** | Restoran (min. 100 review), Kawasan Kuliner, Cafe |
+                | **G** | **Penginapan** | Apartemen |
+                | **H** | **Fasilitas 24 Jam** | SPBU |
+                | **I** | **Tempat Umum** | Tempat Ibadah (>100 review), Alun-alun, Taman, GOR, Lapangan |
+                | **J** | **Tempat Logistik** | Shopee Xpress, Lalamove |
+                """)
             # --- LOAD DATA KHUSUS ---
             # Kita unpack return value (Dataframe dan List File)
             df_iso, loaded_files = load_iso_data()
