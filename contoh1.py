@@ -517,7 +517,7 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
 # =================================================================
-        # TAB 2: PETA JANGKAUAN + SMART RADIUS FILTER
+        # TAB 2: PETA JANGKAUAN + DROPDOWN FILTER RADIUS
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan & Jarak Tempuh")
@@ -530,10 +530,9 @@ if uploaded_file is None:
             else:
                 st.markdown("""
                 <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
-                    <small><b>Mode Smart Radius:</b> 
-                    <br>1. Tentukan Titik Pusat.
-                    <br>2. Peta akan membuat area jangkauan (Isochrone).
-                    <br>3. Sistem otomatis <b>membuang titik di luar area</b> dan <b>menghitung jarak</b> hanya untuk titik di dalam area.</small>
+                    <small><b>Workflow:</b> 
+                    <br>1. Pilih Titik Pusat & Klik <b>'Hitung'</b>.
+                    <br>2. Setelah area radius muncul, dropdown <b>'Pilih Tujuan'</b> akan otomatis terisi hanya dengan lokasi yang terjangkau.</small>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -544,7 +543,8 @@ if uploaded_file is None:
                 if 'iso_speed' not in st.session_state: st.session_state['iso_speed'] = 30
                 if 'iso_matrix_data' not in st.session_state: st.session_state['iso_matrix_data'] = None 
                 if 'iso_targets' not in st.session_state: st.session_state['iso_targets'] = [] 
-                # Simpan dataframe hasil filter radius di state agar render konsisten
+                
+                # State Penting: Menyimpan Dataframe yang sudah difilter radius
                 if 'df_inside_radius' not in st.session_state: st.session_state['df_inside_radius'] = pd.DataFrame()
 
                 # --- 2. LAYOUT FILTER (3 Kolom) ---
@@ -559,44 +559,52 @@ if uploaded_file is None:
                         list_kab_iso = sorted(df_iso['kabupaten'].astype(str).unique().tolist())
                         list_kab_iso.insert(0, "SEMUA KABUPATEN")
                         pilih_kab_iso = st.selectbox("1. Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
-                        
-                        if pilih_kab_iso == "SEMUA KABUPATEN":
-                            df_iso_step0 = df_iso.copy()
-                        else:
-                            df_iso_step0 = df_iso[df_iso['kabupaten'] == pilih_kab_iso]
+                        df_iso_step0 = df_iso.copy() if pilih_kab_iso == "SEMUA KABUPATEN" else df_iso[df_iso['kabupaten'] == pilih_kab_iso]
                     else:
                         df_iso_step0 = df_iso.copy()
 
-                    # B. Filter Kode Venue (Langsung)
+                    # B. Filter Kode Venue
                     col_kode = 'kode_venue' if 'kode_venue' in df_iso_step0.columns else None
                     if col_kode:
                         unique_kodes = sorted(df_iso_step0[col_kode].astype(str).unique().tolist())
                         unique_kodes.insert(0, "SEMUA KODE")
                         pilih_kode_iso = st.selectbox(f"2. Pilih {col_kode.title()}:", unique_kodes, key='iso_filter_kode')
-                        
-                        if pilih_kode_iso == "SEMUA KODE":
-                            df_iso_final = df_iso_step0.copy()
-                        else:
-                            df_iso_final = df_iso_step0[df_iso_step0[col_kode].astype(str) == pilih_kode_iso]
+                        df_iso_final = df_iso_step0.copy() if pilih_kode_iso == "SEMUA KODE" else df_iso_step0[df_iso_step0[col_kode].astype(str) == pilih_kode_iso]
                     else:
                         df_iso_final = df_iso_step0.copy()
 
-                # --- KOLOM 2: PARAMETER ---
+                # --- KOLOM 2: PARAMETER & DROPDOWN DINAMIS ---
                 with iso_col2:
                     st.markdown("##### 2. Parameter")
                     api_key = st.text_input("🔑 ORS API Key", type="password", help="Wajib diisi.")
                     speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30)
                     
                     st.markdown("---")
-                    enable_isodistance = st.checkbox("Aktifkan Hitung Jarak (Isodistance)", value=True) # Default True biar langsung kelihatan
+                    enable_isodistance = st.checkbox("Aktifkan Hitung Jarak (Isodistance)", value=True)
                     
-                    target_name_selection = "SEMUA TITIK DALAM RADIUS" 
-                    if enable_isodistance and not df_iso_final.empty:
-                        c_name = 'nama_venue' if 'nama_venue' in df_iso_final.columns else 'title'
-                        # Opsi tujuan (Logic: Pilih spesifik atau semua yang kena radius)
-                        list_dest = sorted(df_iso_final[c_name].astype(str).unique().tolist())
-                        list_dest.insert(0, "SEMUA TITIK DALAM RADIUS")
-                        target_name_selection = st.selectbox("Pilih Tujuan (Opsional):", list_dest)
+                    # --- LOGIKA DROPDOWN DINAMIS (PENTING) ---
+                    # Dropdown ini mengambil isi dari 'st.session_state['df_inside_radius']'
+                    # yang baru akan terisi SETELAH tombol 'Hitung' ditekan.
+                    
+                    target_name_selection = "SEMUA TITIK DALAM RADIUS" # Default
+                    
+                    if enable_isodistance:
+                        # Cek apakah sudah ada hasil radius dari proses sebelumnya
+                        if not st.session_state['df_inside_radius'].empty:
+                            # Ambil nama kolom yang sesuai
+                            cols_in_state = st.session_state['df_inside_radius'].columns
+                            c_name_state = 'nama_venue' if 'nama_venue' in cols_in_state else 'title'
+                            
+                            # Buat list opsi dari hasil filter radius
+                            list_dest_dynamic = sorted(st.session_state['df_inside_radius'][c_name_state].astype(str).unique().tolist())
+                            list_dest_dynamic.insert(0, "SEMUA TITIK DALAM RADIUS")
+                            
+                            st.success(f"✅ {len(list_dest_dynamic)-1} Titik dalam radius")
+                            target_name_selection = st.selectbox("Pilih Tujuan (Dari Radius):", list_dest_dynamic)
+                        else:
+                            # Jika belum ada hasil radius
+                            st.info("ℹ️ Klik 'Hitung' dulu untuk memunculkan daftar titik.")
+                            target_name_selection = st.selectbox("Pilih Tujuan:", ["(Hasil Radius akan muncul di sini)"], disabled=True)
 
                 # --- KOLOM 3: TITIK PUSAT ---
                 with iso_col3:
@@ -611,74 +619,105 @@ if uploaded_file is None:
                         st.info("Data kosong.")
 
                     st.caption(f"Total Data Awal: **{len(df_iso_final)}** titik.")
-                    run_iso = st.button("📍 Hitung Analisis", use_container_width=True, key="btn_iso_run")
+                    
+                    # Tombol ini akan memicu perhitungan Radius -> Filter Data -> Simpan ke State
+                    run_iso = st.button("📍 Hitung & Filter Radius", use_container_width=True, key="btn_iso_run")
 
                 # --- 3. LOGIKA PROSES UTAMA ---
-                if run_iso:
-                    if api_key and center_point_name:
+                if run_iso or (st.session_state['iso_geojson'] is not None and enable_isodistance): 
+                    # Keterangan Logika di atas: Kita jalankan logic jika tombol ditekan, 
+                    # ATAU jika sudah ada geojson di state (agar saat user ganti dropdown tujuan, peta tidak hilang).
+                    
+                    # Pastikan API Key dan Pusat ada (validasi ulang untuk safety)
+                    if not api_key or not center_point_name:
+                        if run_iso and not api_key: st.warning("⚠️ API Key kosong.")
+                    else:
                         try:
-                            # 1. AMBIL KOORDINAT PUSAT
-                            row_pusat = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
-                            lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                            c_lat, c_lon = row_pusat[lat_c], row_pusat['longitude']
-
-                            # Simpan State Dasar
-                            st.session_state['iso_center_coord'] = [c_lat, c_lon]
-                            st.session_state['iso_center_name'] = center_point_name
-                            st.session_state['iso_speed'] = speed_val
+                            # 1. PERSIAPAN DATA (Re-fetch row pusat untuk memastikan konsistensi)
+                            # Perlu handle kasus jika user ganti filter tapi belum klik hitung
+                            if center_point_name in df_iso_final[col_nama].values:
+                                row_pusat = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
+                            else:
+                                # Fallback ambil dari state jika filter berubah
+                                row_pusat = None 
                             
-                            client = openrouteservice.Client(key=api_key)
+                            if row_pusat is not None:
+                                lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
+                                c_lat, c_lon = row_pusat[lat_c], row_pusat['longitude']
 
-                            # 2. HITUNG ISOCHRONE (POLIGON)
-                            with st.spinner("1/3 Membuat peta jangkauan waktu..."):
-                                ranges_m = [(t/60) * speed_val * 1000 for t in [25, 20, 15, 10, 5]]
-                                iso_res = client.isochrones(
-                                    locations=[[c_lon, c_lat]], profile='driving-car',
-                                    range_type='distance', range=ranges_m, units='m'
-                                )
-                                iso_res['features'] = sorted(iso_res['features'], key=lambda x: x['properties']['value'], reverse=True)
-                                st.session_state['iso_geojson'] = iso_res
-
-                            # 3. FILTER TITIK YANG MASUK RADIUS (LOGIKA SHAPELY)
-                            with st.spinner("2/3 Memfilter titik di dalam area..."):
-                                from shapely.geometry import shape, Point
-                                # Ambil poligon terluar (index 0)
-                                outer_polygon = shape(iso_res['features'][0]['geometry'])
-                                
-                                # Fungsi cek poin
-                                def is_in_radius(row):
-                                    point = Point(row['longitude'], row[lat_c])
-                                    return outer_polygon.contains(point)
-                                
-                                # Filter DataFrame
-                                df_inside = df_iso_final[df_iso_final.apply(is_in_radius, axis=1)]
-                                # Simpan ke state untuk dipakai saat render
-                                st.session_state['df_inside_radius'] = df_inside
-
-                            # 4. HITUNG ISODISTANCE (JARAK REAL) UNTUK TITIK DI DALAM RADIUS
-                            if enable_isodistance:
-                                with st.spinner(f"3/3 Menghitung jarak untuk {len(df_inside)} titik terfilter..."):
-                                    # Tentukan target dari df_inside saja
-                                    if target_name_selection == "SEMUA TITIK DALAM RADIUS":
-                                        df_targets = df_inside[df_inside[col_nama] != center_point_name]
-                                    else:
-                                        df_targets = df_inside[df_inside[col_nama] == target_name_selection]
+                                # Jika tombol ditekan, kita update state isochrone baru
+                                if run_iso:
+                                    st.session_state['iso_center_coord'] = [c_lat, c_lon]
+                                    st.session_state['iso_center_name'] = center_point_name
+                                    st.session_state['iso_speed'] = speed_val
                                     
-                                    # Update target list untuk pewarnaan
+                                    client = openrouteservice.Client(key=api_key)
+
+                                    # 2. HITUNG ISOCHRONE (API CALL)
+                                    with st.spinner("1/3 Menghitung area jangkauan..."):
+                                        ranges_m = [(t/60) * speed_val * 1000 for t in [25, 20, 15, 10, 5]]
+                                        iso_res = client.isochrones(
+                                            locations=[[c_lon, c_lat]], profile='driving-car',
+                                            range_type='distance', range=ranges_m, units='m'
+                                        )
+                                        iso_res['features'] = sorted(iso_res['features'], key=lambda x: x['properties']['value'], reverse=True)
+                                        st.session_state['iso_geojson'] = iso_res
+
+                                    # 3. FILTER TITIK DALAM RADIUS (SHAPELY)
+                                    with st.spinner("2/3 Memfilter titik di dalam area..."):
+                                        from shapely.geometry import shape, Point
+                                        outer_polygon = shape(iso_res['features'][0]['geometry'])
+                                        
+                                        def is_in_radius(row):
+                                            point = Point(row['longitude'], row[lat_c])
+                                            return outer_polygon.contains(point)
+                                        
+                                        # Filter dari data awal
+                                        df_inside = df_iso_final[df_iso_final.apply(is_in_radius, axis=1)]
+                                        
+                                        # SIMPAN HASIL FILTER KE STATE (Agar Dropdown bisa baca)
+                                        st.session_state['df_inside_radius'] = df_inside
+                                        
+                                        # Jika baru dihitung, force rerun agar dropdown langsung terupdate
+                                        if run_iso: 
+                                            st.rerun() 
+
+                                # Ambil data filtered dari state (baik hasil baru atau lama)
+                                df_inside = st.session_state.get('df_inside_radius', pd.DataFrame())
+
+                                # 4. HITUNG ISODISTANCE (JARAK REAL)
+                                if enable_isodistance and not df_inside.empty:
+                                    # Cek target seleksi (karena ini mungkin berubah tanpa klik hitung)
+                                    # Jika seleksi adalah placeholder "(Silakan Hitung...)", anggap SEMUA
+                                    if target_name_selection == "(Hasil Radius akan muncul di sini)":
+                                        target_real = "SEMUA TITIK DALAM RADIUS"
+                                    else:
+                                        target_real = target_name_selection
+
+                                    # Filter target berdasarkan dropdown
+                                    if target_real == "SEMUA TITIK DALAM RADIUS":
+                                        df_targets = df_inside[df_inside[col_nama] != st.session_state['iso_center_name']]
+                                    else:
+                                        df_targets = df_inside[df_inside[col_nama] == target_real]
+                                    
                                     st.session_state['iso_targets'] = df_targets[col_nama].tolist()
 
                                     if not df_targets.empty:
+                                        # Kalau cuma ganti target, jangan panggil API isochrone, cukup distance
+                                        # Tapi disini kita simplifikasi dalam blok run
                                         locations = [[c_lon, c_lat]] 
                                         dest_names = []
                                         
-                                        # Limit API (50 titik)
                                         for _, r in df_targets.head(49).iterrows():
                                             locations.append([r['longitude'], r[lat_c]])
                                             dest_names.append(r[col_nama])
                                         
                                         if len(df_targets) > 49:
-                                            st.toast("⚠️ Terlalu banyak titik. Hanya 50 terdekat yang dihitung jaraknya.", icon="⚠️")
+                                            st.toast("⚠️ Max 50 titik dihitung jaraknya.", icon="⚠️")
 
+                                        # Panggil API Matrix (Hanya jika perlu update)
+                                        # Disini kita panggil setiap render agar responsif ganti target
+                                        client = openrouteservice.Client(key=api_key)
                                         matrix = client.distance_matrix(
                                             locations=locations, profile='driving-car', metrics=['distance'], units='km'
                                         )
@@ -687,21 +726,15 @@ if uploaded_file is None:
                                         st.session_state['iso_matrix_data'] = result_data
                                     else:
                                         st.session_state['iso_matrix_data'] = None
-                                        if target_name_selection != "SEMUA TITIK DALAM RADIUS":
-                                            st.warning(f"Titik '{target_name_selection}' berada DI LUAR jangkauan isochrone.")
-                            else:
-                                st.session_state['iso_matrix_data'] = None
-                                st.session_state['iso_targets'] = []
-
-                            st.success(f"Analisis Selesai! Ditemukan {len(df_inside)} titik dalam radius.")
+                                else:
+                                    st.session_state['iso_matrix_data'] = None
+                                    st.session_state['iso_targets'] = []
 
                         except Exception as e:
-                            st.error(f"Gagal: {e}")
-                    elif not api_key:
-                        st.warning("⚠️ API Key kosong.")
+                            # Jangan spam error saat rerun biasa
+                            if run_iso: st.error(f"Terjadi kesalahan: {e}")
 
                 # --- 4. RENDER PETA ---
-                # Tentukan Center
                 if st.session_state['iso_center_coord']:
                     map_center = st.session_state['iso_center_coord']; zoom = 14
                 elif not df_iso_final.empty:
@@ -745,7 +778,7 @@ if uploaded_file is None:
                     <div style="position: fixed; bottom: 30px; right: 10px; width: 220px; max-height: 350px; 
                     background-color: white; z-index:9999; font-size:11px; border:2px solid black; border-radius: 5px; padding: 10px; opacity: 0.95; overflow-y: auto;">
                         <h5 style="margin:0; text-align:center;">Jarak Tempuh (Mobil)</h5>
-                        <div style="text-align:center; font-size:9px; color:grey;">Hanya titik dalam radius</div>
+                        <div style="text-align:center; font-size:9px; color:grey;">Filter: {target_name_selection[:20]}..</div>
                         <hr style="margin:5px 0;">
                         <ul style="padding-left: 15px; margin:0;">{list_items}</ul>
                     </div>
@@ -754,26 +787,24 @@ if uploaded_file is None:
                     
                     if len(st.session_state['iso_matrix_data']) == 1:
                         target_name = st.session_state['iso_matrix_data'][0][0]
-                        # Cari di df_inside_radius (karena pasti ada disitu)
                         df_in = st.session_state['df_inside_radius']
                         if not df_in.empty:
                             row_t = df_in[df_in[col_nama] == target_name].iloc[0]
                             lat_c_col = 'lattitude' if 'lattitude' in df_in.columns else 'latitude'
                             folium.PolyLine(locations=[st.session_state['iso_center_coord'], [row_t[lat_c_col], row_t['longitude']]], color="red", weight=2, dash_array='5, 5', opacity=0.8).add_to(m_iso)
 
-                # LAYER TITIK (Hanya Tampilkan Titik yang Ada di df_inside_radius jika sudah dihitung)
+                # LAYER TITIK
                 lat_c_col = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
                 
-                # Jika sudah ada hasil hitungan radius, gunakan df_inside_radius. Jika belum, gunakan df_iso_final (semua).
+                # Gunakan df_inside_radius jika ada (hasil filter), jika tidak gunakan df awal
                 if not st.session_state['df_inside_radius'].empty:
                     df_to_render = st.session_state['df_inside_radius']
-                elif st.session_state['iso_geojson']: # Jika hitungan ada tapi df kosong (tidak ada titik), render kosong
+                elif st.session_state['iso_geojson']: 
                     df_to_render = pd.DataFrame() 
                 else:
-                    df_to_render = df_iso_final # Tampilan awal sebelum hitung
+                    df_to_render = df_iso_final 
 
                 for _, row in df_to_render.iterrows():
-                    # Skip pusat
                     if st.session_state['iso_center_name'] and row[col_nama] == st.session_state['iso_center_name']: continue
                     
                     is_target = row[col_nama] in st.session_state['iso_targets']
