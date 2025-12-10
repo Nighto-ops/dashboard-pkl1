@@ -544,21 +544,9 @@ if uploaded_file is None:
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan & Jarak Tempuh")
-            
-            # Tombol Refresh Cache (PENTING untuk file baru)
-            if st.button("🔄 Refresh Data (Klik jika file baru tidak muncul)", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
-
             # --- LOAD DATA KHUSUS ---
             # Kita unpack return value (Dataframe dan List File)
             df_iso, loaded_files = load_iso_data()
-            
-            # Tampilkan info file apa saja yang berhasil dibaca (Untuk Debugging)
-            if loaded_files:
-                with st.expander(f"Berhasil memuat {len(loaded_files)} file _kode"):
-                    st.write(loaded_files)
-                    st.caption(f"Total Baris Data: {len(df_iso)}")
             
             if df_iso is None or df_iso.empty:
                 st.warning("Data khusus kode venue (file *_kode.xlsx/csv) tidak ditemukan di folder 'data'.")
