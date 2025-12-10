@@ -373,7 +373,7 @@ if uploaded_file is None:
     <div class="welcome-box">
         <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
         <p style='font-size: 1.1rem;'>Halaman ini menyajikan peta interaktif persebaran lokasi pekerja Gig di D.I. Yogyakarta.</p>
-        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b> (Regresi, ANOVA, MANOVA), silakan unggah dataset Anda di panel kiri.</p>
+        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b>, silakan unggah dataset Anda di panel kiri.</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -387,7 +387,7 @@ if uploaded_file is None:
         tab_sebaran, tab_iso = st.tabs(["🗺️ Peta Sebaran (Wilayah & Titik)", "⏱️ Peta Jangkauan & Label"])
 
         # =================================================================
-        # TAB 1: PETA SEBARAN (LOGIKA LAMA - TETAP ADA)
+        # TAB 1: PETA SEBARAN (TETAP SAMA)
         # =================================================================
         with tab_sebaran:
             st.subheader("Filter Visualisasi Sebaran")
@@ -464,7 +464,7 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
         # =================================================================
-        # TAB 2: PETA JANGKAUAN (ISOCHRONE + LABEL) - KODE BARU
+        # TAB 2: PETA JANGKAUAN (ISOCHRONE + LABEL) - UPDATE FILTER KABUPATEN
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan (Berdasarkan Kecepatan & Waktu)")
@@ -480,19 +480,32 @@ if uploaded_file is None:
             
             with iso_col1:
                 st.markdown("##### 1. Filter Data")
-                # Filter Kecamatan (Penting agar peta tidak berat me-render teks)
-                list_kec_iso = sorted(df_map['kecamatan'].unique().tolist())
+                
+                # [BARU] A. Filter Kabupaten (Hierarki Tertinggi)
+                if 'kabupaten' in df_map.columns:
+                    list_kab_iso = sorted(df_map['kabupaten'].unique().tolist())
+                    list_kab_iso.insert(0, "SEMUA KABUPATEN")
+                    pilih_kab_iso = st.selectbox("Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
+                    
+                    if pilih_kab_iso == "SEMUA KABUPATEN":
+                        df_iso_step0 = df_map.copy()
+                    else:
+                        df_iso_step0 = df_map[df_map['kabupaten'] == pilih_kab_iso]
+                else:
+                    df_iso_step0 = df_map.copy()
+
+                # [UPDATE] B. Filter Kecamatan (Berdasarkan Hasil Filter Kabupaten)
+                list_kec_iso = sorted(df_iso_step0['kecamatan'].unique().tolist())
                 list_kec_iso.insert(0, "SEMUA KECAMATAN")
                 pilih_kec_iso = st.selectbox("Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
                 
                 if pilih_kec_iso == "SEMUA KECAMATAN":
-                    df_iso_step1 = df_map.copy()
+                    df_iso_step1 = df_iso_step0.copy()
                 else:
-                    df_iso_step1 = df_map[df_map['kecamatan'] == pilih_kec_iso]
+                    df_iso_step1 = df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
 
-                # Filter Kode Venue (Opsional)
-                if 'kode_venue' in df_map.columns:
-                    # Pastikan kode venue string bersih
+                # [UPDATE] C. Filter Kode Venue (Berdasarkan Hasil Filter Kecamatan)
+                if 'kode_venue' in df_iso_step1.columns:
                     df_iso_step1['kode_venue_clean'] = df_iso_step1['kode_venue'].astype(str).replace('nan', '-')
                     list_kode_iso = sorted(df_iso_step1['kode_venue_clean'].unique().tolist())
                     list_kode_iso.insert(0, "SEMUA KODE")
@@ -514,7 +527,7 @@ if uploaded_file is None:
                 st.markdown("##### 3. Titik Pusat")
                 # Dropdown hanya menampilkan lokasi hasil filter agar mudah dicari
                 if not df_iso_final.empty:
-                    list_lokasi = df_iso_final['title'].astype(str).unique().tolist()
+                    list_lokasi = sorted(df_iso_final['title'].astype(str).unique().tolist())
                     center_point_name = st.selectbox("Pilih Lokasi Pusat:", list_lokasi, key="iso_center_select")
                 else:
                     st.warning("Data tidak ditemukan.")
@@ -634,7 +647,6 @@ if uploaded_file is None:
 
     else:
         st.warning("Data peta (file Excel atau SHP) belum tersedia di folder 'data/'. Pastikan file .xlsx dan .shp telah diunggah dengan benar.")
-
 # === JIKA FILE SUDAH DIUPLOAD (KODE ASLI STATISTIK) ===
 else:
     # Inisialisasi
