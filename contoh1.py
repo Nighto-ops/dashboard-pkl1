@@ -491,26 +491,33 @@ if uploaded_file is None:
             else:
                 st.info("Silakan pilih Kabupaten dan Kecamatan di panel filter.")
 
-        # =================================================================
-        # TAB 2: PETA JANGKAUAN (ISOCHRONE)
+# =================================================================
+        # TAB 2: PETA JANGKAUAN (ISOCHRONE) - FIXED SESSION STATE
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan Waktu (Isochrone)")
             st.markdown("""
             <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
-                <small><b>Isochrone</b> memvisualisasikan area yang dapat dijangkau dari satu titik pusat dalam batas waktu tertentu. 
-                Sangat berguna untuk melihat cakupan layanan (service area) berdasarkan kondisi jalan nyata.</small>
+                <small><b>Isochrone</b> memvisualisasikan area yang dapat dijangkau dari satu titik pusat dalam batas waktu tertentu.</small>
             </div>
             """, unsafe_allow_html=True)
 
-            # --- Input Parameter ---
+            # --- 1. INISIALISASI SESSION STATE (AGAR PETA TIDAK HILANG) ---
+            if 'iso_geojson' not in st.session_state:
+                st.session_state['iso_geojson'] = None
+            if 'iso_center' not in st.session_state:
+                st.session_state['iso_center'] = [-7.7956, 110.3695] # Default Jogja
+            if 'iso_zoom' not in st.session_state:
+                st.session_state['iso_zoom'] = 11
+
+            # --- 2. INPUT PARAMETER ---
             iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
             
             with iso_col1:
-                api_key = st.text_input("ORS API Key", type="password", help="Dapatkan gratis di openrouteservice.org")
+                api_key = st.text_input("🔑 ORS API Key", type="password", help="Dapatkan gratis di openrouteservice.org")
                 travel_mode = st.selectbox("Moda Transportasi", 
                                             ["driving-car", "cycling-regular", "foot-walking"],
-                                            format_func=lambda x: "Mobil" if "car" in x else "Sepeda" if "cycling" in x else "Jalan Kaki",
+                                            format_func=lambda x: "🚗 Mobil" if "car" in x else "🚲 Sepeda" if "cycling" in x else "🚶 Jalan Kaki",
                                             key="iso_mode")
             
             with iso_col2:
@@ -518,93 +525,88 @@ if uploaded_file is None:
                 interval_val = st.slider("Interval Kontur (Menit)", 5, range_val, 5, step=5, key="iso_interval")
 
             with iso_col3:
-                # Dropdown cari lokasi dari data yang diupload
                 st.write("**Pilih Titik Pusat (Dari Data):**")
-                
-                # Cek ketersediaan kolom Nama/Title
                 if 'title' in df_map.columns:
                     search_options = df_map['title'].astype(str).unique().tolist()
                     center_point_name = st.selectbox("Cari Nama Lokasi:", search_options, key="iso_search")
                 else:
-                    st.warning("Kolom 'title' tidak ditemukan di data excel. Menggunakan default index.")
+                    st.warning("Kolom 'title' tidak ditemukan.")
                     center_point_name = None
 
-            # Tombol Eksekusi
-            run_iso = st.button("Hitung Area Jangkauan", use_container_width=True, key="btn_iso")
+            # --- 3. TOMBOL EKSEKUSI ---
+            run_iso = st.button("📍 Hitung Area Jangkauan", use_container_width=True, key="btn_iso")
 
-            # --- Render Map Isochrone ---
-            # Default Map Center (Yogyakarta)
-            m_iso = folium.Map(location=[-7.7956, 110.3695], zoom_start=11, tiles='CartoDB positron')
-
+            # --- 4. LOGIKA PROSES (UPDATE STATE) ---
             if run_iso:
                 if not api_key:
-                    st.warning("Mohon masukkan API Key OpenRouteService terlebih dahulu.")
+                    st.warning("⚠️ Mohon masukkan API Key OpenRouteService terlebih dahulu.")
                 elif center_point_name:
                     try:
-                        # Ambil koordinat lokasi terpilih
+                        # Ambil koordinat
                         row_center = df_map[df_map['title'] == center_point_name].iloc[0]
                         c_lat = row_center['lattitude'] 
                         c_lon = row_center['longitude']
 
-                        # Update Center Map
-                        m_iso.location = [c_lat, c_lon]
-                        m_iso.zoom_start = 13
-
-                        # Marker Pusat
-                        folium.Marker(
-                            [c_lat, c_lon],
-                            popup=f"<b>Pusat: {center_point_name}</b>",
-                            tooltip="Titik Pusat",
-                            icon=folium.Icon(color="red", icon="star", prefix='fa')
-                        ).add_to(m_iso)
-
                         # Call API ORS
                         client = openrouteservice.Client(key=api_key)
-                        ranges = [i * 60 for i in range(interval_val, range_val + 1, interval_val)] # Konversi ke detik
+                        ranges = [i * 60 for i in range(interval_val, range_val + 1, interval_val)] # Detik
                         
-                        with st.spinner("Sedang menghitung poligon jangkauan..."):
+                        with st.spinner("Sedang menghubungi server peta..."):
                             iso_response = client.isochrones(
-                                locations=[[c_lon, c_lat]], # ORS format: [Lon, Lat]
+                                locations=[[c_lon, c_lat]], 
                                 profile=travel_mode,
                                 range=ranges,
                                 attributes=['total_pop']
                             )
-
-                            # Styling Function (Grand Design Palette)
-                            # Warna gradasi: Kuning (dekat) -> Merah Bata (sedang) -> Coklat Gelap (jauh)
-                            colors_iso = ['#F2C94C', '#E07A3F', '#D35400', '#A04000', '#6E2C00'] 
                             
-                            def style_iso(feature):
-                                val_sec = feature['properties']['value']
-                                # Tentukan index warna berdasarkan interval
-                                idx = int(val_sec / (interval_val * 60)) - 1
-                                idx = max(0, min(idx, len(colors_iso)-1)) # Safety index
-                                
-                                return {
-                                    'fillColor': colors_iso[idx],
-                                    'color': '#4A3B32', # Garis tepi gelap
-                                    'weight': 1,
-                                    'fillOpacity': 0.5
-                                }
-
-                            # Tambah GeoJson ke Peta
-                            folium.GeoJson(
-                                iso_response,
-                                name="Area Jangkauan",
-                                style_function=style_iso,
-                                tooltip=folium.GeoJsonTooltip(
-                                    fields=['value', 'total_pop'], 
-                                    aliases=['Waktu (detik):', 'Estimasi Populasi:'],
-                                    localize=True
-                                )
-                            ).add_to(m_iso)
-                            
-                            st.success(f"Analisis Selesai! Menampilkan area jangkauan {travel_mode} max {range_val} menit.")
+                            # SIMPAN KE SESSION STATE (INI KUNCINYA)
+                            st.session_state['iso_geojson'] = iso_response
+                            st.session_state['iso_center'] = [c_lat, c_lon]
+                            st.session_state['iso_zoom'] = 13
+                            st.success("Analisis Selesai!")
 
                     except Exception as e:
-                        st.error(f"Terjadi kesalahan API atau Data: {e}")
-            
-            # Tampilkan Peta Isochrone
+                        st.error(f"Terjadi kesalahan API: {e}")
+
+            # --- 5. RENDER PETA (DARI STATE) ---
+            # Peta dirender berdasarkan apa yang ada di memori, bukan tombol
+            m_iso = folium.Map(
+                location=st.session_state['iso_center'], 
+                zoom_start=st.session_state['iso_zoom'], 
+                tiles='CartoDB positron'
+            )
+
+            # Jika data hasil hitungan ada di memori, tampilkan
+            if st.session_state['iso_geojson']:
+                # Marker Pusat
+                folium.Marker(
+                    st.session_state['iso_center'],
+                    tooltip="Titik Pusat Terpilih",
+                    icon=folium.Icon(color="red", icon="star", prefix='fa')
+                ).add_to(m_iso)
+
+                # Styling
+                colors_iso = ['#F2C94C', '#E07A3F', '#D35400', '#A04000', '#6E2C00'] 
+                
+                def style_iso(feature):
+                    val_sec = feature['properties']['value']
+                    idx = int(val_sec / (interval_val * 60)) - 1
+                    idx = max(0, min(idx, len(colors_iso)-1))
+                    return {
+                        'fillColor': colors_iso[idx],
+                        'color': '#4A3B32',
+                        'weight': 1,
+                        'fillOpacity': 0.5
+                    }
+
+                folium.GeoJson(
+                    st.session_state['iso_geojson'],
+                    name="Area Jangkauan",
+                    style_function=style_iso,
+                    tooltip=folium.GeoJsonTooltip(fields=['value', 'total_pop'], aliases=['Waktu (detik):', 'Populasi:'])
+                ).add_to(m_iso)
+
+            # Tampilkan Widget Peta
             st.markdown('<div style="box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 12px; border: 2px solid #F2C94C; overflow: hidden;">', unsafe_allow_html=True)
             st_folium(m_iso, width=1200, height=600, key="folium_iso")
             st.markdown('</div>', unsafe_allow_html=True)
