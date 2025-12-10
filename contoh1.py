@@ -309,6 +309,37 @@ def load_map_excel_data():
     return combined_df
 
 @st.cache_data
+def load_iso_data():
+    folder_path = 'data'
+    df_list = []
+    if os.path.exists(folder_path):
+        for file in os.listdir(folder_path):
+            # Syarat: File Excel DAN ADA '_kode' di namanya
+            if (file.endswith('.xlsx') or file.endswith('.xls')) and ('_kode' in file.lower()):
+                file_path = os.path.join(folder_path, file)
+                try:
+                    temp_df = pd.read_excel(file_path)
+                    
+                    # --- CLEANING SPESIFIK UNTUK ISOCHRONE ---
+                    # 1. Lowercase header & ganti spasi jadi _
+                    temp_df.columns = temp_df.columns.str.lower().str.strip().str.replace(' ', '_')
+                    
+                    # 2. Rename 'title' jadi 'nama_venue' (karena di file kode biasanya pakai 'title')
+                    if 'title' in temp_df.columns:
+                        temp_df = temp_df.rename(columns={'title': 'nama_venue'})
+                    
+                    # 3. Pastikan kode_venue string
+                    if 'kode_venue' in temp_df.columns:
+                        temp_df['kode_venue'] = temp_df['kode_venue'].astype(str)
+                        
+                    df_list.append(temp_df)
+                except: pass
+
+    if df_list:
+        return pd.concat(df_list, ignore_index=True)
+    return pd.DataFrame()
+
+@st.cache_data
 def load_shp_data():
     try:
         gdf = gpd.read_file("data/shp/kec_jogja.shp") 
@@ -485,237 +516,194 @@ if uploaded_file is None:
             else:
                 st.info("Pilih filter wilayah di atas.")
 
-        # =================================================================
-        # TAB 2: PETA JANGKAUAN (UPDATE: KABUPATEN + KECAMATAN + KODE VENUE)
+# =================================================================
+        # TAB 2: PETA JANGKAUAN (UPDATE: SUMBER DATA KHUSUS + FILTER LENGKAP)
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan (Filter Bertingkat)")
-            st.markdown("""
-            <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
-                <small>Fitur ini mensimulasikan jangkauan layanan. Gunakan filter di bawah secara berurutan:
-                <br><b>Kabupaten ➝ Kecamatan ➝ Kode Venue</b></small>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # --- 1. INISIALISASI SESSION STATE ---
-            if 'iso_geojson' not in st.session_state: st.session_state['iso_geojson'] = None
-            if 'iso_center_coord' not in st.session_state: st.session_state['iso_center_coord'] = None
-            if 'iso_center_name' not in st.session_state: st.session_state['iso_center_name'] = ""
-            if 'iso_speed' not in st.session_state: st.session_state['iso_speed'] = 30
-
-            # --- 2. LAYOUT FILTER (3 Kolom) ---
-            iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
             
-            # --- KOLOM 1: FILTER WILAYAH & KODE (FILTER DATA) ---
-            with iso_col1:
-                st.markdown("##### 1. Filter Data")
-                
-                # A. Filter Kabupaten (TETAP ADA)
-                if 'kabupaten' in df_map.columns:
-                    list_kab_iso = sorted(df_map['kabupaten'].unique().tolist())
-                    list_kab_iso.insert(0, "SEMUA KABUPATEN")
-                    pilih_kab_iso = st.selectbox("1. Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
-                    
-                    if pilih_kab_iso == "SEMUA KABUPATEN":
-                        df_iso_step0 = df_map.copy()
-                    else:
-                        df_iso_step0 = df_map[df_map['kabupaten'] == pilih_kab_iso]
-                else:
-                    df_iso_step0 = df_map.copy()
-
-                # B. Filter Kecamatan (TETAP ADA)
-                if 'kecamatan' in df_iso_step0.columns:
-                    list_kec_iso = sorted(df_iso_step0['kecamatan'].unique().tolist())
-                    list_kec_iso.insert(0, "SEMUA KECAMATAN")
-                    pilih_kec_iso = st.selectbox("2. Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
-                    
-                    if pilih_kec_iso == "SEMUA KECAMATAN":
-                        df_iso_step1 = df_iso_step0.copy()
-                    else:
-                        df_iso_step1 = df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
-                else:
-                    df_iso_step1 = df_iso_step0.copy()
-
-                # C. Filter Kode Venue (PENAMBAHAN BARU DISINI BREE)
-                # Cek dulu nama kolomnya (mengantisipasi variasi nama)
-                col_kode = 'kode_venue' if 'kode_venue' in df_iso_step1.columns else None
-                if not col_kode:
-                     # Cari kolom yang mengandung kata 'kode' jika 'kode_venue' gak ketemu
-                     for c in df_iso_step1.columns:
-                         if 'kode' in c: col_kode = c; break
-                
-                if col_kode:
-                    # Pastikan data jadi string agar tidak error saat sort
-                    df_iso_step1[col_kode] = df_iso_step1[col_kode].astype(str).replace('nan', '-')
-                    
-                    list_kode_iso = sorted(df_iso_step1[col_kode].unique().tolist())
-                    list_kode_iso.insert(0, "SEMUA KODE")
-                    
-                    pilih_kode_iso = st.selectbox(f"3. Pilih {col_kode.title()}:", list_kode_iso, key='iso_filter_kode')
-                    
-                    if pilih_kode_iso == "SEMUA KODE":
-                        df_iso_final = df_iso_step1.copy()
-                    else:
-                        df_iso_final = df_iso_step1[df_iso_step1[col_kode] == pilih_kode_iso]
-                else:
-                    st.warning("Kolom Kode Venue tidak ditemukan.")
-                    df_iso_final = df_iso_step1.copy()
-
-            # --- KOLOM 2: PARAMETER ---
-            with iso_col2:
-                st.markdown("##### 2. Parameter")
-                api_key = st.text_input("🔑 ORS API Key", type="password", help="Wajib untuk menampilkan poligon warna.")
-                speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30, help="Asumsi kecepatan rata-rata kendaraan.")
+            # --- [PERUBAHAN 1] LOAD DATA KHUSUS ---
+            # Kita panggil fungsi baru load_iso_data() agar membaca file *_kode.xlsx
+            df_iso = load_iso_data() 
             
-            # --- KOLOM 3: TITIK PUSAT ---
-            with iso_col3:
-                st.markdown("##### 3. Titik Pusat")
-                # Deteksi kolom nama venue
-                col_nama = 'nama_venue' if 'nama_venue' in df_iso_final.columns else ('title' if 'title' in df_iso_final.columns else df_iso_final.columns[0])
-                
-                if not df_iso_final.empty:
-                    list_lokasi = sorted(df_iso_final[col_nama].astype(str).unique().tolist())
-                    center_point_name = st.selectbox("Pilih Lokasi Pusat:", list_lokasi, key="iso_center_select")
-                else:
-                    st.warning("Data tidak ditemukan dengan filter di atas.")
-                    center_point_name = None
-
-            st.caption(f"Menampilkan {len(df_iso_final)} titik lokasi.")
-            
-            # Tombol Eksekusi
-            run_iso = st.button("📍 Hitung Jangkauan & Tampilkan Label", use_container_width=True, key="btn_iso_run")
-
-            # --- 3. LOGIKA PROSES ISOCHRONE ---
-            if run_iso:
-                if api_key and center_point_name:
-                    try:
-                        # Ambil koordinat pusat
-                        selected_center_row = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
-                        
-                        # Cek nama kolom lat/lon (lattitude vs latitude)
-                        lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                        c_lat = selected_center_row[lat_c]
-                        c_lon = selected_center_row['longitude']
-
-                        st.session_state['iso_center_coord'] = [c_lat, c_lon]
-                        st.session_state['iso_center_name'] = center_point_name
-                        st.session_state['iso_speed'] = speed_val
-
-                        # Hitung Isochrone
-                        times_min = [20, 15, 10, 5] 
-                        ranges_m = [(t/60) * speed_val * 1000 for t in times_min]
-                        
-                        client = openrouteservice.Client(key=api_key)
-                        
-                        with st.spinner("Sedang menghitung area jangkauan..."):
-                            iso_res = client.isochrones(
-                                locations=[[c_lon, c_lat]],
-                                profile='driving-car',
-                                range_type='distance',
-                                range=ranges_m,
-                                units='m'
-                            )
-                            st.session_state['iso_geojson'] = iso_res
-                            st.success(f"Berhasil! Kecepatan: {speed_val} km/jam.")
-
-                    except Exception as e:
-                        st.error(f"Gagal memuat Isochrone: {e}")
-                elif not api_key:
-                    st.warning("⚠️ API Key kosong.")
-
-            # --- 4. RENDER PETA ---
-            # Tentukan Center Peta
-            if st.session_state['iso_center_coord']:
-                map_center = st.session_state['iso_center_coord']
-                map_zoom = 14
-            elif center_point_name and not df_iso_final.empty:
-                try:
-                    row_preview = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
-                    lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                    map_center = [row_preview[lat_c], row_preview['longitude']]
-                    map_zoom = 14
-                except:
-                    map_center = [-7.7956, 110.3695]; map_zoom = 11
+            if df_iso is None or df_iso.empty:
+                st.warning("⚠️ Data khusus kode venue (file dengan akhiran *_kode.xlsx) tidak ditemukan di folder 'data'.")
             else:
-                map_center = [-7.7956, 110.3695]; map_zoom = 11
+                st.markdown("""
+                <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
+                    <small>Fitur ini menggunakan data khusus. Gunakan filter secara berurutan:
+                    <br><b>Kabupaten ➝ Kecamatan ➝ Kode Venue</b></small>
+                </div>
+                """, unsafe_allow_html=True)
 
-            m_iso = folium.Map(location=map_center, zoom_start=map_zoom, tiles='CartoDB positron')
+                # --- 1. INISIALISASI SESSION STATE ---
+                if 'iso_geojson' not in st.session_state: st.session_state['iso_geojson'] = None
+                if 'iso_center_coord' not in st.session_state: st.session_state['iso_center_coord'] = None
+                if 'iso_center_name' not in st.session_state: st.session_state['iso_center_name'] = ""
+                if 'iso_speed' not in st.session_state: st.session_state['iso_speed'] = 30
 
-            # A. GAMBAR ISOCHRONE (Jika ada di State)
-            if st.session_state['iso_geojson']:
-                colors = ['#d7191c', '#fdae61', '#a6d96a', '#1a9641'] 
-                labels = ['15-20 mnt', '10-15 mnt', '5-10 mnt', '< 5 mnt']
-                spd = st.session_state['iso_speed']
-
-                for i, feature in enumerate(st.session_state['iso_geojson']['features']):
-                    col = colors[i] if i < len(colors) else 'gray'
-                    lbl = labels[i] if i < len(labels) else ''
+                # --- 2. LAYOUT FILTER (3 Kolom) ---
+                iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
+                
+                # --- KOLOM 1: FILTER BERTINGKAT ---
+                with iso_col1:
+                    st.markdown("##### 1. Filter Data")
                     
-                    folium.GeoJson(
-                        feature,
-                        style_function=lambda x, col=col: {
-                            'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.4
-                        },
-                        tooltip=f"Jangkauan {lbl} ({spd} km/jam)"
-                    ).add_to(m_iso)
-                
-                # Bintang Pusat
-                folium.Marker(
-                    st.session_state['iso_center_coord'],
-                    icon=folium.Icon(color='red', icon='star', prefix='fa'),
-                    tooltip=f"PUSAT: {st.session_state['iso_center_name']}"
-                ).add_to(m_iso)
-
-            # B. GAMBAR TITIK + LABEL KODE
-            lat_col_loop = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-            
-            for _, row in df_iso_final.iterrows():
-                # Jangan plot titik pusat sebagai lingkaran biasa
-                if st.session_state['iso_center_name'] and row[col_nama] == st.session_state['iso_center_name']:
-                    continue
-                
-                raw_lat = row.get(lat_col_loop)
-                raw_lon = row.get('longitude')
-                
-                if pd.isna(raw_lat) or pd.isna(raw_lon):
-                    continue
-                
-                try:
-                    lat_pt = float(raw_lat)
-                    lon_pt = float(raw_lon)
-                    
-                    # Ambil kode
-                    if col_kode:
-                        kode_text = str(row.get(col_kode, '?')).replace('nan', '?')
-                    else:
-                        kode_text = "?"
+                    # A. Filter Kabupaten (TETAP ADA - Tapi pakai df_iso)
+                    if 'kabupaten' in df_iso.columns:
+                        list_kab_iso = sorted(df_iso['kabupaten'].astype(str).unique().tolist())
+                        list_kab_iso.insert(0, "SEMUA KABUPATEN")
+                        pilih_kab_iso = st.selectbox("1. Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
                         
-                    nama_pt = str(row.get(col_nama, 'Lokasi'))
+                        if pilih_kab_iso == "SEMUA KABUPATEN":
+                            df_iso_step0 = df_iso.copy()
+                        else:
+                            df_iso_step0 = df_iso[df_iso['kabupaten'] == pilih_kab_iso]
+                    else:
+                        df_iso_step0 = df_iso.copy()
 
-                    # Titik Biru
+                    # B. Filter Kecamatan (TETAP ADA)
+                    if 'kecamatan' in df_iso_step0.columns:
+                        list_kec_iso = sorted(df_iso_step0['kecamatan'].astype(str).unique().tolist())
+                        list_kec_iso.insert(0, "SEMUA KECAMATAN")
+                        pilih_kec_iso = st.selectbox("2. Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
+                        
+                        if pilih_kec_iso == "SEMUA KECAMATAN":
+                            df_iso_step1 = df_iso_step0.copy()
+                        else:
+                            df_iso_step1 = df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
+                    else:
+                        df_iso_step1 = df_iso_step0.copy()
+
+                    # C. Filter Kode Venue (PENAMBAHAN BARU)
+                    # Cari kolom kode_venue
+                    col_kode = 'kode_venue' if 'kode_venue' in df_iso_step1.columns else None
+                    
+                    if col_kode:
+                        # Pastikan string dan urut
+                        unique_kodes = sorted(df_iso_step1[col_kode].astype(str).unique().tolist())
+                        unique_kodes.insert(0, "SEMUA KODE")
+                        
+                        pilih_kode_iso = st.selectbox(f"3. Pilih {col_kode.title()}:", unique_kodes, key='iso_filter_kode')
+                        
+                        if pilih_kode_iso == "SEMUA KODE":
+                            df_iso_final = df_iso_step1.copy()
+                        else:
+                            df_iso_final = df_iso_step1[df_iso_step1[col_kode].astype(str) == pilih_kode_iso]
+                    else:
+                        st.warning("Kolom 'kode_venue' tidak ditemukan.")
+                        df_iso_final = df_iso_step1.copy()
+
+                # --- KOLOM 2: PARAMETER ---
+                with iso_col2:
+                    st.markdown("##### 2. Parameter")
+                    api_key = st.text_input("🔑 ORS API Key", type="password", help="Wajib diisi.")
+                    speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30)
+                
+                # --- KOLOM 3: TITIK PUSAT ---
+                with iso_col3:
+                    st.markdown("##### 3. Titik Pusat")
+                    # Deteksi kolom nama venue
+                    col_nama = 'nama_venue' if 'nama_venue' in df_iso_final.columns else ('title' if 'title' in df_iso_final.columns else df_iso_final.columns[0])
+                    
+                    if not df_iso_final.empty:
+                        list_lokasi = sorted(df_iso_final[col_nama].astype(str).unique().tolist())
+                        center_point_name = st.selectbox("Pilih Lokasi Pusat:", list_lokasi, key="iso_center_select")
+                    else:
+                        st.info("Tidak ada data hasil filter.")
+                        center_point_name = None
+
+                st.caption(f"Menampilkan {len(df_iso_final)} titik lokasi.")
+                
+                # Tombol Eksekusi
+                run_iso = st.button("📍 Hitung Jangkauan", use_container_width=True, key="btn_iso_run")
+
+                # --- 3. LOGIKA PROSES ---
+                if run_iso:
+                    if api_key and center_point_name:
+                        try:
+                            # Ambil koordinat pusat
+                            selected_row = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
+                            lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
+                            
+                            c_lat = selected_row[lat_c]
+                            c_lon = selected_row['longitude']
+
+                            st.session_state['iso_center_coord'] = [c_lat, c_lon]
+                            st.session_state['iso_center_name'] = center_point_name
+                            st.session_state['iso_speed'] = speed_val
+
+                            # API Request
+                            client = openrouteservice.Client(key=api_key)
+                            ranges_m = [(t/60) * speed_val * 1000 for t in [20, 15, 10, 5]]
+                            
+                            with st.spinner("Menghitung jangkauan..."):
+                                iso_res = client.isochrones(
+                                    locations=[[c_lon, c_lat]],
+                                    profile='driving-car',
+                                    range=ranges_m,
+                                    units='m'
+                                )
+                                st.session_state['iso_geojson'] = iso_res
+                                st.success(f"Berhasil! Jangkauan dari {center_point_name}")
+
+                        except Exception as e:
+                            st.error(f"Gagal: {e}")
+                    elif not api_key:
+                        st.warning("⚠️ API Key kosong.")
+
+                # --- 4. RENDER PETA ---
+                # Tentukan Center
+                if st.session_state['iso_center_coord']:
+                    map_center = st.session_state['iso_center_coord']
+                    zoom = 14
+                elif not df_iso_final.empty:
+                    lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
+                    map_center = [df_iso_final.iloc[0][lat_c], df_iso_final.iloc[0]['longitude']]
+                    zoom = 13
+                else:
+                    map_center = [-7.7956, 110.3695]; zoom = 11
+
+                m_iso = folium.Map(location=map_center, zoom_start=zoom, tiles='CartoDB positron')
+
+                # Layer Poligon Isochrone
+                if st.session_state['iso_geojson']:
+                    colors = ['#d7191c', '#fdae61', '#a6d96a', '#1a9641']
+                    labels = ['15-20 mnt', '10-15 mnt', '5-10 mnt', '< 5 mnt']
+                    spd = st.session_state['iso_speed']
+                    
+                    for i, feature in enumerate(st.session_state['iso_geojson']['features']):
+                        col = colors[i] if i < len(colors) else 'gray'
+                        folium.GeoJson(
+                            feature, 
+                            style_function=lambda x, col=col: {'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.4},
+                            tooltip=f"Area {labels[i] if i < 4 else ''}"
+                        ).add_to(m_iso)
+                    
+                    folium.Marker(st.session_state['iso_center_coord'], icon=folium.Icon(color='red', icon='star'), tooltip="PUSAT").add_to(m_iso)
+
+                # Layer Titik Venue (Sesuai Filter)
+                lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
+                
+                for _, row in df_iso_final.iterrows():
+                    # Skip titik pusat agar tidak double
+                    if st.session_state['iso_center_name'] and row[col_nama] == st.session_state['iso_center_name']: continue
+                    
+                    kode_txt = str(row.get('kode_venue', '?')).replace('nan', '?')
+                    
+                    # Titik
                     folium.CircleMarker(
-                        location=[lat_pt, lon_pt],
-                        radius=4, color='blue', fill=True, fill_color='cyan', fill_opacity=0.8,
-                        popup=f"<b>{nama_pt}</b><br>Kode: {kode_text}",
-                        tooltip=f"{nama_pt} ({kode_text})"
+                        [row[lat_c], row['longitude']], radius=4, color='blue', fill=True, fill_color='cyan', fill_opacity=0.8,
+                        popup=f"{row[col_nama]} ({kode_txt})", tooltip=row[col_nama]
                     ).add_to(m_iso)
-
-                    # Label Huruf Kode
+                    
+                    # Label Kode
                     folium.Marker(
-                        location=[lat_pt, lon_pt],
-                        icon=DivIcon(
-                            icon_size=(150,36),
-                            icon_anchor=(6, 14), 
-                            html=f'<div style="font-size: 10pt; font-weight: bold; color: black; text-shadow: 1px 1px 0 #fff;">{kode_text}</div>'
-                        )
+                        [row[lat_c], row['longitude']],
+                        icon=DivIcon(icon_size=(150,36), icon_anchor=(6, 14), html=f'<div style="font-size: 8pt; font-weight: bold;">{kode_txt}</div>')
                     ).add_to(m_iso)
-                except:
-                    continue
 
-            # Widget Peta
-            st.markdown('<div style="box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 12px; border: 2px solid #F2C94C; overflow: hidden;">', unsafe_allow_html=True)
-            st_folium(m_iso, width=1200, height=700, key="folium_iso_final")
-            st.markdown('</div>', unsafe_allow_html=True)
+                st_folium(m_iso, width=1200, height=600)
 
     else:
         st.warning("Data peta default tidak tersedia. Pastikan fungsi load_map_excel_data() berfungsi.")
