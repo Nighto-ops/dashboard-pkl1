@@ -517,135 +517,164 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
 # =================================================================
-        # TAB 2: PETA JANGKAUAN (UPDATE: SUMBER DATA KHUSUS + FILTER LENGKAP)
+        # TAB 2: PETA JANGKAUAN & JARAK (MERGE FITUR TEMAN)
         # =================================================================
         with tab_iso:
-            st.subheader("Analisis Jangkauan (Filter Bertingkat)")
+            st.subheader("Analisis Jangkauan & Jarak Tempuh")
             
-            # --- [PERUBAHAN 1] LOAD DATA KHUSUS ---
-            # Kita panggil fungsi baru load_iso_data() agar membaca file *_kode.xlsx
-            df_iso = load_iso_data() 
+            # --- LOAD DATA KHUSUS ---
+            df_iso = load_iso_data()
             
             if df_iso is None or df_iso.empty:
-                st.warning("⚠️ Data khusus kode venue (file dengan akhiran *_kode.xlsx) tidak ditemukan di folder 'data'.")
+                st.warning("⚠️ Data khusus kode venue (file *_kode.xlsx) tidak ditemukan.")
             else:
                 st.markdown("""
                 <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
-                    <small>Fitur ini menggunakan data khusus. Gunakan filter secara berurutan:
-                    <br><b>Kabupaten ➝ Kecamatan ➝ Kode Venue</b></small>
+                    <small>Fitur ini menggabungkan <b>Isochrone</b> (Area Waktu) dan <b>Isodistance</b> (Jarak Tempuh Real).
+                    <br>Filter: <b>Kabupaten ➝ Kecamatan ➝ Kode</b></small>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # --- 1. INISIALISASI SESSION STATE ---
+                # --- 1. INISIALISASI SESSION STATE (LENGKAP) ---
                 if 'iso_geojson' not in st.session_state: st.session_state['iso_geojson'] = None
                 if 'iso_center_coord' not in st.session_state: st.session_state['iso_center_coord'] = None
                 if 'iso_center_name' not in st.session_state: st.session_state['iso_center_name'] = ""
                 if 'iso_speed' not in st.session_state: st.session_state['iso_speed'] = 30
+                # State baru untuk fitur teman (Jarak)
+                if 'iso_matrix_data' not in st.session_state: st.session_state['iso_matrix_data'] = None 
+                if 'iso_targets' not in st.session_state: st.session_state['iso_targets'] = [] 
 
                 # --- 2. LAYOUT FILTER (3 Kolom) ---
-                iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
+                iso_col1, iso_col2, iso_col3 = st.columns([1, 1.2, 1.5])
                 
-                # --- KOLOM 1: FILTER BERTINGKAT ---
+                # --- KOLOM 1: FILTER WILAYAH ---
                 with iso_col1:
                     st.markdown("##### 1. Filter Data")
-                    
-                    # A. Filter Kabupaten (TETAP ADA - Tapi pakai df_iso)
+                    # A. Filter Kabupaten
                     if 'kabupaten' in df_iso.columns:
                         list_kab_iso = sorted(df_iso['kabupaten'].astype(str).unique().tolist())
                         list_kab_iso.insert(0, "SEMUA KABUPATEN")
                         pilih_kab_iso = st.selectbox("1. Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
-                        
-                        if pilih_kab_iso == "SEMUA KABUPATEN":
-                            df_iso_step0 = df_iso.copy()
-                        else:
-                            df_iso_step0 = df_iso[df_iso['kabupaten'] == pilih_kab_iso]
+                        df_iso_step0 = df_iso if pilih_kab_iso == "SEMUA KABUPATEN" else df_iso[df_iso['kabupaten'] == pilih_kab_iso]
                     else:
                         df_iso_step0 = df_iso.copy()
 
-                    # B. Filter Kecamatan (TETAP ADA)
+                    # B. Filter Kecamatan
                     if 'kecamatan' in df_iso_step0.columns:
                         list_kec_iso = sorted(df_iso_step0['kecamatan'].astype(str).unique().tolist())
                         list_kec_iso.insert(0, "SEMUA KECAMATAN")
                         pilih_kec_iso = st.selectbox("2. Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
-                        
-                        if pilih_kec_iso == "SEMUA KECAMATAN":
-                            df_iso_step1 = df_iso_step0.copy()
-                        else:
-                            df_iso_step1 = df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
+                        df_iso_step1 = df_iso_step0 if pilih_kec_iso == "SEMUA KECAMATAN" else df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
                     else:
                         df_iso_step1 = df_iso_step0.copy()
 
-                    # C. Filter Kode Venue (PENAMBAHAN BARU)
-                    # Cari kolom kode_venue
+                    # C. Filter Kode Venue
                     col_kode = 'kode_venue' if 'kode_venue' in df_iso_step1.columns else None
-                    
                     if col_kode:
-                        # Pastikan string dan urut
                         unique_kodes = sorted(df_iso_step1[col_kode].astype(str).unique().tolist())
                         unique_kodes.insert(0, "SEMUA KODE")
-                        
                         pilih_kode_iso = st.selectbox(f"3. Pilih {col_kode.title()}:", unique_kodes, key='iso_filter_kode')
-                        
-                        if pilih_kode_iso == "SEMUA KODE":
-                            df_iso_final = df_iso_step1.copy()
-                        else:
-                            df_iso_final = df_iso_step1[df_iso_step1[col_kode].astype(str) == pilih_kode_iso]
+                        df_iso_final = df_iso_step1 if pilih_kode_iso == "SEMUA KODE" else df_iso_step1[df_iso_step1[col_kode].astype(str) == pilih_kode_iso]
                     else:
-                        st.warning("Kolom 'kode_venue' tidak ditemukan.")
                         df_iso_final = df_iso_step1.copy()
 
-                # --- KOLOM 2: PARAMETER ---
+                # --- KOLOM 2: PARAMETER & FITUR BARU ---
                 with iso_col2:
-                    st.markdown("##### 2. Parameter")
+                    st.markdown("##### 2. Parameter & Jarak")
                     api_key = st.text_input("🔑 ORS API Key", type="password", help="Wajib diisi.")
                     speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30)
-                
-                # --- KOLOM 3: TITIK PUSAT ---
+                    
+                    st.markdown("---")
+                    # --- FITUR TEMAN ANDA: ISODISTANCE ---
+                    enable_isodistance = st.checkbox("Aktifkan Hitung Jarak (Isodistance)", value=False)
+                    
+                    target_name_selection = "SEMUA TITIK" # Default
+                    if enable_isodistance and not df_iso_final.empty:
+                        # Deteksi kolom nama
+                        c_name = 'nama_venue' if 'nama_venue' in df_iso_final.columns else 'title'
+                        list_dest = sorted(df_iso_final[c_name].astype(str).unique().tolist())
+                        list_dest.insert(0, "SEMUA TITIK")
+                        target_name_selection = st.selectbox("Pilih Tujuan Perhitungan:", list_dest, help="Pilih satu titik atau hitung ke semua titik dalam filter.")
+
+                # --- KOLOM 3: TITIK PUSAT & EKSEKUSI ---
                 with iso_col3:
                     st.markdown("##### 3. Titik Pusat")
-                    # Deteksi kolom nama venue
                     col_nama = 'nama_venue' if 'nama_venue' in df_iso_final.columns else ('title' if 'title' in df_iso_final.columns else df_iso_final.columns[0])
                     
                     if not df_iso_final.empty:
                         list_lokasi = sorted(df_iso_final[col_nama].astype(str).unique().tolist())
-                        center_point_name = st.selectbox("Pilih Lokasi Pusat:", list_lokasi, key="iso_center_select")
+                        center_point_name = st.selectbox("Pilih Lokasi Pusat (Start):", list_lokasi, key="iso_center_select")
                     else:
-                        st.info("Tidak ada data hasil filter.")
                         center_point_name = None
+                        st.info("Data kosong.")
 
-                st.caption(f"Menampilkan {len(df_iso_final)} titik lokasi.")
-                
-                # Tombol Eksekusi
-                run_iso = st.button("📍 Hitung Jangkauan", use_container_width=True, key="btn_iso_run")
+                    st.caption(f"Menampilkan {len(df_iso_final)} titik.")
+                    run_iso = st.button("📍 Hitung Analisis", use_container_width=True, key="btn_iso_run")
 
-                # --- 3. LOGIKA PROSES ---
+                # --- 3. LOGIKA PROSES (GABUNGAN) ---
                 if run_iso:
                     if api_key and center_point_name:
                         try:
-                            # Ambil koordinat pusat
-                            selected_row = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
+                            # Ambil Data Pusat
+                            row_pusat = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
                             lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                            
-                            c_lat = selected_row[lat_c]
-                            c_lon = selected_row['longitude']
+                            c_lat, c_lon = row_pusat[lat_c], row_pusat['longitude']
 
+                            # Simpan State Dasar
                             st.session_state['iso_center_coord'] = [c_lat, c_lon]
                             st.session_state['iso_center_name'] = center_point_name
                             st.session_state['iso_speed'] = speed_val
-
-                            # API Request
-                            client = openrouteservice.Client(key=api_key)
-                            ranges_m = [(t/60) * speed_val * 1000 for t in [20, 15, 10, 5]]
                             
-                            with st.spinner("Menghitung jangkauan..."):
+                            client = openrouteservice.Client(key=api_key)
+
+                            # A. HITUNG ISOCHRONE (POLIGON WAKTU)
+                            with st.spinner("1/2 Menghitung area jangkauan waktu..."):
+                                ranges_m = [(t/60) * speed_val * 1000 for t in [25, 20, 15, 10, 5]]
                                 iso_res = client.isochrones(
-                                    locations=[[c_lon, c_lat]],
-                                    profile='driving-car',
-                                    range=ranges_m,
-                                    units='m'
+                                    locations=[[c_lon, c_lat]], profile='driving-car',
+                                    range_type='distance', range=ranges_m, units='m'
                                 )
+                                # Sorting agar layer rapi (besar di bawah)
+                                iso_res['features'] = sorted(iso_res['features'], key=lambda x: x['properties']['value'], reverse=True)
                                 st.session_state['iso_geojson'] = iso_res
-                                st.success(f"Berhasil! Jangkauan dari {center_point_name}")
+
+                            # B. HITUNG ISODISTANCE (JARAK REAL) - FITUR TEMAN
+                            if enable_isodistance:
+                                with st.spinner("2/2 Menghitung matriks jarak..."):
+                                    # Tentukan baris tujuan
+                                    if target_name_selection == "SEMUA TITIK":
+                                        df_targets = df_iso_final[df_iso_final[col_nama] != center_point_name]
+                                    else:
+                                        df_targets = df_iso_final[df_iso_final[col_nama] == target_name_selection]
+                                    
+                                    # Simpan daftar target untuk pewarnaan di peta nanti
+                                    st.session_state['iso_targets'] = df_targets[col_nama].tolist()
+
+                                    # Siapkan Koordinat API (Limitasi 50 titik agar tidak error/lambat)
+                                    locations = [[c_lon, c_lat]] # Index 0 adalah Pusat
+                                    dest_names = []
+                                    
+                                    for _, r in df_targets.head(49).iterrows():
+                                        locations.append([r['longitude'], r[lat_c]])
+                                        dest_names.append(r[col_nama])
+                                    
+                                    if len(df_targets) > 49:
+                                        st.toast("⚠️ Terlalu banyak titik. Hanya 50 titik pertama yang dihitung.", icon="⚠️")
+
+                                    # Panggil API Matrix
+                                    matrix = client.distance_matrix(
+                                        locations=locations, profile='driving-car', metrics=['distance'], units='km'
+                                    )
+                                    # Simpan hasil (Distances dari Index 0 ke lainnya)
+                                    # Format simpan: List of tuples (Nama Tujuan, Jarak KM)
+                                    distances = matrix['distances'][0][1:]
+                                    result_data = list(zip(dest_names, distances))
+                                    st.session_state['iso_matrix_data'] = result_data
+                            else:
+                                st.session_state['iso_matrix_data'] = None
+                                st.session_state['iso_targets'] = []
+
+                            st.success(f"Analisis Selesai! Jangkauan dari {center_point_name}")
 
                         except Exception as e:
                             st.error(f"Gagal: {e}")
@@ -653,55 +682,100 @@ if uploaded_file is None:
                         st.warning("⚠️ API Key kosong.")
 
                 # --- 4. RENDER PETA ---
-                # Tentukan Center
                 if st.session_state['iso_center_coord']:
-                    map_center = st.session_state['iso_center_coord']
-                    zoom = 14
+                    map_center = st.session_state['iso_center_coord']; zoom = 14
                 elif not df_iso_final.empty:
-                    lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                    map_center = [df_iso_final.iloc[0][lat_c], df_iso_final.iloc[0]['longitude']]
-                    zoom = 13
+                    lc = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
+                    map_center = [df_iso_final.iloc[0][lc], df_iso_final.iloc[0]['longitude']]; zoom = 13
                 else:
                     map_center = [-7.7956, 110.3695]; zoom = 11
 
                 m_iso = folium.Map(location=map_center, zoom_start=zoom, tiles='CartoDB positron')
 
-                # Layer Poligon Isochrone
+                # LAYER 1: POLIGON ISOCHRONE (Style Teman)
                 if st.session_state['iso_geojson']:
-                    colors = ['#d7191c', '#fdae61', '#a6d96a', '#1a9641']
-                    labels = ['15-20 mnt', '10-15 mnt', '5-10 mnt', '< 5 mnt']
-                    spd = st.session_state['iso_speed']
+                    colors = ['#d7191c', '#fdae61', '#ffffbf', '#a6d96a', '#1a9641'] # Merah -> Hijau
+                    labels = ['20-25 Mnt', '15-20 Mnt', '10-15 Mnt', '5-10 Mnt', '< 5 Mnt']
                     
                     for i, feature in enumerate(st.session_state['iso_geojson']['features']):
                         col = colors[i] if i < len(colors) else 'gray'
+                        lbl = labels[i] if i < len(labels) else ''
                         folium.GeoJson(
-                            feature, 
-                            style_function=lambda x, col=col: {'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.4},
-                            tooltip=f"Area {labels[i] if i < 4 else ''}"
+                            feature,
+                            style_function=lambda x, col=col: {'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.6},
+                            tooltip=f"Zona: {lbl}"
                         ).add_to(m_iso)
                     
-                    folium.Marker(st.session_state['iso_center_coord'], icon=folium.Icon(color='red', icon='star'), tooltip="PUSAT").add_to(m_iso)
+                    # LEGENDA KIRI BAWAH (HTML Injection)
+                    legend_html = """
+                    <div style="position: fixed; bottom: 30px; left: 30px; width: 150px; height: 130px; 
+                    background-color: white; z-index:9999; font-size:11px; border:2px solid grey; border-radius: 5px; padding: 10px; opacity: 0.9;">
+                        <b>Legenda Waktu</b><br>
+                        <i class="fa fa-square" style="color:#1a9641"></i> < 5 Mnt (Dekat)<br>
+                        <i class="fa fa-square" style="color:#a6d96a"></i> 5-10 Mnt<br>
+                        <i class="fa fa-square" style="color:#ffffbf; border:1px solid #ccc"></i> 10-15 Mnt<br>
+                        <i class="fa fa-square" style="color:#fdae61"></i> 15-20 Mnt<br>
+                        <i class="fa fa-square" style="color:#d7191c"></i> > 20 Mnt (Jauh)
+                    </div>
+                    """
+                    m_iso.get_root().html.add_child(folium.Element(legend_html))
 
-                # Layer Titik Venue (Sesuai Filter)
-                lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                
+                # LAYER 2: ISODISTANCE RESULT (Garis & Info Jarak)
+                if st.session_state['iso_matrix_data']:
+                    # Buat List HTML untuk Panel Kanan
+                    list_items = ""
+                    for name, dist in st.session_state['iso_matrix_data']:
+                        list_items += f"<li><b>{name}</b>: {dist:.2f} km</li>"
+                    
+                    # Panel Kanan Bawah
+                    dist_legend_html = f"""
+                    <div style="position: fixed; bottom: 30px; right: 10px; width: 200px; max-height: 300px; 
+                    background-color: white; z-index:9999; font-size:11px; border:2px solid black; border-radius: 5px; padding: 10px; opacity: 0.95; overflow-y: auto;">
+                        <h5 style="margin:0; text-align:center;">Jarak Tempuh (Mobil)</h5>
+                        <hr style="margin:5px 0;">
+                        <ul style="padding-left: 15px; margin:0;">{list_items}</ul>
+                    </div>
+                    """
+                    m_iso.get_root().html.add_child(folium.Element(dist_legend_html))
+                    
+                    # Jika cuma 1 target, gambar garis putus-putus
+                    if len(st.session_state['iso_matrix_data']) == 1:
+                        target_name = st.session_state['iso_matrix_data'][0][0]
+                        # Cari koordinat target ini di df
+                        row_t = df_iso_final[df_iso_final[col_nama] == target_name].iloc[0]
+                        lat_c_col = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
+                        folium.PolyLine(
+                            locations=[st.session_state['iso_center_coord'], [row_t[lat_c_col], row_t['longitude']]],
+                            color="red", weight=2, dash_array='5, 5', opacity=0.8
+                        ).add_to(m_iso)
+
+                # LAYER 3: MARKER TITIK (Warna-warni sesuai Target)
+                lat_col_loop = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
                 for _, row in df_iso_final.iterrows():
-                    # Skip titik pusat agar tidak double
+                    # Skip pusat
                     if st.session_state['iso_center_name'] and row[col_nama] == st.session_state['iso_center_name']: continue
                     
-                    kode_txt = str(row.get('kode_venue', '?')).replace('nan', '?')
+                    # Tentukan warna: Jika dia adalah target yang dihitung jaraknya -> Kuning, else Biru
+                    is_target = row[col_nama] in st.session_state['iso_targets']
+                    f_color = 'yellow' if is_target else 'cyan'
+                    border_c = 'red' if is_target else 'blue'
+                    rad = 6 if is_target else 4
                     
-                    # Titik
+                    kode_txt = str(row.get(col_kode, '?')).replace('nan', '?')
+                    
                     folium.CircleMarker(
-                        [row[lat_c], row['longitude']], radius=4, color='blue', fill=True, fill_color='cyan', fill_opacity=0.8,
-                        popup=f"{row[col_nama]} ({kode_txt})", tooltip=row[col_nama]
+                        [row[lat_col_loop], row['longitude']], radius=rad, color=border_c, fill=True, fill_color=f_color, fill_opacity=0.9,
+                        popup=f"<b>{row[col_nama]}</b><br>Kode: {kode_txt}", tooltip=f"{row[col_nama]}"
                     ).add_to(m_iso)
                     
-                    # Label Kode
                     folium.Marker(
-                        [row[lat_c], row['longitude']],
+                        [row[lat_col_loop], row['longitude']],
                         icon=DivIcon(icon_size=(150,36), icon_anchor=(6, 14), html=f'<div style="font-size: 8pt; font-weight: bold;">{kode_txt}</div>')
                     ).add_to(m_iso)
+
+                # Marker Pusat
+                if st.session_state['iso_center_coord']:
+                    folium.Marker(st.session_state['iso_center_coord'], icon=folium.Icon(color='red', icon='star'), tooltip="PUSAT").add_to(m_iso)
 
                 st_folium(m_iso, width=1200, height=600)
 
