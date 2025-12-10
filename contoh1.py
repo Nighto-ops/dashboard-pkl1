@@ -387,7 +387,7 @@ if uploaded_file is None:
         tab_sebaran, tab_iso = st.tabs(["🗺️ Peta Sebaran (Wilayah & Titik)", "⏱️ Peta Jangkauan & Label"])
 
         # =================================================================
-        # TAB 1: PETA SEBARAN (LOGIKA LAMA - TETAP ADA)
+        # TAB 1: PETA SEBARAN (Choropleth & Heatmap)
         # =================================================================
         with tab_sebaran:
             st.subheader("Filter Visualisasi Sebaran")
@@ -464,7 +464,7 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
         # =================================================================
-        # TAB 2: PETA JANGKAUAN (ISOCHRONE) - FIXED & FILTER LENGKAP
+        # TAB 2: PETA JANGKAUAN (ISOCHRONE) - FILTER LENGKAP & FIX
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan (Berdasarkan Kecepatan & Waktu)")
@@ -475,27 +475,31 @@ if uploaded_file is None:
             </div>
             """, unsafe_allow_html=True)
 
-            # --- 0. SMART DETEKSI KOLOM KODE ---
+            # --- 0. DETEKSI KOLOM KODE VENUE (Agar pasti ketemu) ---
             all_cols = df_map.columns.tolist()
             col_kode_found = None
-            if 'kode_venue' in all_cols:
-                col_kode_found = 'kode_venue'
-            elif any('kode' in c and 'venue' in c for c in all_cols):
-                col_kode_found = next((c for c in all_cols if 'kode' in c and 'venue' in c), None)
-            elif any('kode' in c for c in all_cols):
-                col_kode_found = next((c for c in all_cols if 'kode' in c), None)
+            
+            # Cek berbagai variasi nama kolom kode
+            potential_names = ['kode_venue', 'kode venue', 'kodevenue', 'kode']
+            for name in potential_names:
+                if name in all_cols:
+                    col_kode_found = name
+                    break
+            
+            # Jika belum ketemu, cari kolom yang mengandung kata 'kode'
+            if not col_kode_found:
+                 for c in all_cols:
+                     if 'kode' in c and 'venue' in c:
+                         col_kode_found = c
+                         break
 
             # --- 1. INISIALISASI SESSION STATE ---
-            if 'iso_geojson' not in st.session_state:
-                st.session_state['iso_geojson'] = None
-            if 'iso_center_coord' not in st.session_state:
-                st.session_state['iso_center_coord'] = None
-            if 'iso_center_name' not in st.session_state:
-                st.session_state['iso_center_name'] = ""
-            if 'iso_speed' not in st.session_state:
-                st.session_state['iso_speed'] = 30
+            if 'iso_geojson' not in st.session_state: st.session_state['iso_geojson'] = None
+            if 'iso_center_coord' not in st.session_state: st.session_state['iso_center_coord'] = None
+            if 'iso_center_name' not in st.session_state: st.session_state['iso_center_name'] = ""
+            if 'iso_speed' not in st.session_state: st.session_state['iso_speed'] = 30
 
-            # --- 2. FILTER & KONTROL ---
+            # --- 2. FILTER & KONTROL (Layout Kolom) ---
             iso_col1, iso_col2, iso_col3 = st.columns([1, 1, 1.5])
             
             with iso_col1:
@@ -505,7 +509,7 @@ if uploaded_file is None:
                 if 'kabupaten' in df_map.columns:
                     list_kab_iso = sorted(df_map['kabupaten'].unique().tolist())
                     list_kab_iso.insert(0, "SEMUA KABUPATEN")
-                    pilih_kab_iso = st.selectbox("Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
+                    pilih_kab_iso = st.selectbox("1. Pilih Kabupaten:", list_kab_iso, key='iso_filter_kab')
                     
                     if pilih_kab_iso == "SEMUA KABUPATEN":
                         df_iso_step0 = df_map.copy()
@@ -517,27 +521,29 @@ if uploaded_file is None:
                 # B. Filter Kecamatan
                 list_kec_iso = sorted(df_iso_step0['kecamatan'].unique().tolist())
                 list_kec_iso.insert(0, "SEMUA KECAMATAN")
-                pilih_kec_iso = st.selectbox("Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
+                pilih_kec_iso = st.selectbox("2. Pilih Kecamatan:", list_kec_iso, key='iso_filter_kec')
                 
                 if pilih_kec_iso == "SEMUA KECAMATAN":
                     df_iso_step1 = df_iso_step0.copy()
                 else:
                     df_iso_step1 = df_iso_step0[df_iso_step0['kecamatan'] == pilih_kec_iso]
 
-                # C. Filter Kode Venue
+                # C. Filter Kode Venue (PASTI ADA SEKARANG)
                 if col_kode_found:
+                    # Pastikan data jadi string
                     df_iso_step1[col_kode_found] = df_iso_step1[col_kode_found].astype(str).replace('nan', '-')
+                    
                     list_kode_iso = sorted(df_iso_step1[col_kode_found].unique().tolist())
                     list_kode_iso.insert(0, "SEMUA KODE")
-                    pilih_kode_iso = st.selectbox(f"Pilih {col_kode_found.title()}:", list_kode_iso, key='iso_filter_kode')
+                    pilih_kode_iso = st.selectbox(f"3. Pilih {col_kode_found.title()}:", list_kode_iso, key='iso_filter_kode')
                     
                     if pilih_kode_iso == "SEMUA KODE":
                         df_iso_final = df_iso_step1.copy()
                     else:
                         df_iso_final = df_iso_step1[df_iso_step1[col_kode_found] == pilih_kode_iso]
                 else:
+                    st.warning("Kolom 'Kode Venue' tidak terdeteksi di Excel.")
                     df_iso_final = df_iso_step1.copy()
-                    st.caption("Kolom Kode Venue tidak ditemukan.")
 
             with iso_col2:
                 st.markdown("##### 2. Parameter")
@@ -569,6 +575,7 @@ if uploaded_file is None:
                         st.session_state['iso_center_name'] = center_point_name
                         st.session_state['iso_speed'] = speed_val
 
+                        # Hitung Isochrone
                         times_min = [20, 15, 10, 5] 
                         ranges_m = [(t/60) * speed_val * 1000 for t in times_min]
                         
@@ -591,8 +598,7 @@ if uploaded_file is None:
                     st.warning("⚠️ API Key kosong.")
 
             # --- 4. RENDER PETA ---
-            import pandas as pd
-            import numpy as np
+            import pandas as pd # Safety import
 
             # Tentukan Center Peta
             if st.session_state['iso_center_coord']:
@@ -635,16 +641,14 @@ if uploaded_file is None:
                     tooltip=f"PUSAT: {st.session_state['iso_center_name']}"
                 ).add_to(m_iso)
 
-            # B. GAMBAR TITIK + LABEL KODE (Dari df_iso_final)
+            # B. GAMBAR TITIK + LABEL KODE
             for _, row in df_iso_final.iterrows():
-                # Skip titik pusat
                 if st.session_state['iso_center_name'] and row['title'] == st.session_state['iso_center_name']:
                     continue
                 
                 raw_lat = row.get('lattitude')
                 raw_lon = row.get('longitude')
                 
-                # Cek Validitas (Anti-Error)
                 if pd.isna(raw_lat) or pd.isna(raw_lon) or raw_lat == '' or raw_lon == '':
                     continue
                 
@@ -652,7 +656,7 @@ if uploaded_file is None:
                     lat_pt = float(raw_lat)
                     lon_pt = float(raw_lon)
                     
-                    # Ambil kode
+                    # Ambil kode dinamis
                     if col_kode_found:
                         kode_text = str(row.get(col_kode_found, '?')).replace('nan', '?')
                     else:
@@ -686,7 +690,7 @@ if uploaded_file is None:
             st.markdown('</div>', unsafe_allow_html=True)
 
     else:
-        st.warning("Data peta (file Excel atau SHP) belum tersedia di folder 'data/'. Pastikan file .xlsx dan .shp telah diunggah dengan benar.")
+        st.warning("Data peta belum tersedia. Pastikan file Excel dan SHP sudah diupload.")
         
 # === JIKA FILE SUDAH DIUPLOAD (KODE ASLI STATISTIK) ===
 else:
