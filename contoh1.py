@@ -629,24 +629,40 @@ if uploaded_file is None:
 
             # B. GAMBAR TITIK + LABEL KODE (Selalu dari Data Filtered)
             for _, row in df_iso_final.iterrows():
-                # Skip titik pusat agar tidak tertumpuk bintang
+                # 1. Skip jika ini titik pusat (agar tidak menumpuk bintang)
                 if st.session_state['iso_center_name'] and row['title'] == st.session_state['iso_center_name']:
                     continue
                 
+                # 2. Ambil data koordinat
+                raw_lat = row.get('lattitude')
+                raw_lon = row.get('longitude')
+                
+                # 3. CEK VALIDITAS KOORDINAT (INI FIX UTAMANYA)
+                # Jika lat/lon kosong, NaN, atau None -> LEWATI (Continue)
+                if pd.isna(raw_lat) or pd.isna(raw_lon) or raw_lat == '' or raw_lon == '':
+                    continue
+                
                 try:
-                    lat_pt, lon_pt = row['lattitude'], row['longitude']
+                    # Pastikan tipe data float
+                    lat_pt = float(raw_lat)
+                    lon_pt = float(raw_lon)
+                    
                     kode_text = str(row.get('kode_venue', '?')).replace('nan', '?')
                     nama_pt = str(row.get('title', 'Lokasi'))
 
-                    # Titik Biru
+                    # 4. Gambar Titik Biru
                     folium.CircleMarker(
                         location=[lat_pt, lon_pt],
-                        radius=4, color='blue', fill=True, fill_color='cyan', fill_opacity=0.8,
+                        radius=4, 
+                        color='blue', 
+                        fill=True, 
+                        fill_color='cyan', 
+                        fill_opacity=0.8,
                         popup=f"<b>{nama_pt}</b><br>Kode: {kode_text}",
                         tooltip=f"{nama_pt} ({kode_text})"
                     ).add_to(m_iso)
 
-                    # Label Huruf
+                    # 5. Gambar Label Huruf
                     folium.Marker(
                         location=[lat_pt, lon_pt],
                         icon=DivIcon(
@@ -655,7 +671,9 @@ if uploaded_file is None:
                             html=f'<div style="font-size: 10pt; font-weight: bold; color: black; text-shadow: 1px 1px 0 #fff;">{kode_text}</div>'
                         )
                     ).add_to(m_iso)
-                except:
+                    
+                except Exception as e:
+                    # Jika data error, lewati saja titik ini agar map tidak crash
                     continue
 
             # Tampilkan Widget Peta
