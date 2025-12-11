@@ -619,7 +619,7 @@ if uploaded_file is None:
                 with iso_col2:
                     st.markdown("##### 2. Parameter")
                     api_key = st.text_input("ORS API Key", type="password", help="Wajib diisi.")
-                    speed_val = st.slider("Kecepatan (km/jam)", 10, 80, 30)
+                    speed_val = st.slider("Kecepatan (km/jam)", 5, 80, 30)
                     
                     st.markdown("---")
                     enable_isodistance = st.checkbox("Aktifkan Hitung Jarak (Isodistance)", value=True)
