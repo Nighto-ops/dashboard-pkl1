@@ -541,23 +541,39 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
 # =================================================================
-        # TAB 2: HYBRID ISOCHRONE (VISUAL ORS + DATA REALTIME GOOGLE)
+        # TAB 2: HYBRID ISOCHRONE (FIXED DATA LOADING)
         # =================================================================
         with tab_iso:
             st.subheader("Analisis Jangkauan (Hybrid)")
             
-            # --- LOAD DATA ---
-            df_iso = load_iso_data()
+            # --- 1. HANDLING DATA LOADING YANG AMAN ---
+            # Kita tampung dulu hasilnya ke variabel sementara
+            raw_result = load_iso_data()
             
+            # Cek apakah hasilnya Tuple (Dataframe, List) atau cuma Dataframe
+            if isinstance(raw_result, tuple):
+                df_iso = raw_result[0] # Ambil item pertama (Dataframe)
+                loaded_files = raw_result[1] # Ambil item kedua (List File untuk info)
+            else:
+                df_iso = raw_result
+                loaded_files = []
+
+            # Tampilkan info file (Opsional, untuk memastikan data terbaca)
+            if loaded_files:
+                with st.expander(f"✅ Data Termuat: {len(loaded_files)} File", expanded=False):
+                    st.write(loaded_files)
+
+            # --- 2. LANJUT KE PENGECEKAN DATA KOSONG ---
             if df_iso is None or df_iso.empty:
                 st.warning("⚠️ Data khusus kode venue (file *_kode.xlsx) tidak ditemukan.")
             else:
+                # ... (KODE DI BAWAH INI SAMA SEPERTI SEBELUMNYA) ...
                 st.markdown("""
                 <div style='background-color: #E3F2FD; padding: 15px; border-radius: 10px; border-left: 5px solid #2196F3; margin-bottom: 20px;'>
                     <small><b>Mode Hybrid Real-time:</b> 
-                    <br>1. <b>Area Peta (Warna)</b> menggunakan OpenRouteService (Estimasi).
+                    <br>1. <b>Area Peta</b> menggunakan OpenRouteService.
                     <br>2. <b>List Jarak & Waktu</b> menggunakan <b>Google Maps</b> (Real-time Traffic).
-                    <br>3. Pastikan API Key Google valid & Billing aktif.</small>
+                    <br>3. Pastikan API Key Google valid.</small>
                 </div>
                 """, unsafe_allow_html=True)
 
