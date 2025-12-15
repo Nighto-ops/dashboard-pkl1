@@ -15,7 +15,6 @@ from streamlit_folium import st_folium
 import openrouteservice
 from openrouteservice import convert
 from folium.features import DivIcon
-import googlemaps
 
 # Impor dari Scikit-learn (SKLEARN)
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
@@ -541,56 +540,62 @@ if uploaded_file is None:
                 st.info("Pilih filter wilayah di atas.")
 
 # =================================================================
-        # TAB 2: HYBRID ISOCHRONE (FIXED DATA LOADING)
+        # TAB 2: PETA JANGKAUAN + REFRESH BUTTON
         # =================================================================
         with tab_iso:
-            st.subheader("Analisis Jangkauan (Hybrid)")
-            
-            # --- 1. HANDLING DATA LOADING YANG AMAN ---
-            # Kita tampung dulu hasilnya ke variabel sementara
-            raw_result = load_iso_data()
-            
-            # Cek apakah hasilnya Tuple (Dataframe, List) atau cuma Dataframe
-            if isinstance(raw_result, tuple):
-                df_iso = raw_result[0] # Ambil item pertama (Dataframe)
-                loaded_files = raw_result[1] # Ambil item kedua (List File untuk info)
-            else:
-                df_iso = raw_result
-                loaded_files = []
-
-            # Tampilkan info file (Opsional, untuk memastikan data terbaca)
-            if loaded_files:
-                with st.expander(f"✅ Data Termuat: {len(loaded_files)} File", expanded=False):
-                    st.write(loaded_files)
-
-            # --- 2. LANJUT KE PENGECEKAN DATA KOSONG ---
-            if df_iso is None or df_iso.empty:
-                st.warning("⚠️ Data khusus kode venue (file *_kode.xlsx) tidak ditemukan.")
-            else:
-                # ... (KODE DI BAWAH INI SAMA SEPERTI SEBELUMNYA) ...
+            st.subheader("Analisis Jangkauan & Jarak Tempuh")
+            # --- 1. LEGENDA KLASIFIKASI VENUE (FITUR BARU) ---
+            with st.expander("Klik untuk melihat Legenda Kode Venue (Klasifikasi)", expanded=False):
                 st.markdown("""
-                <div style='background-color: #E3F2FD; padding: 15px; border-radius: 10px; border-left: 5px solid #2196F3; margin-bottom: 20px;'>
-                    <small><b>Mode Hybrid Real-time:</b> 
-                    <br>1. <b>Area Peta</b> menggunakan OpenRouteService.
-                    <br>2. <b>List Jarak & Waktu</b> menggunakan <b>Google Maps</b> (Real-time Traffic).
-                    <br>3. Pastikan API Key Google valid.</small>
+                **Keterangan Kode Klasifikasi:**
+                
+                | Kode | Kategori | Detail Venue |
+                | :---: | :--- | :--- |
+                | **A** | **Pangkalan Ojek** | Pangkalan, Pickup/Drop off point |
+                | **B** | **Pusat Transportasi** | Terminal, Stasiun, Bandara, Halte |
+                | **C** | **Pusat Jual Beli** | Mall, Pusat Grosir, Plaza |
+                | **D** | **Pusat Pendidikan** | Universitas, Sekolah (kecuali SD/sederajat) |
+                | **E** | **Pusat Kesehatan** | Rumah Sakit, RSUD |
+                | **F** | **Pusat Kuliner** | Restoran (min. 100 review), Kawasan Kuliner, Cafe |
+                | **G** | **Penginapan** | Apartemen |
+                | **H** | **Fasilitas 24 Jam** | SPBU |
+                | **I** | **Tempat Umum** | Tempat Ibadah (>100 review), Alun-alun, Taman, GOR, Lapangan |
+                | **J** | **Tempat Logistik** | Shopee Xpress, Lalamove |
+                """)
+            # --- LOAD DATA KHUSUS ---
+            # Kita unpack return value (Dataframe dan List File)
+            df_iso, loaded_files = load_iso_data()
+            
+            if df_iso is None or df_iso.empty:
+                st.warning("Data khusus kode venue (file *_kode.xlsx/csv) tidak ditemukan di folder 'data'.")
+            else:
+                st.markdown("""
+                <div style='background-color: #FDF1D6; padding: 15px; border-radius: 10px; border-left: 5px solid #F2C94C; margin-bottom: 20px;'>
+                    <small><b>Mode Smart Radius:</b> 
+                    <br>1. Tentukan Titik Pusat.
+                    <br>2. Peta akan membuat area jangkauan (Isochrone).
+                    <br>3. Sistem otomatis <b>membuang titik di luar area</b> dan <b>menghitung jarak</b> hanya untuk titik di dalam area.</small>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # --- 1. STATE ---
+                # --- 1. INISIALISASI SESSION STATE ---
                 if 'iso_geojson' not in st.session_state: st.session_state['iso_geojson'] = None
                 if 'iso_center_coord' not in st.session_state: st.session_state['iso_center_coord'] = None
                 if 'iso_center_name' not in st.session_state: st.session_state['iso_center_name'] = ""
                 if 'iso_speed' not in st.session_state: st.session_state['iso_speed'] = 30
                 if 'iso_matrix_data' not in st.session_state: st.session_state['iso_matrix_data'] = None 
                 if 'iso_targets' not in st.session_state: st.session_state['iso_targets'] = [] 
+                
+                # State Penting: Menyimpan Dataframe yang sudah difilter radius
                 if 'df_inside_radius' not in st.session_state: st.session_state['df_inside_radius'] = pd.DataFrame()
 
-                # --- 2. LAYOUT FILTER ---
+                # --- 2. LAYOUT FILTER (3 Kolom) ---
                 iso_col1, iso_col2, iso_col3 = st.columns([1, 1.2, 1.5])
                 
+                # --- KOLOM 1: FILTER WILAYAH ---
                 with iso_col1:
                     st.markdown("##### 1. Filter Data")
+                    
                     # A. Filter Kabupaten
                     if 'kabupaten' in df_iso.columns:
                         list_kab_iso = sorted(df_iso['kabupaten'].astype(str).unique().tolist())
@@ -600,7 +605,7 @@ if uploaded_file is None:
                     else:
                         df_iso_step0 = df_iso.copy()
 
-                    # B. Filter Kode
+                    # B. Filter Kode Venue
                     col_kode = 'kode_venue' if 'kode_venue' in df_iso_step0.columns else None
                     if col_kode:
                         unique_kodes = sorted(df_iso_step0[col_kode].astype(str).unique().tolist())
@@ -610,26 +615,40 @@ if uploaded_file is None:
                     else:
                         df_iso_final = df_iso_step0.copy()
 
+                # --- KOLOM 2: PARAMETER & DROPDOWN DINAMIS ---
                 with iso_col2:
-                    st.markdown("##### 2. Parameter API")
-                    # Kita butuh 2 API Key sekarang
-                    ors_key = st.text_input("🔑 ORS API Key (Visual Peta)", type="password", help="Untuk menggambar area warna.")
-                    gmaps_key = st.text_input("🔑 Google Maps API Key (Data Realtime)", type="password", help="Untuk hitung jarak & macet.")
+                    st.markdown("##### 2. Parameter")
+                    api_key = st.text_input("ORS API Key", type="password", help="Wajib diisi.")
+                    speed_val = st.slider("Kecepatan (km/jam)", 5, 80, 30)
                     
                     st.markdown("---")
-                    speed_val = st.slider("Kecepatan Rata-rata (Untuk Peta)", 10, 80, 30)
+                    enable_isodistance = st.checkbox("Aktifkan Hitung Jarak (Isodistance)", value=True)
                     
-                    # Logic Dropdown Dinamis
-                    target_name_selection = "SEMUA TITIK DALAM RADIUS"
-                    if not st.session_state['df_inside_radius'].empty:
-                        c_name_state = 'nama_venue' if 'nama_venue' in st.session_state['df_inside_radius'].columns else 'title'
-                        list_dest_dynamic = sorted(st.session_state['df_inside_radius'][c_name_state].astype(str).unique().tolist())
-                        list_dest_dynamic.insert(0, "SEMUA TITIK DALAM RADIUS")
-                        st.success(f"✅ {len(list_dest_dynamic)-1} Titik Terjangkau")
-                        target_name_selection = st.selectbox("Pilih Tujuan (Dari Radius):", list_dest_dynamic)
-                    else:
-                        st.selectbox("Pilih Tujuan:", ["(Menunggu Hasil Hitung...)"], disabled=True)
+                    # --- LOGIKA DROPDOWN DINAMIS (PENTING) ---
+                    # Dropdown ini mengambil isi dari 'st.session_state['df_inside_radius']'
+                    # yang baru akan terisi SETELAH tombol 'Hitung' ditekan.
+                    
+                    target_name_selection = "SEMUA TITIK DALAM RADIUS" # Default
+                    
+                    if enable_isodistance:
+                        # Cek apakah sudah ada hasil radius dari proses sebelumnya
+                        if not st.session_state['df_inside_radius'].empty:
+                            # Ambil nama kolom yang sesuai
+                            cols_in_state = st.session_state['df_inside_radius'].columns
+                            c_name_state = 'nama_venue' if 'nama_venue' in cols_in_state else 'title'
+                            
+                            # Buat list opsi dari hasil filter radius
+                            list_dest_dynamic = sorted(st.session_state['df_inside_radius'][c_name_state].astype(str).unique().tolist())
+                            list_dest_dynamic.insert(0, "SEMUA TITIK DALAM RADIUS")
+                            
+                            st.success(f"{len(list_dest_dynamic)-1} Titik dalam radius")
+                            target_name_selection = st.selectbox("Pilih Tujuan (Dari Radius):", list_dest_dynamic)
+                        else:
+                            # Jika belum ada hasil radius
+                            st.info("Klik 'Hitung' dulu untuk memunculkan daftar titik.")
+                            target_name_selection = st.selectbox("Pilih Tujuan:", ["(Hasil Radius akan muncul di sini)"], disabled=True)
 
+                # --- KOLOM 3: TITIK PUSAT ---
                 with iso_col3:
                     st.markdown("##### 3. Titik Pusat")
                     col_nama = 'nama_venue' if 'nama_venue' in df_iso_final.columns else ('title' if 'title' in df_iso_final.columns else df_iso_final.columns[0])
@@ -641,112 +660,121 @@ if uploaded_file is None:
                         center_point_name = None
                         st.info("Data kosong.")
 
-                    st.caption(f"Total Data: **{len(df_iso_final)}** titik.")
-                    run_iso = st.button("📍 Hitung Analisis Hybrid", use_container_width=True, key="btn_iso_run")
+                    st.caption(f"Total Data Awal: **{len(df_iso_final)}** titik.")
+                    
+                    # Tombol ini akan memicu perhitungan Radius -> Filter Data -> Simpan ke State
+                    run_iso = st.button("Hitung & Filter Radius", use_container_width=True, key="btn_iso_run")
 
-                # --- 3. LOGIKA PROSES HYBRID ---
-                if run_iso:
-                    if not ors_key or not gmaps_key or not center_point_name:
-                        st.warning("⚠️ Harap isi KEDUA API Key dan pilih Lokasi Pusat.")
+                # --- 3. LOGIKA PROSES UTAMA ---
+                if run_iso or (st.session_state['iso_geojson'] is not None and enable_isodistance): 
+                    # Keterangan Logika di atas: Kita jalankan logic jika tombol ditekan, 
+                    # ATAU jika sudah ada geojson di state (agar saat user ganti dropdown tujuan, peta tidak hilang).
+                    
+                    # Pastikan API Key dan Pusat ada (validasi ulang untuk safety)
+                    if not api_key or not center_point_name:
+                        if run_iso and not api_key: st.warning("API Key kosong.")
                     else:
                         try:
-                            # SETUP DATA PUSAT
+                            # 1. PERSIAPAN DATA (Re-fetch row pusat untuk memastikan konsistensi)
+                            # Perlu handle kasus jika user ganti filter tapi belum klik hitung
                             if center_point_name in df_iso_final[col_nama].values:
                                 row_pusat = df_iso_final[df_iso_final[col_nama] == center_point_name].iloc[0]
+                            else:
+                                # Fallback ambil dari state jika filter berubah
+                                row_pusat = None 
+                            
+                            if row_pusat is not None:
                                 lat_c = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
                                 c_lat, c_lon = row_pusat[lat_c], row_pusat['longitude']
 
-                                st.session_state['iso_center_coord'] = [c_lat, c_lon]
-                                st.session_state['iso_center_name'] = center_point_name
-                                st.session_state['iso_speed'] = speed_val
-                                
-                                # A. VISUALISASI PETA (PAKAI ORS - GRATIS & BISA GAMBAR POLIGON)
-                                client_ors = openrouteservice.Client(key=ors_key)
-                                with st.spinner("1/3 ORS: Menggambar peta jangkauan..."):
-                                    ranges_m = [(t/60) * speed_val * 1000 for t in [25, 20, 15, 10, 5]]
-                                    iso_res = client_ors.isochrones(
-                                        locations=[[c_lon, c_lat]], profile='driving-car',
-                                        range_type='distance', range=ranges_m, units='m'
-                                    )
-                                    iso_res['features'] = sorted(iso_res['features'], key=lambda x: x['properties']['value'], reverse=True)
-                                    st.session_state['iso_geojson'] = iso_res
-
-                                # B. FILTER RADIUS (SHAPELY)
-                                with st.spinner("2/3 System: Memfilter titik dalam area..."):
-                                    from shapely.geometry import shape, Point
-                                    outer_polygon = shape(iso_res['features'][0]['geometry'])
-                                    def is_in_radius(row):
-                                        return outer_polygon.contains(Point(row['longitude'], row[lat_c]))
+                                # Jika tombol ditekan, kita update state isochrone baru
+                                if run_iso:
+                                    st.session_state['iso_center_coord'] = [c_lat, c_lon]
+                                    st.session_state['iso_center_name'] = center_point_name
+                                    st.session_state['iso_speed'] = speed_val
                                     
-                                    df_inside = df_iso_final[df_iso_final.apply(is_in_radius, axis=1)]
-                                    st.session_state['df_inside_radius'] = df_inside
-                                    
-                                    # Force rerun agar dropdown terisi sebelum lanjut ke Google Maps
-                                    # Tapi karena kita mau langsung hitung Google Maps, kita lanjut saja menggunakan variabel lokal
+                                    client = openrouteservice.Client(key=api_key)
 
-                                # C. DATA JARAK REALTIME (PAKAI GOOGLE MAPS API)
-                                if not df_inside.empty:
-                                    with st.spinner("3/3 Google Maps: Menghitung Traffic Real-time..."):
-                                        # Inisialisasi Client Google Maps
-                                        gmaps = googlemaps.Client(key=gmaps_key)
+                                    # 2. HITUNG ISOCHRONE (API CALL)
+                                    with st.spinner("1/3 Menghitung area jangkauan..."):
+                                        ranges_m = [(t/60) * speed_val * 1000 for t in [25, 20, 15, 10, 5]]
+                                        iso_res = client.isochrones(
+                                            locations=[[c_lon, c_lat]], profile='driving-car',
+                                            range_type='distance', range=ranges_m, units='m'
+                                        )
+                                        iso_res['features'] = sorted(iso_res['features'], key=lambda x: x['properties']['value'], reverse=True)
+                                        st.session_state['iso_geojson'] = iso_res
 
-                                        # Tentukan target
-                                        if target_name_selection == "SEMUA TITIK DALAM RADIUS" or "Menunggu" in target_name_selection:
-                                            df_targets = df_inside[df_inside[col_nama] != center_point_name]
-                                        else:
-                                            df_targets = df_inside[df_inside[col_nama] == target_name_selection]
+                                    # 3. FILTER TITIK DALAM RADIUS (SHAPELY)
+                                    with st.spinner("2/3 Memfilter titik di dalam area..."):
+                                        from shapely.geometry import shape, Point
+                                        outer_polygon = shape(iso_res['features'][0]['geometry'])
                                         
-                                        st.session_state['iso_targets'] = df_targets[col_nama].tolist()
+                                        def is_in_radius(row):
+                                            point = Point(row['longitude'], row[lat_c])
+                                            return outer_polygon.contains(point)
+                                        
+                                        # Filter dari data awal
+                                        df_inside = df_iso_final[df_iso_final.apply(is_in_radius, axis=1)]
+                                        
+                                        # SIMPAN HASIL FILTER KE STATE (Agar Dropdown bisa baca)
+                                        st.session_state['df_inside_radius'] = df_inside
+                                        
+                                        # Jika baru dihitung, force rerun agar dropdown langsung terupdate
+                                        if run_iso: 
+                                            st.rerun() 
 
-                                        if not df_targets.empty:
-                                            # Batasi max 25 titik (Google Matrix limit standard per request)
-                                            # Jika butuh lebih, harus loop/batching. Disini kita ambil 25 terdekat dulu.
-                                            df_batch = df_targets.head(25) 
-                                            if len(df_targets) > 25:
-                                                st.toast("⚠️ Google API Limit: Hanya menampilkan 25 titik teratas.", icon="ℹ️")
+                                # Ambil data filtered dari state (baik hasil baru atau lama)
+                                df_inside = st.session_state.get('df_inside_radius', pd.DataFrame())
 
-                                            # Siapkan format koordinat untuk Google Maps (Latitude, Longitude)
-                                            origin = (c_lat, c_lon)
-                                            destinations = []
-                                            dest_names = []
-                                            
-                                            for _, r in df_batch.iterrows():
-                                                destinations.append((r[lat_c], r['longitude']))
-                                                dest_names.append(r[col_nama])
+                                # 4. HITUNG ISODISTANCE (JARAK REAL)
+                                if enable_isodistance and not df_inside.empty:
+                                    # Cek target seleksi (karena ini mungkin berubah tanpa klik hitung)
+                                    # Jika seleksi adalah placeholder "(Silakan Hitung...)", anggap SEMUA
+                                    if target_name_selection == "(Hasil Radius akan muncul di sini)":
+                                        target_real = "SEMUA TITIK DALAM RADIUS"
+                                    else:
+                                        target_real = target_name_selection
 
-                                            # REQUEST KE GOOGLE MAPS
-                                            # departure_time='now' penting untuk traffic realtime!
-                                            matrix_result = gmaps.distance_matrix(
-                                                origins=[origin],
-                                                destinations=destinations,
-                                                mode="driving",
-                                                departure_time="now", 
-                                                language="id"
-                                            )
-
-                                            # Parsing Hasil Google
-                                            result_data = []
-                                            if matrix_result['status'] == 'OK':
-                                                rows = matrix_result['rows'][0]['elements']
-                                                for idx, element in enumerate(rows):
-                                                    if element['status'] == 'OK':
-                                                        dist_text = element['distance']['text']
-                                                        dur_text = element['duration_in_traffic']['text'] # Waktu kena macet
-                                                        name = dest_names[idx]
-                                                        result_data.append((name, dist_text, dur_text))
-                                            
-                                            st.session_state['iso_matrix_data'] = result_data
-                                        else:
-                                            st.session_state['iso_matrix_data'] = None
-                                            st.warning("Target spesifik tidak ditemukan dalam radius.")
+                                    # Filter target berdasarkan dropdown
+                                    if target_real == "SEMUA TITIK DALAM RADIUS":
+                                        df_targets = df_inside[df_inside[col_nama] != st.session_state['iso_center_name']]
+                                    else:
+                                        df_targets = df_inside[df_inside[col_nama] == target_real]
                                     
-                                    st.success(f"Selesai! Data Traffic Realtime dimuat.")
-                                    st.rerun() # Refresh agar dropdown update
+                                    st.session_state['iso_targets'] = df_targets[col_nama].tolist()
+
+                                    if not df_targets.empty:
+                                        # Kalau cuma ganti target, jangan panggil API isochrone, cukup distance
+                                        # Tapi disini kita simplifikasi dalam blok run
+                                        locations = [[c_lon, c_lat]] 
+                                        dest_names = []
+                                        
+                                        for _, r in df_targets.head(49).iterrows():
+                                            locations.append([r['longitude'], r[lat_c]])
+                                            dest_names.append(r[col_nama])
+                                        
+                                        if len(df_targets) > 49:
+                                            st.toast("Max 50 titik dihitung jaraknya.", icon="⚠️")
+
+                                        # Panggil API Matrix (Hanya jika perlu update)
+                                        # Disini kita panggil setiap render agar responsif ganti target
+                                        client = openrouteservice.Client(key=api_key)
+                                        matrix = client.distance_matrix(
+                                            locations=locations, profile='driving-car', metrics=['distance'], units='km'
+                                        )
+                                        distances = matrix['distances'][0][1:]
+                                        result_data = list(zip(dest_names, distances))
+                                        st.session_state['iso_matrix_data'] = result_data
+                                    else:
+                                        st.session_state['iso_matrix_data'] = None
                                 else:
-                                    st.warning("Tidak ada titik lain yang masuk dalam jangkauan.")
+                                    st.session_state['iso_matrix_data'] = None
+                                    st.session_state['iso_targets'] = []
 
                         except Exception as e:
-                            st.error(f"Terjadi kesalahan: {e}")
+                            # Jangan spam error saat rerun biasa
+                            if run_iso: st.error(f"Terjadi kesalahan: {e}")
 
                 # --- 4. RENDER PETA ---
                 if st.session_state['iso_center_coord']:
@@ -759,60 +787,64 @@ if uploaded_file is None:
 
                 m_iso = folium.Map(location=map_center, zoom_start=zoom, tiles='CartoDB positron')
 
-                # LAYER ISOCHRONE (Visual ORS)
+                # LAYER ISOCHRONE
                 if st.session_state['iso_geojson']:
                     colors = ['#d7191c', '#fdae61', '#ffffbf', '#a6d96a', '#1a9641']
                     labels = ['20-25 Mnt', '15-20 Mnt', '10-15 Mnt', '5-10 Mnt', '< 5 Mnt']
                     for i, feature in enumerate(st.session_state['iso_geojson']['features']):
                         col = colors[i] if i < len(colors) else 'gray'
                         lbl = labels[i] if i < len(labels) else ''
-                        folium.GeoJson(feature, style_function=lambda x, col=col: {'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.6}, tooltip=f"Zona ORS: {lbl}").add_to(m_iso)
+                        folium.GeoJson(feature, style_function=lambda x, col=col: {'fillColor': col, 'color': 'black', 'weight': 1, 'fillOpacity': 0.6}, tooltip=f"Zona: {lbl}").add_to(m_iso)
                     
+                    # Legenda Isochrone
                     legend_html = """
-                    <div style="position: fixed; bottom: 30px; left: 30px; width: 150px; background-color: white; z-index:9999; font-size:11px; border:2px solid grey; border-radius: 5px; padding: 10px; opacity: 0.9;">
-                        <b>Zona Waktu (Estimasi)</b><br>
-                        <i class="fa fa-square" style="color:#1a9641"></i> < 5 Mnt<br>
+                    <div style="position: fixed; bottom: 30px; left: 30px; width: 150px; height: 130px; 
+                    background-color: white; z-index:9999; font-size:11px; border:2px solid grey; border-radius: 5px; padding: 10px; opacity: 0.9;">
+                        <b>Legenda Waktu</b><br>
+                        <i class="fa fa-square" style="color:#1a9641"></i> < 5 Mnt (Dekat)<br>
                         <i class="fa fa-square" style="color:#a6d96a"></i> 5-10 Mnt<br>
                         <i class="fa fa-square" style="color:#ffffbf; border:1px solid #ccc"></i> 10-15 Mnt<br>
                         <i class="fa fa-square" style="color:#fdae61"></i> 15-20 Mnt<br>
-                        <i class="fa fa-square" style="color:#d7191c"></i> > 20 Mnt
+                        <i class="fa fa-square" style="color:#d7191c"></i> > 20 Mnt (Jauh)
                     </div>
                     """
                     m_iso.get_root().html.add_child(folium.Element(legend_html))
 
-                # LAYER GOOGLE TRAFFIC DATA (Panel Kanan)
+                # LAYER ISODISTANCE INFO
                 if st.session_state['iso_matrix_data']:
                     list_items = ""
-                    # Data: (Nama, Jarak, Waktu_Traffic)
-                    for name, dist, dur in st.session_state['iso_matrix_data']:
-                        list_items += f"<li><b>{name}</b><br>📏 {dist} | 🚗 {dur}</li><br>"
+                    for name, dist in st.session_state['iso_matrix_data']:
+                        list_items += f"<li><b>{name}</b>: {dist:.2f} km</li>"
                     
                     dist_legend_html = f"""
-                    <div style="position: fixed; bottom: 30px; right: 10px; width: 230px; max-height: 400px; 
-                    background-color: white; z-index:9999; font-size:11px; border:2px solid #4285F4; border-radius: 5px; padding: 10px; opacity: 0.95; overflow-y: auto;">
-                        <h5 style="margin:0; text-align:center; color:#4285F4;">Google Real-time Traffic</h5>
-                        <div style="text-align:center; font-size:9px; color:grey;">Updated: Now</div>
+                    <div style="position: fixed; bottom: 30px; right: 10px; width: 220px; max-height: 350px; 
+                    background-color: white; z-index:9999; font-size:11px; border:2px solid black; border-radius: 5px; padding: 10px; opacity: 0.95; overflow-y: auto;">
+                        <h5 style="margin:0; text-align:center;">Jarak Tempuh (Mobil)</h5>
+                        <div style="text-align:center; font-size:9px; color:grey;">Filter: {target_name_selection[:20]}..</div>
                         <hr style="margin:5px 0;">
                         <ul style="padding-left: 15px; margin:0;">{list_items}</ul>
                     </div>
                     """
                     m_iso.get_root().html.add_child(folium.Element(dist_legend_html))
                     
-                    # Garis Visual (Opsional, jika 1 target)
                     if len(st.session_state['iso_matrix_data']) == 1:
                         target_name = st.session_state['iso_matrix_data'][0][0]
                         df_in = st.session_state['df_inside_radius']
                         if not df_in.empty:
                             row_t = df_in[df_in[col_nama] == target_name].iloc[0]
                             lat_c_col = 'lattitude' if 'lattitude' in df_in.columns else 'latitude'
-                            folium.PolyLine(
-                                locations=[st.session_state['iso_center_coord'], [row_t[lat_c_col], row_t['longitude']]],
-                                color="#4285F4", weight=3, dash_array='5, 5', opacity=0.8, tooltip="Garis Imajiner"
-                            ).add_to(m_iso)
+                            folium.PolyLine(locations=[st.session_state['iso_center_coord'], [row_t[lat_c_col], row_t['longitude']]], color="red", weight=2, dash_array='5, 5', opacity=0.8).add_to(m_iso)
 
                 # LAYER TITIK
                 lat_c_col = 'lattitude' if 'lattitude' in df_iso_final.columns else 'latitude'
-                df_to_render = st.session_state['df_inside_radius'] if not st.session_state['df_inside_radius'].empty else (pd.DataFrame() if st.session_state['iso_geojson'] else df_iso_final)
+                
+                # Gunakan df_inside_radius jika ada (hasil filter), jika tidak gunakan df awal
+                if not st.session_state['df_inside_radius'].empty:
+                    df_to_render = st.session_state['df_inside_radius']
+                elif st.session_state['iso_geojson']: 
+                    df_to_render = pd.DataFrame() 
+                else:
+                    df_to_render = df_iso_final 
 
                 for _, row in df_to_render.iterrows():
                     if st.session_state['iso_center_name'] and row[col_nama] == st.session_state['iso_center_name']: continue
@@ -821,12 +853,14 @@ if uploaded_file is None:
                     f_color = 'yellow' if is_target else 'cyan'
                     border_c = 'red' if is_target else 'blue'
                     rad = 6 if is_target else 4
+                    
                     kode_txt = str(row.get('kode_venue', '?')).replace('nan', '?')
                     
                     folium.CircleMarker(
                         [row[lat_c_col], row['longitude']], radius=rad, color=border_c, fill=True, fill_color=f_color, fill_opacity=0.9,
                         popup=f"<b>{row[col_nama]}</b><br>Kode: {kode_txt}", tooltip=f"{row[col_nama]}"
                     ).add_to(m_iso)
+                    
                     folium.Marker(
                         [row[lat_c_col], row['longitude']],
                         icon=DivIcon(icon_size=(150,36), icon_anchor=(6, 14), html=f'<div style="font-size: 8pt; font-weight: bold;">{kode_txt}</div>')
