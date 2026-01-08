@@ -273,7 +273,14 @@ with st.sidebar:
 # LOGIKA UTAMA
 # =================================================================
     # Inisialisasi
-    # --- JUDUL & SAMBUTAN ---
+   
+    df = None
+    numeric_cols = []
+    categorical_cols = []
+    all_cols = []
+
+    if uploaded_file is not None:
+         # --- JUDUL & SAMBUTAN ---
     st.markdown("<h1>DASHBOARD ANALISIS STATISTIK<br>PKL 65</h1>", unsafe_allow_html=True)
     
     st.markdown("""
@@ -283,12 +290,6 @@ with st.sidebar:
         <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b>, silakan unggah dataset Anda di panel kiri.</p>
     </div>
     """, unsafe_allow_html=True)
-    df = None
-    numeric_cols = []
-    categorical_cols = []
-    all_cols = []
-
-    if uploaded_file is not None:
         df = load_data(uploaded_file)
         if df is not None:
             st.sidebar.success("File berhasil di-upload.")
