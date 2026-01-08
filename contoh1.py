@@ -230,6 +230,7 @@ MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
 # =================================================================
 # FUNGSI BANTUAN (STATISTIK - ASLI)
 # =================================================================
+
 @st.cache_data
 def load_data(file):
     try:
@@ -272,6 +273,16 @@ with st.sidebar:
 # LOGIKA UTAMA
 # =================================================================
     # Inisialisasi
+    # --- JUDUL & SAMBUTAN ---
+    st.markdown("<h1>DASHBOARD ANALISIS STATISTIK<br>PKL 65</h1>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="welcome-box">
+        <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
+        <p style='font-size: 1.1rem;'>Halaman ini menyajikan analisis statistik mendalam berdasarkan data yang Anda unggah.</p>
+        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b>, silakan unggah dataset Anda di panel kiri.</p>
+    </div>
+    """, unsafe_allow_html=True)
     df = None
     numeric_cols = []
     categorical_cols = []
