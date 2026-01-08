@@ -230,7 +230,15 @@ MASCOT_IMG = 'gambar/image_10.png'  # Maskot Laptop untuk Sidebar
 # =================================================================
 # FUNGSI BANTUAN (STATISTIK - ASLI)
 # =================================================================
-
+ # --- JUDUL & SAMBUTAN ---
+st.markdown("<h1>DASHBOARD ANALISIS STATISTIK<br>PKL 65</h1>", unsafe_allow_html=True)
+st.markdown("""
+    <div class="welcome-box">
+        <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
+        <p style='font-size: 1.1rem;'>Halaman ini menyajikan analisis statistik mendalam berdasarkan data yang Anda unggah.</p>
+        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b>, silakan unggah dataset Anda di panel kiri.</p>
+    </div>
+    """, unsafe_allow_html=True)
 @st.cache_data
 def load_data(file):
     try:
@@ -280,16 +288,6 @@ with st.sidebar:
     all_cols = []
 
     if uploaded_file is not None:
-         # --- JUDUL & SAMBUTAN ---
-    st.markdown("<h1>DASHBOARD ANALISIS STATISTIK<br>PKL 65</h1>", unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="welcome-box">
-        <h3 style='margin-top:0;'>Selamat Datang di Dashboard PKL 65</h3>
-        <p style='font-size: 1.1rem;'>Halaman ini menyajikan analisis statistik mendalam berdasarkan data yang Anda unggah.</p>
-        <p style='font-size: 1rem; margin-top: 15px;'>Untuk memulai <b>Analisis Statistik Mendalam</b>, silakan unggah dataset Anda di panel kiri.</p>
-    </div>
-    """, unsafe_allow_html=True)
         df = load_data(uploaded_file)
         if df is not None:
             st.sidebar.success("File berhasil di-upload.")
